@@ -3205,7 +3205,7 @@ async function runCurrentStats() {
   }
 }
 
-async function seriesDates(rec, from, to, cc) {
+async function seriesDates(rec, from, to) {
   const src = statRec(rec).source;
   const months = [];
   for (let ym = from.slice(0, 7); ym <= to.slice(0, 7); ym = shiftMonth(ym, 1)) months.push(ym);
@@ -3218,8 +3218,9 @@ async function seriesDates(rec, from, to, cc) {
     }));
   }
   const byDate = new Map();
+  // No whole-scene cloud filter: cloudiness is judged over the AOI itself (valid / masked share and the
+  // "Min. valid pixels" filter). The scene cloud cover only sets the reading order (least cloudy first).
   fs.forEach(f => {
-    if (src === "s2" && !knownPass(f, cc)) return;
     const d = f.id.slice(0, 10);
     if (!byDate.has(d)) byDate.set(d, { date: d, scenes: [], cloud: null });
     const e = byDate.get(d), c = cloudPct.get(f.id);
@@ -3269,9 +3270,9 @@ async function runSeries() {
   $("#stProg").textContent = "Looking up acquisitions…";
   let total = 0;
   try {
-    const dates = await seriesDates(rec, from, to, state.cc);
+    const dates = await seriesDates(rec, from, to);
     if (ctrl.signal.aborted) return;
-    if (!dates.length) { $("#stProg").textContent = "No acquisitions in this range" + (r.source === "s2" ? " with ≤ " + state.cc + " % cloud." : "."); return; }
+    if (!dates.length) { $("#stProg").textContent = "No acquisitions in this range."; return; }
     // Every date is read; the least cloudy go first so useful points appear early and Stop keeps them.
     const todo = dates.slice().sort((a, b) => (a.cloud == null ? 101 : a.cloud) - (b.cloud == null ? 101 : b.cloud) ||
                                               a.date.localeCompare(b.date));

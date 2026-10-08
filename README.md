@@ -77,7 +77,7 @@ The swissEO Browser therefore always uses the physical reflectance.
 - **Date selection as in Copernicus Browser** — opens on today's date (greyed out when there is no
   acquisition), ‹ › jump to the previous / next date with data, the arrow button jumps to the latest one.
   The calendar marks days with data, has month / year pull-downs and a maximum cloud-coverage slider
-  (cloud cover from each mosaic's `metadata.json`). Several orbits acquired on the same day are mosaicked
+  (cloud cover of the whole mosaic, from its `metadata.json`, as the tile cloud cover in Copernicus). Several orbits acquired on the same day are mosaicked
   (most recent on top).
 - **Data collections** — a pull-down switches between *swissEO S2-SR v200* and *swissEO VHI v100*; each
   collection has its own layers and its own dates in the calendar.
@@ -108,9 +108,9 @@ The swissEO Browser therefore always uses the physical reflectance.
   only; its toolbar copies the geometry, shows the area, centres the map and downloads the AOI as GeoJSON.
   For the area:
   - *Statistical info*: statistics and histogram for the selected date, and a time series over a date
-    range (CSV download). The time series reads every date in the range, least cloudy first (Stop keeps
-    what has been read), and reports which dates were not reached by that day's orbit and which were
-    fully masked. Clouds can additionally be excluded with the scene classification (SCL 3, 8, 9, 10),
+    range (CSV download). The time series reads every date in the range — clouds are judged over the
+    AOI itself, not by the cloud cover of the whole scene — least cloudy first (Stop keeps what has been
+    read), and reports which dates were not reached by that day's orbit and which were fully masked. Clouds can additionally be excluded with the scene classification (SCL 3, 8, 9, 10),
     which catches clouds OmniCloudMask misses, and the area can be restricted to forest or to all
     vegetation (the share of valid pixels then refers to the masked area). VHI statistics are read from
     the VHI COGs.
@@ -128,8 +128,8 @@ The swissEO Browser therefore always uses the physical reflectance.
 - **Timelapse** — as in the Copernicus Browser, for the current layer over the area of interest (data
   clipped to it, no outline drawn) or the current view:
   - time range, *Select 1 image per* orbit / day / week / month / year, month filter, Search;
-  - list of images with thumbnail, cloud cover and coverage of the area (computed from the cloud mask and
-    the data footprint); per interval the image with the best coverage × clear sky is chosen; Max. cloud
+  - list of images with thumbnail, cloud cover and coverage of the timelapse area (AOI or view, computed
+    from the cloud mask and the data footprint — not the cloud cover of the whole scene); per interval the image with the best coverage × clear sky is chosen; Max. cloud
     coverage and Min. tile coverage filter the list, images can be (de)selected;
   - preview player with speed (fps), transition None / Fade with fade duration, delay last frame,
     adaptive gain per frame (for snowy winter frames), legend, map overlays and captions (date label,
