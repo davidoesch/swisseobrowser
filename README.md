@@ -55,8 +55,9 @@ sheets ([S2-SR v200](https://www.swisstopo.admin.ch/dam/en/sd-web/-i2Y10KmboPf/s
 - **Layer pull-down** — description, legend, adjustable colour scale (min/max), masks for clouds, cloud
   shadows and terrain shadow, and *effects and advanced options* (gain, gamma, red/green/blue ranges,
   opacity). `</>` shows the formula and scaling.
-- **Compare** — add layers to the compare list and compare them with a split or opacity effect;
-  reorder, remove and zoom to each entry.
+- **Compare** — add layers to the compare list; opening the Compare panel (or the ⇄ map button) shows
+  them with a split or opacity effect, going back to Layers shows the single layer again. Reorder,
+  remove and zoom to each entry.
 - **Area of interest** — draw a rectangle or polygon, or import KML/KMZ, GPX, WKT, GeoJSON, a zipped
   Shapefile, an MGRS/GEOREF cell or a bounding box (WGS84, LV95 and LV03 coordinates are detected). For
   the area: statistics and histogram for the selected date, a time series over a date range (CSV
@@ -108,7 +109,7 @@ Parameter names follow the Copernicus Browser where an equivalent exists.
 | `opacity` | `70` | Layer opacity in % |
 | `cloudMask`, `shadowMask`, `terrainMask` | `true` | Masks |
 | `basemap`, `labels` | `swissimage`, `true` | Basemap (`pixelkarte`, `swissimage`, `grey`, `none`) and label overlay |
-| `compareLayers`, `comparedOpacity`, `comparedClipping`, `compareMode` | | Compare list (base64url JSON), per-layer opacity and split range, `split` / `opacity` when compare mode is on |
+| `compareLayers`, `comparedOpacity`, `comparedClipping`, `compareMode` | | Compare list (base64url JSON), per-layer opacity and split range; `compareMode` is `split` / `opacity` when comparing and `off` otherwise (links without it open in compare mode) |
 | `aoi` | | Area of interest as base64url GeoJSON |
 
 Example:

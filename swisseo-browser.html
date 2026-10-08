@@ -1893,11 +1893,15 @@ function renderLayerList() {
 /* Data-collection view switch: Layers / Compare */
 $("#dcLayers").innerHTML = UI.layers;
 $("#dcCompare").insertAdjacentHTML("afterbegin", UI.compare);
+/* As in Copernicus Browser, the Compare panel is compare mode: opening it with two or
+   more layers shows the comparison, going back to Layers shows the single layer again. */
 function showView(v) {
   $("#dcLayers").classList.toggle("on", v === "layers");
   $("#dcCompare").classList.toggle("on", v === "compare");
   $("#v-layers").hidden = v !== "layers";
   $("#v-compare").hidden = v !== "compare";
+  if (v === "compare" && !compareMode && compare.length >= 2) setCompareMode(true);
+  if (v === "layers" && compareMode) setCompareMode(false);
 }
 $("#dcLayers").onclick = () => showView("layers");
 $("#dcCompare").onclick = () => showView("compare");
@@ -1971,7 +1975,7 @@ function updateClips() {
 }
 map.on("move zoomend resize viewreset", updateClips);
 
-function setCompareMode(on) {
+function setCompareMode(on, keepView) {
   if (on && compare.length < 2) on = false;
   if (on === compareMode) { renderCompare(); return; }
   compareMode = on;
@@ -1983,13 +1987,14 @@ function setCompareMode(on) {
   } else {
     clearCompareLayers();
     applyLayer();
+    if (!keepView) showView("layers");
   }
   renderCompare();
   writeUrlSoon();
 }
 $("#btnCompare").onclick = () => setCompareMode(!compareMode);
 $("#cmpEffect").onchange = e => { compareEffect = e.target.value; renderCompare(); updateClips(); writeUrlSoon(); };
-$("#cmpClear").onclick = () => { compare = []; setCompareMode(false); renderCompare(); writeUrlSoon(); };
+$("#cmpClear").onclick = () => { compare = []; setCompareMode(false, true); renderCompare(); writeUrlSoon(); };
 $("#cmpShare").onclick = () => copyLink($("#cmpShare"), "Share");
 
 let dragFrom = -1;
@@ -2004,12 +2009,12 @@ function renderCompare() {
   $("#cmpClear").disabled = !n;
   $("#cmpShare").disabled = !n;
   $("#cmpHint").innerHTML = n < 2
-    ? "Add at least two layers with <b>Add to Compare</b> in the layer pull-down. The compare button " +
-      "(two arrows) then appears on the map below the export button."
+    ? "Add at least two layers with <b>Add to Compare</b> in the layer pull-down. Opening this panel then " +
+      "shows the comparison; the compare button (two arrows) below the export button toggles it."
     : compareMode
       ? "Compare mode is on. Drag the " + (compareEffect === "split" ? "split positions" : "opacity sliders") +
         ", or drag the entries to change which layer is on top."
-      : "Press the compare button (two arrows) on the map to start comparing.";
+      : "Compare mode is off. Press the compare button (two arrows) on the map, or reopen this panel, to compare.";
 
   const box = $("#cmpList");
   box.innerHTML = "";
@@ -2023,7 +2028,7 @@ function renderCompare() {
     del.innerHTML = UI.trash;
     del.onclick = () => {
       compare.splice(i, 1);
-      if (compare.length < 2) setCompareMode(false); else if (compareMode) rebuildCompare();
+      if (compare.length < 2) setCompareMode(false, true); else if (compareMode) rebuildCompare();
       renderCompare(); writeUrlSoon();
     };
     th.append(del);
@@ -2901,7 +2906,7 @@ function writeUrl() {
     }))));
     p.set("comparedOpacity", JSON.stringify(compare.map(it => r3(it.opacity))));
     p.set("comparedClipping", JSON.stringify(compare.map(it => it.clip.map(r3))));
-    if (compareMode) p.set("compareMode", compareEffect);
+    p.set("compareMode", compareMode ? compareEffect : "off");
   }
   if (aoi) {
     const g = { type: aoi.type, coordinates: JSON.parse(JSON.stringify(aoi.coordinates, (k, v) => typeof v === "number" ? +v.toFixed(6) : v)) };
@@ -2949,7 +2954,7 @@ function readUrl() {
   const lat = parseFloat(q.get("lat")), lng = parseFloat(q.get("lng")), z = parseInt(q.get("zoom"), 10);
   const hasView = isFinite(lat) && isFinite(lng) && isFinite(z);
   if (hasView) map.setView([lat, lng], clamp(z, 8, 27), { animate: false });
-  return { hasView, compareMode: (cm === "split" || cm === "opacity") && compare.length >= 2 };
+  return { hasView, compareMode: cm !== "off" && compare.length >= 2 };
 }
 
 async function copyLink(btn, label) {
