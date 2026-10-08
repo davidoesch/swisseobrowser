@@ -1305,16 +1305,30 @@ const classesOf = (rec, s) =>
    sliders multiply these, so 1 / 1 is the default look (as in Copernicus Browser). */
 const BASE_GAIN = 3.0, BASE_GAMMA = 1.6;
 
+/* "True color optimized" look: the tone curve of the Copernicus Browser True color layer
+   (Sentinel Hub L2A optimized evalscript, 1_TRUE_COLOR): contrast enhancement with highlight
+   compression up to reflectance 3.0, mid point 0.13, gamma 1.8, saturation 1.2, sRGB encoding.
+   It is applied to physically scaled reflectance (with the -0.1 offset), like everything here. */
+const OPT = { maxR: 3.0, midR: 0.13, sat: 1.2, gamma: 1.8, gOff: 0.01 };
+OPT.gOffPow = Math.pow(OPT.gOff, OPT.gamma);
+OPT.gOffRange = Math.pow(1 + OPT.gOff, OPT.gamma) - OPT.gOffPow;
+function optLin(a) {
+  const ar = clamp(a / OPT.maxR, 0, 1), t = OPT.midR / OPT.maxR;
+  const adj = ar * (ar * t - 1) / (ar * (2 * t - 1) - t);              // highlight compression
+  return (Math.pow(adj + OPT.gOff, OPT.gamma) - OPT.gOffPow) / OPT.gOffRange;
+}
+const sRGB = c => c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055;
+
 function defaults(rec) {
   return { gain: 1, gamma: 1, r: [0, 1], g: [0, 1], b: [0, 1], min: rec.min, max: rec.max, thr: rec.threshold,
-           opacity: 100, cloud: false, shadow: false, terrain: false, veg: "off", autoGain: false };
+           opacity: 100, cloud: false, shadow: false, terrain: false, veg: "off", autoGain: false, look: "standard" };
 }
 const settings = {};
 const S = rec => settings[rec.id] || (settings[rec.id] = defaults(rec));
 
 const RNG_KEYS = [["r", "redRange"], ["g", "greenRange"], ["b", "blueRange"]];
 const SETTING_KEYS = ["gain", "gamma", "redRange", "greenRange", "blueRange", "valueRange", "threshold",
-                      "opacity", "cloudMask", "shadowMask", "terrainMask", "vegetationMask", "autoGain"];
+                      "opacity", "cloudMask", "shadowMask", "terrainMask", "vegetationMask", "autoGain", "look"];
 const r3 = v => +(+v).toFixed(4);
 
 /* Non-default settings as a flat object, named like the Copernicus Browser URL params. */
@@ -1335,6 +1349,7 @@ function settingsToObj(rec, s) {
   }
   if (rec.source === "s2" && VEG_LABEL[s.veg]) o.vegetationMask = s.veg;
   if (rec.type === "rgb" && s.autoGain) o.autoGain = true;
+  if (rec.type === "rgb" && s.look === "optimized") o.look = "optimized";
   return o;
 }
 function objToSettings(rec, o) {
@@ -1357,6 +1372,7 @@ function objToSettings(rec, o) {
   s.cloud = bool(o.cloudMask); s.shadow = bool(o.shadowMask); s.terrain = bool(o.terrainMask);
   if (rec.source === "s2" && VEG_LABEL[o.vegetationMask]) s.veg = o.vegetationMask;
   s.autoGain = rec.type === "rgb" && bool(o.autoGain);
+  if (rec.type === "rgb" && o.look === "optimized") s.look = "optimized";
   return s;
 }
 const cloneSettings = s => JSON.parse(JSON.stringify(s));
@@ -1539,6 +1555,24 @@ async function renderScene(rec, s, id, bbox, W, H, signal) {
   const img = new ImageData(W, H), d = img.data, n = W * H;
   const put = (k, c) => { d[k*4] = c[0]; d[k*4+1] = c[1]; d[k*4+2] = c[2]; d[k*4+3] = 255; };
 
+  if (rec.type === "rgb" && s.look === "optimized") {
+    // Copernicus Browser "True color optimized"; Gain scales the input, Gamma and RGB ranges the output
+    const ig = 1 / s.gamma, rg = [s.r, s.g, s.b], lin = [0, 0, 0];
+    for (let k = 0; k < n; k++) {
+      if ((a[0][k] === 0 && a[1][k] === 0 && a[2][k] === 0) || masked(k)) continue;
+      for (let c = 0; c < 3; c++) lin[c] = optLin(toRho(a[c][k]) * s.gain);
+      const avg = (lin[0] + lin[1] + lin[2]) / 3 * (1 - OPT.sat);
+      for (let c = 0; c < 3; c++) {
+        let v = sRGB(clamp(avg + lin[c] * OPT.sat, 0, 1));
+        if (ig !== 1) v = Math.pow(v, ig);
+        v = clamp((v - rg[c][0]) / ((rg[c][1] - rg[c][0]) || 1e-6), 0, 1);
+        d[k * 4 + c] = 255 * v;
+      }
+      d[k * 4 + 3] = 255;
+    }
+    return img;
+  }
+
   if (rec.type === "rgb") {
     const gain = BASE_GAIN * (rec.gainMul || 1) * s.gain, ig = 1 / (BASE_GAMMA * s.gamma);
     const rg = [s.r, s.g, s.b];
@@ -1705,7 +1739,7 @@ function refreshPending() {
    saturation (0.95 after gain). It only ever lowers the gain, by at most a factor of 4, and only
    for the colour composites. Masks of the layer (clouds, shadows, vegetation) are respected. */
 async function autoGainFactor(rec, s, scenes, bbox, signal, grid) {
-  if (rec.type !== "rgb" || !scenes.length) return 1;
+  if (rec.type !== "rgb" || !scenes.length || s.look === "optimized") return 1;
   let g = grid;
   if (!g) {
     const res = Math.max(10, Math.max(bbox[2] - bbox[0], bbox[3] - bbox[1]) / 64);
@@ -1729,6 +1763,7 @@ function showAutoGain(f) {
   if (e) e.textContent = currentRec.type === "rgb" && S(currentRec).autoGain
     ? "Gain × " + f.toFixed(2) + " for this view" + (f < 1 ? " — lowered so bright areas do not saturate" : " — not bright, unchanged")
     : "Lowers the gain when the view is bright (snow, clouds) so it does not saturate";
+  if (e && S(currentRec).look === "optimized" && S(currentRec).autoGain) e.textContent = "Not needed with the True color optimized look — it compresses highlights instead of clipping them";
 }
 /* Recomputes the factor for the view; true when it changed enough to redraw. */
 async function refreshAutoGain() {
@@ -2167,6 +2202,17 @@ function layerBody(rec) {
   if (open) {
     sec("Effects and advanced options");
     if (rec.type === "rgb") {
+      const lk = el("div", "tog");
+      lk.innerHTML = "<span>Look<small>Standard stretch, or the Copernicus Browser True color optimized curve (highlight compression)</small></span>";
+      const seg = el("div", "seg");
+      [["standard", "Standard"], ["optimized", "Optimized"]].forEach(([v, t]) => {
+        const b = el("button", s.look === v ? "on" : "", t);
+        b.type = "button";
+        b.onclick = e => { e.preventDefault(); s.look = v; renderLayerList(); onSettings(rec); };
+        seg.append(b);
+      });
+      lk.append(seg);
+      body.append(lk);
       body.append(sliderRow("Gain", 0, 3, 0.01, s.gain, v => { s.gain = v; onSettings(rec); }));
       body.append(sliderRow("Gamma", 0.1, 3, 0.01, s.gamma, v => { s.gamma = v; onSettings(rec); }));
       const ag = el("label", "tog");
@@ -2188,7 +2234,7 @@ function layerBody(rec) {
     rs.style.marginTop = "6px";
     rs.onclick = () => {
       const d = defaults(rec);
-      Object.assign(s, { gain: d.gain, gamma: d.gamma, r: d.r, g: d.g, b: d.b, opacity: d.opacity, autoGain: false });
+      Object.assign(s, { gain: d.gain, gamma: d.gamma, r: d.r, g: d.g, b: d.b, opacity: d.opacity, autoGain: false, look: "standard" });
       renderLayerList(); onSettings(rec, "opacity"); onSettings(rec);
     };
     body.append(rs);

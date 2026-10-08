@@ -64,43 +64,60 @@ Indices (NDVI, NDWI, …) are computed from ρ after this scaling. Very dark pix
 0 after the −0.1 offset; such negative reflectance is set to 0 before an index is computed, so ratio
 indices stay within −1…1.
 
+**Why indices are higher than in the Copernicus Browser:** since processing baseline 04.00 the Sentinel-2
+L2A digital numbers contain a +1000 shift, which the offset −0.1 removes. The Copernicus Browser requests
+its data with Sentinel Hub's `harmonizeValues`, which is numerically equivalent to leaving the offset out,
+so its NDVI over dense vegetation is markedly lower (e.g. 0.56 instead of 0.87). CDSE confirmed that the
+offset is correct and recommends keeping it
+([forum thread](https://forum.dataspace.copernicus.eu/t/sentinel-2-baseline-04-00-offset-csde-stac-derived-ndvi-doesnt-match-copernicus-browser-ndvi/5417)).
+The swissEO Browser therefore always uses the physical reflectance.
+
 ## Features
 
 - **Date selection as in Copernicus Browser** — opens on today's date (greyed out when there is no
-  acquisition), ‹ › jump to the previous/next date with data, the arrow button jumps to the latest one.
-  The calendar marks days with data, has month/year pull-downs and a maximum cloud-coverage slider
-  (cloud cover from each mosaic's `metadata.json`). Several orbits acquired on the same day are mosaicked.
+  acquisition), ‹ › jump to the previous / next date with data, the arrow button jumps to the latest one.
+  The calendar marks days with data, has month / year pull-downs and a maximum cloud-coverage slider
+  (cloud cover from each mosaic's `metadata.json`). Several orbits acquired on the same day are mosaicked
+  (most recent on top).
 - **Data collections** — a pull-down switches between *swissEO S2-SR v200* and *swissEO VHI v100*; each
   collection has its own layers and its own dates in the calendar.
 - **Layers** — S2-SR: true color and five false-color composites (false color, urban, SWIR, agriculture,
-  geology 12-8-2); NDVI, NDWI, moisture index, NDSI, NBR and AOT; scene classification, cloud mask, terrain /
-  solar incidence. VHI: forest and vegetation. Layers are listed with the Copernicus Browser preview
-  thumbnails as icons.
-- **Layer pull-down** — the Copernicus Browser title, description and "More info" link (Sentinel Hub
-  custom-scripts page; swisstopo product page for True color L2A and the swissEO-specific layers), legend,
-  adjustable colour scale (min/max), masks for clouds and cloud shadows (OmniCloudMask), terrain shadow
-  (terrain mask 200) and a vegetation mask (Off / Forest / All vegetation, from swissEO VHI v100), and
-  *effects and advanced options* (gain, gamma, adaptive gain, red/green/blue ranges, opacity). *Adaptive
-  gain* (colour composites) lowers the gain when the view is bright — snow, glaciers, clouds — so that the
-  98th percentile of the reflectance stays just below saturation; it never brightens and lowers the gain
-  by at most a factor of 4, and is recomputed when the view changes.
-  `</>` shows the formula and scaling. NDSI is rendered as in the Copernicus Browser (snow above an
-  adjustable threshold in blue, true color elsewhere).
+  geology 12-8-2); NDVI, NDWI, moisture index, NDSI, NBR and AOT; scene classification, cloud mask,
+  terrain / solar incidence. VHI: forest and vegetation (WMS). Layers are listed with the Copernicus
+  Browser preview thumbnails as icons.
+- **Layer pull-down**
+  - the Copernicus Browser title, description and "More info" link (Sentinel Hub custom-scripts page;
+    swisstopo product page for True color L2A and the swissEO-specific layers); `</>` shows the formula
+    and scaling;
+  - legend with adjustable colour scale (min / max); NDSI is rendered as in the Copernicus Browser (snow
+    above an adjustable threshold in blue, true color elsewhere);
+  - masks: clouds and cloud shadows (OmniCloudMask), terrain shadow (terrain mask 200) and a vegetation
+    mask (Off / Forest / All vegetation, from swissEO VHI v100);
+  - *effects and advanced options* for the colour composites: **Look** — *Standard* stretch or *True
+    color optimized* (the tone curve of the Copernicus Browser True color layer: contrast enhancement with
+    highlight compression, saturation 1.2, sRGB); gain, gamma, **adaptive gain** (lowers the gain when the
+    view is bright — snow, glaciers, clouds — so that the 98th percentile of the reflectance stays just
+    below saturation; never brightens, at most a factor of 4, recomputed when the view changes; not needed
+    with the optimized look), red / green / blue ranges, opacity.
 - **Compare** — add layers to the compare list; opening the Compare panel (or the ⇄ map button) shows
   them with a split or opacity effect, going back to Layers shows the single layer again. Reorder,
   remove and zoom to each entry.
-- **Area of interest** — draw a rectangle or polygon, or import KML/KMZ, GPX, WKT, GeoJSON, a zipped
-  Shapefile, an MGRS/GEOREF cell or a bounding box (WGS84, LV95 and LV03 coordinates are detected). For
-  the area: statistics and histogram for the selected date, a time series over a date range (CSV
-  download) and a spectral explorer. The time series reads every date in the range, least cloudy first
-  (Stop keeps what has been read), and reports which dates were not reached by that day's orbit and
-  which were fully masked. Statistics can additionally exclude clouds flagged by the scene
-  classification (SCL 3, 8, 9, 10), which catches clouds OmniCloudMask misses, and can be restricted to
-  forest or to all vegetation with the vegetation mask (the share of valid pixels then refers to the
-  masked area).
+- **Area of interest** — draw a rectangle (axis-aligned in LV95) or polygon, or import KML/KMZ, GPX, WKT,
+  GeoJSON, a zipped Shapefile, an MGRS / GEOREF cell or a bounding box (WGS84, LV95 and LV03 coordinates
+  are detected). Vertices stay editable and drawing again adds a polygon. The AOI is shown as an outline
+  only; its toolbar copies the geometry, shows the area, centres the map and downloads the AOI as GeoJSON.
+  For the area:
+  - *Statistical info*: statistics and histogram for the selected date, and a time series over a date
+    range (CSV download). The time series reads every date in the range, least cloudy first (Stop keeps
+    what has been read), and reports which dates were not reached by that day's orbit and which were
+    fully masked. Clouds can additionally be excluded with the scene classification (SCL 3, 8, 9, 10),
+    which catches clouds OmniCloudMask misses, and the area can be restricted to forest or to all
+    vegetation (the share of valid pixels then refers to the masked area). VHI statistics are read from
+    the VHI COGs.
+  - *Spectral explorer*: mean surface reflectance of all 12 bands (± σ), with CSV download.
 - **Image download** — three tabs as in the Copernicus Browser:
   - *Basic*: the current view as PNG or JPG, with captions (datasource, date, scale bar) and an optional
-    description, map overlays, legend, crop to AOI and AOI outline; works in compare mode.
+    description, map overlays, legend, crop to AOI and an optional AOI outline; works in compare mode.
   - *Analytical*: any layers of the collection (visualised) and raw bands (B01–B12, B8A, AOT, SCL, cloud
     mask, terrain mask; VHI values) for the current view or the AOI, at LOW / MEDIUM / HIGH (40 / 20 /
     10 m) or a custom resolution, up to 2500 × 2500 px, as PNG, JPG or GeoTIFF (8-bit, 16-bit = stored DN,
@@ -108,17 +125,23 @@ indices stay within −1…1.
     files are zipped.
   - *High-res print*: the view re-rendered for a printed size (width / height in inches and DPI), with
     the same captions, legend, overlay and AOI options, as PNG or JPG.
-- **Timelapse** — as in the Copernicus Browser, for the current layer and the area of interest (or the
-  current view): time range, *Select 1 image per* orbit / day / week / month / year, month filter, and a
-  list of images with thumbnail, cloud cover and coverage of the area (computed from the cloud mask and
-  the data footprint); per interval the image with the best coverage × clear sky is chosen. Max. cloud
-  coverage and Min. tile coverage filter the list, images can be (de)selected. The preview player has
-  speed (fps), transition None / Fade with fade duration, delay last frame, adaptive gain per frame (for
-  snowy winter frames), legend, map overlays and captions (date label, scale bar, source). Download as GIF or as video (MP4 or WebM, depending on the
-  browser), default 1024 px. VHI layers work too (via the WMS).
-- **Pixel inspector** — band values (DN and physical value), index value, SCL, cloud mask and terrain
-  mask at a clicked location.
-- **Permalink** — the URL is updated on every change, so copying it reproduces the view.
+- **Timelapse** — as in the Copernicus Browser, for the current layer over the area of interest (data
+  clipped to it, no outline drawn) or the current view:
+  - time range, *Select 1 image per* orbit / day / week / month / year, month filter, Search;
+  - list of images with thumbnail, cloud cover and coverage of the area (computed from the cloud mask and
+    the data footprint); per interval the image with the best coverage × clear sky is chosen; Max. cloud
+    coverage and Min. tile coverage filter the list, images can be (de)selected;
+  - preview player with speed (fps), transition None / Fade with fade duration, delay last frame,
+    adaptive gain per frame (for snowy winter frames), legend, map overlays and captions (date label,
+    scale bar, source);
+  - download as GIF or as video (MP4 or WebM, depending on the browser), default 1024 px (up to 2048).
+    VHI layers work too (via the WMS).
+- **Pixel inspector** — band values (DN and physical value), index value, SCL, cloud mask, terrain mask
+  and forest / vegetation mask at a clicked location.
+- **Permalink** — the URL is updated on every change (view, date, cloud filter, layer, legend range,
+  masks, look and effects, compare list, AOI); *Copy link* in the header copies it.
+- **Info tab** — the acquisitions of the selected date with their metadata, the scaling / no-data table
+  and a description of the services used.
 - Colours follow the Swiss Confederation scheme used by
   [swisstopo/topo-drought-briefing](https://github.com/swisstopo/topo-drought-briefing).
 
@@ -138,10 +161,9 @@ A current desktop browser (Firefox, Chrome, Edge) is required.
 
 GitHub Pages is published by the workflow [`.github/workflows/pages.yml`](.github/workflows/pages.yml)
 on every push to `main` that changes `swisseo-browser.html`, and can be started manually from the
-*Actions* tab. It deploys only `swisseo-browser.html`, as `index.html` (and under its own name), plus the layer
-thumbnails it references from `public/previews/`, so the upstream `index.html` and sources are never
-published. The repository's *Settings → Pages → Source*
-must be set to **GitHub Actions**.
+*Actions* tab. It deploys only `swisseo-browser.html`, as `index.html` (and under its own name), plus
+the layer thumbnails it references from `public/previews/`, so the upstream `index.html` and sources are
+never published. The repository's *Settings → Pages → Source* must be set to **GitHub Actions**.
 
 External libraries are loaded from CDNs: Leaflet, Proj4js, Proj4Leaflet, geotiff.js and Leaflet-Geoman;
 the import formats additionally load togeojson, JSZip, shpjs and mgrs on demand, and the timelapse GIF
@@ -161,6 +183,7 @@ Parameter names follow the Copernicus Browser where an equivalent exists.
 | `threshold` | `0.5` | NDSI snow threshold (default 0.42; above it snow is shown in blue, otherwise true colour, as in the Copernicus Browser) |
 | `gain`, `gamma` | `1.2` | Effects for the composites (1 = default) |
 | `autoGain` | `true` | Adaptive gain for the composites |
+| `look` | `optimized` | *True color optimized* tone curve for the composites (default: standard stretch) |
 | `redRange`, `greenRange`, `blueRange` | `[0,0.8]` | Advanced RGB effects |
 | `opacity` | `70` | Layer opacity in % |
 | `cloudMask`, `shadowMask`, `terrainMask` | `true` | Masks |
