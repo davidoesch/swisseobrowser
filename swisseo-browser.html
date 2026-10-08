@@ -708,6 +708,7 @@ table.kv td:first-child{color:var(--muted)}
             </div>
             <div class="tl-opts">
               <label class="chk"><input type="checkbox" id="tlDelay" checked> Delay last frame</label>
+              <label class="chk" id="tlAutoRow" title="Per frame, lowers the gain when the area is bright (snow, clouds) so it does not saturate"><input type="checkbox" id="tlAuto"> Adaptive gain (bright scenes)</label>
               <label class="chk"><input type="checkbox" id="tlLeg"> Show legend</label>
               <label class="chk"><input type="checkbox" id="tlOv"> Add map overlays</label>
               <label class="chk"><input type="checkbox" id="tlCap" checked> Show captions</label>
@@ -1306,14 +1307,14 @@ const BASE_GAIN = 3.0, BASE_GAMMA = 1.6;
 
 function defaults(rec) {
   return { gain: 1, gamma: 1, r: [0, 1], g: [0, 1], b: [0, 1], min: rec.min, max: rec.max, thr: rec.threshold,
-           opacity: 100, cloud: false, shadow: false, terrain: false, veg: "off" };
+           opacity: 100, cloud: false, shadow: false, terrain: false, veg: "off", autoGain: false };
 }
 const settings = {};
 const S = rec => settings[rec.id] || (settings[rec.id] = defaults(rec));
 
 const RNG_KEYS = [["r", "redRange"], ["g", "greenRange"], ["b", "blueRange"]];
 const SETTING_KEYS = ["gain", "gamma", "redRange", "greenRange", "blueRange", "valueRange", "threshold",
-                      "opacity", "cloudMask", "shadowMask", "terrainMask", "vegetationMask"];
+                      "opacity", "cloudMask", "shadowMask", "terrainMask", "vegetationMask", "autoGain"];
 const r3 = v => +(+v).toFixed(4);
 
 /* Non-default settings as a flat object, named like the Copernicus Browser URL params. */
@@ -1333,6 +1334,7 @@ function settingsToObj(rec, s) {
     if (s.terrain) o.terrainMask = true;
   }
   if (rec.source === "s2" && VEG_LABEL[s.veg]) o.vegetationMask = s.veg;
+  if (rec.type === "rgb" && s.autoGain) o.autoGain = true;
   return o;
 }
 function objToSettings(rec, o) {
@@ -1354,6 +1356,7 @@ function objToSettings(rec, o) {
   if (num(o.opacity) != null) s.opacity = clamp(Math.round(num(o.opacity)), 0, 100);
   s.cloud = bool(o.cloudMask); s.shadow = bool(o.shadowMask); s.terrain = bool(o.terrainMask);
   if (rec.source === "s2" && VEG_LABEL[o.vegetationMask]) s.veg = o.vegetationMask;
+  s.autoGain = rec.type === "rgb" && bool(o.autoGain);
   return s;
 }
 const cloneSettings = s => JSON.parse(JSON.stringify(s));
@@ -1603,7 +1606,8 @@ async function renderScene(rec, s, id, bbox, W, H, signal) {
 
 /* Mosaic of every scene of the day: the first scene with data wins per pixel. */
 async function renderTile(cfg, bbox, W, H, signal) {
-  const imgs = await Promise.all(cfg.scenes.map(id => renderScene(cfg.rec, cfg.s, id, bbox, W, H, signal)));
+  const s = cfg.gf && cfg.gf !== 1 ? Object.assign({}, cfg.s, { gain: cfg.s.gain * cfg.gf }) : cfg.s;
+  const imgs = await Promise.all(cfg.scenes.map(id => renderScene(cfg.rec, s, id, bbox, W, H, signal)));
   let out = null;
   for (const im of imgs) {
     if (!im) continue;
@@ -1697,6 +1701,53 @@ function refreshPending() {
   else if (statusKind === "tiles") setStatus("");
 }
 
+/* Adaptive gain: the 98th percentile of max(R, G, B) reflectance in the area is kept just below
+   saturation (0.95 after gain). It only ever lowers the gain, by at most a factor of 4, and only
+   for the colour composites. Masks of the layer (clouds, shadows, vegetation) are respected. */
+async function autoGainFactor(rec, s, scenes, bbox, signal, grid) {
+  if (rec.type !== "rgb" || !scenes.length) return 1;
+  let g = grid;
+  if (!g) {
+    const res = Math.max(10, Math.max(bbox[2] - bbox[0], bbox[3] - bbox[1]) / 64);
+    const W = Math.max(1, Math.round((bbox[2] - bbox[0]) / res)), H = Math.max(1, Math.round((bbox[3] - bbox[1]) / res));
+    g = { bbox, W, H, mask: new Uint8Array(W * H).fill(1), n: W * H };
+  }
+  const r = await sampleAoi({ type: "rgb", source: "s2", bands: rec.bands }, scenes, g,
+    { maskClouds: s.cloud || s.shadow, cloudCodes: { 1: s.cloud, 2: s.cloud, 3: s.shadow }, maskTerrain: s.terrain, veg: s.veg }, signal);
+  const br = [];
+  for (let k = 0; k < g.W * g.H; k++) {
+    const a = r.vals[0][k], b = r.vals[1][k], c = r.vals[2][k];
+    if (isFinite(a) && isFinite(b) && isFinite(c)) br.push(Math.max(a, b, c));
+  }
+  if (br.length < 30) return 1;
+  br.sort((x, y) => x - y);
+  const p98 = br[Math.floor(0.98 * (br.length - 1))];
+  return clamp(0.95 / (p98 * BASE_GAIN * (rec.gainMul || 1) * s.gain), 0.25, 1);
+}
+function showAutoGain(f) {
+  const e = $("#agInfo");
+  if (e) e.textContent = currentRec.type === "rgb" && S(currentRec).autoGain
+    ? "Gain × " + f.toFixed(2) + " for this view" + (f < 1 ? " — lowered so bright areas do not saturate" : " — not bright, unchanged")
+    : "Lowers the gain when the view is bright (snow, clouds) so it does not saturate";
+}
+/* Recomputes the factor for the view; true when it changed enough to redraw. */
+async function refreshAutoGain() {
+  const cfg = currentCfg;
+  if (!cfg || compareMode || !current || cfg.rec.type !== "rgb") return false;
+  const f = cfg.s.autoGain ? await autoGainFactor(cfg.rec, cfg.s, cfg.scenes, viewBox()).catch(() => 1) : 1;
+  if (cfg !== currentCfg) return false;
+  const old = cfg.gf || 1;
+  cfg.gf = f;
+  showAutoGain(f);
+  return Math.abs(f - old) / old > 0.08;
+}
+let agTimer = null;
+map.on("moveend", () => {
+  if (!currentCfg || !currentCfg.s.autoGain) return;
+  clearTimeout(agTimer);
+  agTimer = setTimeout(async () => { if (await refreshAutoGain() && current && current._tiles) current.redraw(); }, 500);
+});
+
 function removeCurrent() {
   if (current) { map.removeLayer(current); current = null; }
 }
@@ -1724,6 +1775,11 @@ async function applyLayer() {
     return;
   }
   setStatus("");
+  if (rec.type === "rgb" && currentCfg.s.autoGain) {
+    currentCfg.gf = await autoGainFactor(rec, currentCfg.s, scenes, viewBox()).catch(() => 1);
+    if (tok !== applyToken) return;
+    showAutoGain(currentCfg.gf);
+  }
   current = makeLayer(currentCfg).addTo(map);
 }
 
@@ -1734,7 +1790,11 @@ function onSettings(rec, kind) {
   if (compareMode || rec !== currentRec || !current) return;
   if (kind === "opacity") { setLayerOpacity(current, S(rec).opacity / 100); return; }
   clearTimeout(redrawTimer);
-  redrawTimer = setTimeout(() => { if (current && current.redraw && current._tiles) current.redraw(); }, 250);
+  redrawTimer = setTimeout(async () => {
+    if (!current || !current.redraw || !current._tiles) return;
+    await refreshAutoGain();
+    if (current && current._tiles) current.redraw();
+  }, 250);
 }
 
 function selectLayer(rec) {
@@ -2109,6 +2169,14 @@ function layerBody(rec) {
     if (rec.type === "rgb") {
       body.append(sliderRow("Gain", 0, 3, 0.01, s.gain, v => { s.gain = v; onSettings(rec); }));
       body.append(sliderRow("Gamma", 0.1, 3, 0.01, s.gamma, v => { s.gamma = v; onSettings(rec); }));
+      const ag = el("label", "tog");
+      ag.innerHTML = '<span>Adaptive gain<small id="agInfo"></small></span>';
+      const ai = el("input");
+      ai.type = "checkbox"; ai.checked = s.autoGain;
+      ai.onchange = () => { s.autoGain = ai.checked; onSettings(rec); };
+      ag.append(ai);
+      body.append(ag);
+      setTimeout(() => showAutoGain(currentCfg && currentCfg.rec === rec ? currentCfg.gf || 1 : 1), 0);
       const h = el("div", null, "Advanced RGB effects");
       h.style.cssText = "font-weight:700;font-size:12.5px;margin:12px 0 4px";
       body.append(h);
@@ -2120,7 +2188,7 @@ function layerBody(rec) {
     rs.style.marginTop = "6px";
     rs.onclick = () => {
       const d = defaults(rec);
-      Object.assign(s, { gain: d.gain, gamma: d.gamma, r: d.r, g: d.g, b: d.b, opacity: d.opacity });
+      Object.assign(s, { gain: d.gain, gamma: d.gamma, r: d.r, g: d.g, b: d.b, opacity: d.opacity, autoGain: false });
       renderLayerList(); onSettings(rec, "opacity"); onSettings(rec);
     };
     body.append(rs);
@@ -2225,7 +2293,9 @@ async function rebuildCompare() {
   try {
     cfgs = await Promise.all(compare.map(async it => {
       const rec = LAYER[it.layerId];
-      return { rec, s: it.s, scenes: await resolveScenes(rec, it.date, it.cc), date: it.date };
+      const scenes = await resolveScenes(rec, it.date, it.cc);
+      const gf = it.s.autoGain ? await autoGainFactor(rec, it.s, scenes, viewBox()).catch(() => 1) : 1;
+      return { rec, s: it.s, scenes, date: it.date, gf };
     }));
   } catch (e) { if (tok === applyToken) setStatus("Catalogue request failed: " + e.message); return; }
   if (tok !== applyToken || !compareMode) return;
@@ -3904,7 +3974,7 @@ async function runAnalytical(signal, prog) {
       files.push({ name: name + ".tif", blob: encodeGeoTiff(Object.assign({ bands: [res.vals[0]], type: "f32", nodata: NaN }, geo)) });
       continue;
     }
-    const cv = await renderCfgCanvas({ rec, s, scenes }, bbox, W, H, signal,
+    const cv = await renderCfgCanvas({ rec, s, scenes, gf: rec === currentRec && currentCfg ? currentCfg.gf : 1 }, bbox, W, H, signal,
       (d, t) => prog("Rendering " + rec.name + " (" + step + "/" + total + ") · " + Math.round(100 * d / t) + " %"));
     if (inAoi) {
       const c = cv.getContext("2d");
@@ -4007,7 +4077,9 @@ async function runPrint(signal, prog) {
     const rec = st ? LAYER[st.it.layerId] : currentRec, sset = st ? st.it.s : S(currentRec);
     const scenes = st ? await resolveScenes(rec, st.it.date, st.it.cc) : (currentCfg ? currentCfg.scenes : []);
     if (!scenes.length) continue;
-    const lc = await renderCfgCanvas({ rec, s: sset, scenes }, bbox, W, H, signal,
+    const gf = st ? (sset.autoGain ? await autoGainFactor(rec, sset, scenes, viewBox()).catch(() => 1) : 1)
+                  : (currentCfg && currentCfg.rec === rec ? currentCfg.gf : 1);
+    const lc = await renderCfgCanvas({ rec, s: sset, scenes, gf }, bbox, W, H, signal,
       (d, t) => prog("Rendering " + rec.name + " · " + Math.round(100 * d / t) + " %"));
     ctx.save();
     if (st && compareEffect === "split") {
@@ -4279,7 +4351,9 @@ async function tlThumbs(rec, signal) {
   await pool(tl.items.slice(), 3, async it => {
     if (signal.aborted || it.thumb) return;
     try {
-      const cv = await renderCfgCanvas({ rec, s: S(rec), scenes: it.scenes }, b, tw, th, signal);
+      const gf = $("#tlAuto").checked && rec.type === "rgb"
+        ? await autoGainFactor(rec, S(rec), it.scenes, b, signal, tlGrid(b, 32)) : 1;
+      const cv = await renderCfgCanvas({ rec, s: S(rec), scenes: it.scenes, gf }, b, tw, th, signal);
       it.thumb = cv.toDataURL("image/png");
       if (it.img) it.img.src = it.thumb;
     } catch (e) { /* keep the empty thumbnail */ }
@@ -4287,6 +4361,10 @@ async function tlThumbs(rec, signal) {
 }
 $("#tlCc").oninput = () => { $("#tlCcV").textContent = $("#tlCc").value + " %"; tlRenderList(); };
 $("#tlCov").oninput = () => { $("#tlCovV").textContent = $("#tlCov").value + " %"; tlRenderList(); };
+$("#tlAuto").onchange = () => {   // thumbnails follow the setting
+  tl.items.forEach(it => { it.thumb = null; if (it.img) it.img.removeAttribute("src"); });
+  if (tl.items.length) tlThumbs(currentRec, (tl.abort || new AbortController()).signal);
+};
 $("#tlAll").onchange = () => { tl.items.forEach(it => { it.selected = $("#tlAll").checked; }); tlRenderList(); };
 $("#tlSearch").onclick = tlSearch;
 
@@ -4308,7 +4386,8 @@ async function tlFrame(it, area, W, H, o, signal) {
   ctx.fillStyle = "#e9ecef"; ctx.fillRect(0, 0, W, H);
   if (tl.base) ctx.drawImage(tl.base, 0, 0);
   const rings = aoi ? aoiRingsPx(area.bbox, W, H) : [];
-  const lc = await renderCfgCanvas({ rec, s, scenes: it.scenes }, area.bbox, W, H, signal);
+  const gf = o.autoGain && rec.type === "rgb" ? await autoGainFactor(rec, s, it.scenes, area.bbox, signal, tlGrid(area.bbox, 64)) : 1;
+  const lc = await renderCfgCanvas({ rec, s, scenes: it.scenes, gf }, area.bbox, W, H, signal);
   ctx.save();
   if (area.aoi && rings.length) { pathRings(ctx, rings); ctx.clip("evenodd"); }
   ctx.globalAlpha = s.opacity / 100;
@@ -4344,7 +4423,7 @@ async function tlBuild() {
   if (!use.length) { $("#tlProg").textContent = "No images to use — search first, or widen the cloud / coverage limits."; return false; }
   if (use.length > 300) { $("#tlProg").textContent = "At most 300 frames — choose a coarser interval."; return false; }
   const area = tlArea(), [W, H] = tlSize();
-  const o = { legend: $("#tlLeg").checked, overlay: $("#tlOv").checked, caption: $("#tlCap").checked };
+  const o = { legend: $("#tlLeg").checked, overlay: $("#tlOv").checked, caption: $("#tlCap").checked, autoGain: $("#tlAuto").checked };
   $("#tlPreview").disabled = $("#tlDl").disabled = true;
   try {
     $("#tlProg").textContent = "Loading the basemap…";
@@ -4481,7 +4560,7 @@ async function tlVideo(prog) {
 }
 $("#tlDl").onclick = async () => {
   const area = tlArea(), [W, H] = tlSize(), use = tl.items.filter(it => it.selected && tlApplicable(it));
-  const o = { legend: $("#tlLeg").checked, overlay: $("#tlOv").checked, caption: $("#tlCap").checked };
+  const o = { legend: $("#tlLeg").checked, overlay: $("#tlOv").checked, caption: $("#tlCap").checked, autoGain: $("#tlAuto").checked };
   const key = JSON.stringify([use.map(u => u.label), W, H, o, currentRec.id, settingsToObj(currentRec, S(currentRec)), area.bbox]);
   if (!tl.frames.length || key !== tl.key) { if (!(await tlBuild())) return; }
   tlStop();
@@ -4507,6 +4586,8 @@ function openTimelapse() {
   const sz = tlDefaultSize();
   $("#tlW").value = sz[0]; $("#tlH").value = sz[1];
   $("#tlOv").checked = map.hasLayer(asitLayer);
+  $("#tlAutoRow").hidden = rec.type !== "rgb";
+  $("#tlAuto").checked = rec.type === "rgb" && S(rec).autoGain;
   $("#tlCc").disabled = rec.source !== "s2";
   $("#tlTr").onchange();
   openModal("tlModal");

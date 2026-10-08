@@ -80,7 +80,10 @@ indices stay within −1…1.
   custom-scripts page; swisstopo product page for True color L2A and the swissEO-specific layers), legend,
   adjustable colour scale (min/max), masks for clouds and cloud shadows (OmniCloudMask), terrain shadow
   (terrain mask 200) and a vegetation mask (Off / Forest / All vegetation, from swissEO VHI v100), and
-  *effects and advanced options* (gain, gamma, red/green/blue ranges, opacity).
+  *effects and advanced options* (gain, gamma, adaptive gain, red/green/blue ranges, opacity). *Adaptive
+  gain* (colour composites) lowers the gain when the view is bright — snow, glaciers, clouds — so that the
+  98th percentile of the reflectance stays just below saturation; it never brightens and lowers the gain
+  by at most a factor of 4, and is recomputed when the view changes.
   `</>` shows the formula and scaling. NDSI is rendered as in the Copernicus Browser (snow above an
   adjustable threshold in blue, true color elsewhere).
 - **Compare** — add layers to the compare list; opening the Compare panel (or the ⇄ map button) shows
@@ -110,8 +113,8 @@ indices stay within −1…1.
   list of images with thumbnail, cloud cover and coverage of the area (computed from the cloud mask and
   the data footprint); per interval the image with the best coverage × clear sky is chosen. Max. cloud
   coverage and Min. tile coverage filter the list, images can be (de)selected. The preview player has
-  speed (fps), transition None / Fade with fade duration, delay last frame, legend, map overlays and
-  captions (date label, scale bar, source). Download as GIF or as video (MP4 or WebM, depending on the
+  speed (fps), transition None / Fade with fade duration, delay last frame, adaptive gain per frame (for
+  snowy winter frames), legend, map overlays and captions (date label, scale bar, source). Download as GIF or as video (MP4 or WebM, depending on the
   browser), default 1024 px. VHI layers work too (via the WMS).
 - **Pixel inspector** — band values (DN and physical value), index value, SCL, cloud mask and terrain
   mask at a clicked location.
@@ -157,6 +160,7 @@ Parameter names follow the Copernicus Browser where an equivalent exists.
 | `valueRange` | `[0,0.9]` | Colour-scale min/max of index and continuous layers |
 | `threshold` | `0.5` | NDSI snow threshold (default 0.42; above it snow is shown in blue, otherwise true colour, as in the Copernicus Browser) |
 | `gain`, `gamma` | `1.2` | Effects for the composites (1 = default) |
+| `autoGain` | `true` | Adaptive gain for the composites |
 | `redRange`, `greenRange`, `blueRange` | `[0,0.8]` | Advanced RGB effects |
 | `opacity` | `70` | Layer opacity in % |
 | `cloudMask`, `shadowMask`, `terrainMask` | `true` | Masks |
