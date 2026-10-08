@@ -43,6 +43,10 @@ sheets ([S2-SR v200](https://www.swisstopo.admin.ch/dam/en/sd-web/-i2Y10KmboPf/s
 | Terrain mask | 1 | 0 | 0–180 solar incidence angle (°) · 200 shadow · 255 no data |
 | VHI | 1 | 0 | 0–100 index · 110 no data (class) · 255 no data (raster) |
 
+Indices (NDVI, NDWI, …) are computed from ρ after this scaling. Very dark pixels can fall slightly below
+0 after the −0.1 offset; such negative reflectance is set to 0 before an index is computed, so ratio
+indices stay within −1…1.
+
 ## Features
 
 - **Date selection as in Copernicus Browser** — opens on today's date (greyed out when there is no
@@ -53,15 +57,18 @@ sheets ([S2-SR v200](https://www.swisstopo.admin.ch/dam/en/sd-web/-i2Y10KmboPf/s
   classification, cloud mask, terrain / solar incidence; swissEO VHI forest and vegetation (WMS); a
   server-rendered true-colour WMS.
 - **Layer pull-down** — description, legend, adjustable colour scale (min/max), masks for clouds, cloud
-  shadows and terrain shadow, and *effects and advanced options* (gain, gamma, red/green/blue ranges,
-  opacity). `</>` shows the formula and scaling.
+  shadows (OmniCloudMask), terrain shadow (terrain mask 200) and SCL clouds (scene classification 3, 8,
+  9, 10 — catches clouds OmniCloudMask misses), and *effects and advanced options* (gain, gamma,
+  red/green/blue ranges, opacity). `</>` shows the formula and scaling.
 - **Compare** — add layers to the compare list; opening the Compare panel (or the ⇄ map button) shows
   them with a split or opacity effect, going back to Layers shows the single layer again. Reorder,
   remove and zoom to each entry.
 - **Area of interest** — draw a rectangle or polygon, or import KML/KMZ, GPX, WKT, GeoJSON, a zipped
   Shapefile, an MGRS/GEOREF cell or a bounding box (WGS84, LV95 and LV03 coordinates are detected). For
   the area: statistics and histogram for the selected date, a time series over a date range (CSV
-  download) and a spectral explorer.
+  download) and a spectral explorer. The time series reads every date in the range, least cloudy first
+  (Stop keeps what has been read), and reports which dates were not reached by that day's orbit and
+  which were fully masked.
 - **Image download** — PNG of the current view with scale bar, legend and caption; works in compare mode
   and can be clipped to the area of interest.
 - **Pixel inspector** — band values (DN and physical value), index value, SCL, cloud mask and terrain
@@ -107,7 +114,7 @@ Parameter names follow the Copernicus Browser where an equivalent exists.
 | `gain`, `gamma` | `1.2` | Effects for the composites (1 = default) |
 | `redRange`, `greenRange`, `blueRange` | `[0,0.8]` | Advanced RGB effects |
 | `opacity` | `70` | Layer opacity in % |
-| `cloudMask`, `shadowMask`, `terrainMask` | `true` | Masks |
+| `cloudMask`, `shadowMask`, `terrainMask`, `sclMask` | `true` | Masks |
 | `basemap`, `labels` | `swissimage`, `true` | Basemap (`pixelkarte`, `swissimage`, `grey`, `none`) and label overlay |
 | `compareLayers`, `comparedOpacity`, `comparedClipping`, `compareMode` | | Compare list (base64url JSON), per-layer opacity and split range; `compareMode` is `split` / `opacity` when comparing and `off` otherwise (links without it open in compare mode) |
 | `aoi` | | Area of interest as base64url GeoJSON |

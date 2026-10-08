@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>swissEO Browser</title>
-<link rel="icon" href="https://www.admin.ch/favicon.ico" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23DA291C'/%3E%3Cpath d='M13 6h6v7h7v6h-7v7h-6v-7H6v-6h7z' fill='%23fff'/%3E%3C/svg%3E" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@geoman-io/leaflet-geoman-free@2.17.0/dist/leaflet-geoman.css" />
 <style>
@@ -317,7 +317,7 @@ table.kv td:first-child{color:var(--muted)}
   <header id="topbar">
     <a class="site-brand" href="?">
       <span class="beta-badge">BETA</span>
-      <img src="https://www.admin.ch/favicon.ico" width="18" height="18" alt="" aria-hidden="true">
+      <svg width="20" height="20" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" fill="#DA291C"/><path d="M13 6h6v7h7v6h-7v7h-6v-7H6v-6h7z" fill="#fff"/></svg>
       <span>swissEO Browser</span>
     </a>
     <span class="by">swisstopo</span>
@@ -541,6 +541,7 @@ table.kv td:first-child{color:var(--muted)}
         <div class="mhead"><h3 id="stTitle">Statistical info</h3><button class="x" data-close title="Close">×</button></div>
         <div class="hint" id="stMeta" style="margin-top:0"></div>
         <label class="chk" id="stCloudRow"><input type="checkbox" id="stCloud" checked> Exclude clouds and cloud shadows (OmniCloudMask 1–3)</label>
+        <label class="chk" id="stSclRow"><input type="checkbox" id="stScl" checked> Exclude clouds from the scene classification (SCL 3, 8, 9, 10)</label>
         <label class="chk" id="stTerrRow"><input type="checkbox" id="stTerr"> Exclude terrain shadow (terrain mask 200)</label>
         <div class="msec">Selected date · <span id="stDate"></span></div>
         <div id="stCur"></div>
@@ -562,6 +563,7 @@ table.kv td:first-child{color:var(--muted)}
         <div class="mhead"><h3>Spectral explorer</h3><button class="x" data-close title="Close">×</button></div>
         <div class="hint" id="spMeta" style="margin-top:0"></div>
         <label class="chk"><input type="checkbox" id="spCloud" checked> Exclude clouds and cloud shadows (OmniCloudMask 1–3)</label>
+        <label class="chk"><input type="checkbox" id="spScl" checked> Exclude clouds from the scene classification (SCL 3, 8, 9, 10)</label>
         <div id="spChart"></div>
         <div class="mrow" style="margin-top:8px"><button class="btn sec sm" id="spCsv">Download CSV</button></div>
       </div></div>
@@ -730,6 +732,9 @@ const REFL = { scale: 0.0001, offset: -0.1 };
 const AOTS = { scale: 0.001,  offset: 0 };
 const bandScale = b => b === "aot" ? AOTS : REFL;
 const phys = (b, dn) => { const s = bandScale(b); return dn * s.scale + s.offset; };
+/* Index inputs: dark pixels can drop slightly below 0 after the -0.1 offset, which would push
+   ratio indices outside -1..1, so negative reflectance is set to 0 first. */
+const physIdx = (b, dn) => Math.max(0, phys(b, dn));
 const toRho = dn => dn * REFL.scale + REFL.offset;
 
 /* ============================================================
@@ -896,7 +901,8 @@ const VHI_CLASSES = [
 /* ============================================================
    6. Layer catalogue
    ============================================================ */
-const SCALE_NOTE = "Reflectance bands are stored scaled: ρ = DN × 0.0001 − 0.1, DN = 0 is no-data.";
+const SCALE_NOTE = "Reflectance bands are stored scaled: ρ = DN × 0.0001 − 0.1, DN = 0 is no-data. " +
+  "Indices use ρ after this scaling; negative ρ (dark pixels) is set to 0 first.";
 
 /* Title and abstract of the WMS layers, from the wms.geo.admin.ch GetCapabilities
    document (lang=en). Baked in because the full document is 2.6 MB. */
@@ -1065,6 +1071,7 @@ const LAYERS = [
 const LAYER = Object.fromEntries(LAYERS.map(r => [r.id, r]));
 LAYERS.forEach(r => { if (r.ramp) r.domain = [r.min, r.max]; });
 const MASKABLE = { rgb: 1, index: 1, cont: 1, terrain: 1 };
+const SCL_CLOUD = { 3: 1, 8: 1, 9: 1, 10: 1 };   // SCL cloud shadow, cloud medium / high probability, cirrus
 const classesOf = rec =>
   rec.classes ? rec.classes :
   rec.palette ? Object.keys(rec.palette).filter(k => rec.palette[k][1]).map(k => [k + " · " + rec.palette[k][0], rec.palette[k][1]]) :
@@ -1079,14 +1086,14 @@ const BASE_GAIN = 3.0, BASE_GAMMA = 1.6;
 
 function defaults(rec) {
   return { gain: 1, gamma: 1, r: [0, 1], g: [0, 1], b: [0, 1], min: rec.min, max: rec.max,
-           opacity: 100, cloud: false, shadow: false, terrain: false };
+           opacity: 100, cloud: false, shadow: false, terrain: false, scl: false };
 }
 const settings = {};
 const S = rec => settings[rec.id] || (settings[rec.id] = defaults(rec));
 
 const RNG_KEYS = [["r", "redRange"], ["g", "greenRange"], ["b", "blueRange"]];
 const SETTING_KEYS = ["gain", "gamma", "redRange", "greenRange", "blueRange", "valueRange",
-                      "opacity", "cloudMask", "shadowMask", "terrainMask"];
+                      "opacity", "cloudMask", "shadowMask", "terrainMask", "sclMask"];
 const r3 = v => +(+v).toFixed(4);
 
 /* Non-default settings as a flat object, named like the Copernicus Browser URL params. */
@@ -1103,6 +1110,7 @@ function settingsToObj(rec, s) {
     if (s.cloud) o.cloudMask = true;
     if (s.shadow) o.shadowMask = true;
     if (s.terrain) o.terrainMask = true;
+    if (s.scl) o.sclMask = true;
   }
   return o;
 }
@@ -1122,7 +1130,7 @@ function objToSettings(rec, o) {
   const vr = arr(o.valueRange);
   if (vr && rec.ramp) { s.min = Math.min(vr[0], vr[1]); s.max = Math.max(vr[0], vr[1]); }
   if (num(o.opacity) != null) s.opacity = clamp(Math.round(num(o.opacity)), 0, 100);
-  s.cloud = bool(o.cloudMask); s.shadow = bool(o.shadowMask); s.terrain = bool(o.terrainMask);
+  s.cloud = bool(o.cloudMask); s.shadow = bool(o.shadowMask); s.terrain = bool(o.terrainMask); s.scl = bool(o.sclMask);
   return s;
 }
 const cloneSettings = s => JSON.parse(JSON.stringify(s));
@@ -1293,13 +1301,14 @@ async function renderScene(rec, s, id, bbox, N, signal) {
   const reads = bands.map(b => readTile(assetUrl(id, b), bbox, N, signal, b === "terrain" ? 255 : 0));
   reads.push(maskable && (s.cloud || s.shadow) ? readTile(assetUrl(id, "cloud"), bbox, N, signal, 0) : null);
   reads.push(maskable && s.terrain ? readTile(assetUrl(id, "terrain"), bbox, N, signal, 255) : null);
+  reads.push(maskable && s.scl ? readTile(assetUrl(id, "scl"), bbox, N, signal, 0) : null);
   const res = await Promise.all(reads);
-  const tm = res.pop(), cm = res.pop(), a = res;
+  const sm = res.pop(), tm = res.pop(), cm = res.pop(), a = res;
   if (a.some(x => !x)) return null;
 
   const masked = k =>
     (cm && ((s.cloud && (cm[k] === 1 || cm[k] === 2)) || (s.shadow && cm[k] === 3))) ||
-    (tm && tm[k] === 200);
+    (tm && tm[k] === 200) || (sm && SCL_CLOUD[sm[k]]);
   const img = new ImageData(N, N), d = img.data, n = N * N;
   const put = (k, c) => { d[k*4] = c[0]; d[k*4+1] = c[1]; d[k*4+2] = c[2]; d[k*4+3] = 255; };
 
@@ -1329,7 +1338,7 @@ async function renderScene(rec, s, id, bbox, N, signal) {
       let c;
       if (rec.type === "index") {
         if (a[0][k] === 0 || a[1][k] === 0) continue;
-        c = col(rec.fn(bands.map((b, i) => phys(b, a[i][k]))));
+        c = col(rec.fn(bands.map((b, i) => physIdx(b, a[i][k]))));
       } else if (rec.type === "cont") {
         if (a[0][k] === 0) continue;
         c = col(phys(rec.band, a[0][k]));
@@ -1424,7 +1433,6 @@ function makeLayer(cfg, pane) {
 const state = { date: todayStr, cc: 100 };
 let currentRec = LAYER.true;
 let current = null, currentCfg = null;
-let footprint = null;
 let applyToken = 0;
 const expanded = new Set(["true"]);
 const showCode = new Set();
@@ -1454,7 +1462,6 @@ function refreshPending() {
 
 function removeCurrent() {
   if (current) { map.removeLayer(current); current = null; }
-  if (footprint) { map.removeLayer(footprint); footprint = null; }
 }
 
 async function applyLayer() {
@@ -1481,11 +1488,6 @@ async function applyLayer() {
   }
   setStatus("");
   current = makeLayer(currentCfg).addTo(map);
-  if (rec.source === "s2") {
-    footprint = L.geoJSON(scenes.map(id => featById.get(id)).filter(Boolean), {
-      style: { color: "#DC0000", weight: 1.3, fill: false, dashArray: "5 4" }, interactive: false
-    }).addTo(map);
-  }
 }
 
 /* Settings tweaks: opacity is applied in place, everything else re-renders the tiles. */
@@ -1816,6 +1818,7 @@ function layerBody(rec) {
     tog("cloud", "Clouds", "OmniCloudMask thick (1) and thin (2) cloud");
     tog("shadow", "Cloud shadows", "OmniCloudMask cloud shadow (3)");
     tog("terrain", "Terrain shadow", "Terrain mask value 200 — cast or self-shadow");
+    tog("scl", "SCL clouds", "Scene classification 3, 8, 9, 10 — catches clouds OmniCloudMask misses");
   }
 
   /* ---- effects and advanced options ---- */
@@ -2516,34 +2519,71 @@ function aoiGrid(maxCells) {
   return { bbox, W, H, res, mask, n };
 }
 
-/* Values of a layer inside the AOI for one date (all scenes of the day, first with data wins). */
+/* Values of a layer inside the AOI for one date (all scenes of the day, first with data wins).
+   Reads are staged so small AOIs stay cheap over long time series: one band first (does this
+   orbit reach the AOI at all?), then the masks (is anything left unmasked?), then the rest. */
 async function sampleAoi(r, scenes, grid, o, signal) {
   const { bbox, W, H, mask } = grid, n = W * H;
   const bands = r.type === "spectral" ? r.bands : (r.bands || [r.band]);
   const nb = r.type === "rgb" || r.type === "spectral" ? bands.length : 1;
   const vals = Array.from({ length: nb }, () => new Float32Array(n).fill(NaN));
   const cls = r.type === "class" ? new Int16Array(n).fill(-1) : null;
-  const done = new Uint8Array(n);
+  const done = new Uint8Array(n), cov = new Uint8Array(n);
   let masked = 0, shadow = 0;
-  const soft = p => p && p.catch(e => { if (e && e.name === "AbortError") throw e; return null; });
+  const soft = q => q && q.catch(e => { if (e && e.name === "AbortError") throw e; return null; });
+  const rd = (id, b) => soft(readGrid(assetUrl(id, b), bbox, W, H, signal, b === "terrain" ? 255 : 0));
   for (const id of scenes) {
+    let open = 0;
+    for (let k = 0; k < n; k++) if (mask[k] && !done[k]) open++;
+    if (!open) break;                                         // every AOI cell resolved
     if (r.source === "vhi") {
       const a = await soft(readGrid(vhiUrl(id, r), bbox, W, H, signal, 255));
       if (!a) continue;
-      for (let k = 0; k < n; k++) if (mask[k] && !done[k] && a[k] <= 100) { vals[0][k] = a[k]; done[k] = 1; }
+      for (let k = 0; k < n; k++) {
+        if (!mask[k] || done[k] || a[k] === 255) continue;
+        cov[k] = 1;
+        if (a[k] <= 100) { vals[0][k] = a[k]; done[k] = 1; }
+      }
       continue;
     }
     const box = sceneBox(id);
     if (box && (bbox[2] < box[0] || bbox[0] > box[2] || bbox[3] < box[1] || bbox[1] > box[3])) continue;
-    const useMask = r.type !== "class";
-    const reads = bands.map(b => soft(readGrid(assetUrl(id, b), bbox, W, H, signal, b === "terrain" ? 255 : 0)));
-    reads.push(useMask && o.maskClouds ? soft(readGrid(assetUrl(id, "cloud"), bbox, W, H, signal, 0)) : null);
-    reads.push(useMask && o.maskTerrain ? soft(readGrid(assetUrl(id, "terrain"), bbox, W, H, signal, 255)) : null);
-    const res = await Promise.all(reads);
-    const tm = res.pop(), cm = res.pop(), a = res;
-    if (a.some(x => !x)) continue;
+
+    // 1. coverage: the cloud mask cannot tell "clear" from "outside the swath", so B04 stands in for it
+    const covBand = r.band === "cloud" ? "b04" : bands[0];
+    const first = await rd(id, covBand);
+    if (!first) continue;
+    const has = new Uint8Array(n);
+    let nHas = 0;
     for (let k = 0; k < n; k++) {
       if (!mask[k] || done[k]) continue;
+      const v = first[k];
+      if (r.type === "terrain" ? v !== 255 : v !== 0) { has[k] = 1; cov[k] = 1; nHas++; }
+    }
+    if (!nHas) continue;                                      // this orbit does not reach the AOI
+
+    // 2. masks: when everything left is masked, the remaining bands are not needed
+    const useMask = r.type !== "class";
+    const [cm, tm, sm] = await Promise.all([
+      useMask && o.maskClouds ? rd(id, "cloud") : null,
+      useMask && o.maskTerrain && r.type !== "terrain" ? rd(id, "terrain") : null,
+      useMask && o.maskScl ? rd(id, "scl") : null]);
+    let left = 0;
+    for (let k = 0; k < n; k++) {
+      if (!has[k]) continue;
+      if ((cm && cm[k] >= 1 && cm[k] <= 3) || (tm && tm[k] === 200) || (sm && SCL_CLOUD[sm[k]])) {
+        masked++; done[k] = 1; has[k] = 0;
+      } else left++;
+    }
+    if (!left) continue;
+
+    // 3. the remaining bands
+    const need = covBand === bands[0] ? bands.slice(1) : bands;
+    const rest = await Promise.all(need.map(b => rd(id, b)));
+    if (rest.some(x => !x)) continue;
+    const a = covBand === bands[0] ? [first].concat(rest) : rest;
+    for (let k = 0; k < n; k++) {
+      if (!has[k]) continue;
       if (r.type === "class") {
         const v = a[0][k];
         if (r.band === "scl" && v === 0) continue;
@@ -2551,18 +2591,16 @@ async function sampleAoi(r, scenes, grid, o, signal) {
       }
       if (r.type === "terrain") {
         const v = a[0][k];
-        if (v === 255 || (v > 180 && v !== 200)) continue;
-        if (v === 200 || (tm && tm[k] === 200)) { shadow++; done[k] = 1; continue; }
-      } else if (a.every(x => x[k] === 0)) continue;          // outside this scene's data
-      if ((cm && cm[k] >= 1 && cm[k] <= 3) || (tm && tm[k] === 200)) { masked++; done[k] = 1; continue; }
-      if (r.type === "terrain") vals[0][k] = a[0][k];
-      else if (r.type === "index") { if (a[0][k] && a[1][k]) vals[0][k] = r.fn(bands.map((b, i) => phys(b, a[i][k]))); }
+        if (v > 180 && v !== 200) continue;
+        if (v === 200) { shadow++; done[k] = 1; continue; }
+        vals[0][k] = v;
+      } else if (r.type === "index") { if (a[0][k] && a[1][k]) vals[0][k] = r.fn(bands.map((b, i) => physIdx(b, a[i][k]))); }
       else if (r.type === "cont") vals[0][k] = phys(r.band, a[0][k]);
       else for (let i = 0; i < nb; i++) if (a[i][k]) vals[i][k] = phys(bands[i], a[i][k]);
       done[k] = 1;
     }
   }
-  return { vals, cls, masked, shadow, total: grid.n };
+  return { vals, cls, masked, shadow, covered: cov.reduce((t, v) => t + v, 0), total: grid.n };
 }
 
 function summarize(arr) {
@@ -2671,6 +2709,7 @@ function openStats() {
   const s2 = r.source === "s2";
   $("#stTitle").textContent = "Statistical info — " + rec.name;
   $("#stCloudRow").hidden = !s2 || r.type === "class";
+  $("#stSclRow").hidden = !s2 || r.type === "class";
   $("#stTerrRow").hidden = !s2 || r.type === "class" || r.type === "terrain";
   $("#stTerr").checked = S(rec).terrain;
   $("#stDate").textContent = state.date;
@@ -2686,7 +2725,7 @@ function openStats() {
 }
 $("#statModal").onclose = () => { if (stAbort) stAbort.abort(); };
 $("#aoiStats").onclick = openStats;
-$("#stCloud").onchange = $("#stTerr").onchange = () => { runCurrentStats(); };
+$("#stCloud").onchange = $("#stScl").onchange = $("#stTerr").onchange = () => { runCurrentStats(); };
 
 async function runCurrentStats() {
   const rec = stRec, r = statRec(rec), box = $("#stCur");
@@ -2697,7 +2736,8 @@ async function runCurrentStats() {
   try {
     const scenes = await scenesFor(rec, state.date, state.cc);
     if (!scenes.length) { box.innerHTML = '<div class="hint">No acquisition on ' + state.date + ".</div>"; return; }
-    const res = await sampleAoi(r, scenes, grid, { maskClouds: $("#stCloud").checked, maskTerrain: $("#stTerr").checked });
+    const res = await sampleAoi(r, scenes, grid, { maskClouds: $("#stCloud").checked, maskScl: $("#stScl").checked,
+                                                   maskTerrain: $("#stTerr").checked });
     if (stRec !== rec) return;
     const pct = v => (100 * v / res.total).toFixed(1) + " %";
     if (r.type === "class") {
@@ -2753,22 +2793,29 @@ async function seriesDates(rec, from, to, cc) {
   for (let ym = from.slice(0, 7); ym <= to.slice(0, 7); ym = shiftMonth(ym, 1)) months.push(ym);
   const fs = (await Promise.all(months.map(m => loadMonth(src, m)))).flat()
     .filter(f => { const d = f.id.slice(0, 10); return d >= from && d <= to; });
-  if (src === "s2") await pool(fs, 6, f => cloudOf(f.id));
+  if (src === "s2") {
+    let got = 0;
+    await pool(fs, 12, f => cloudOf(f.id).then(() => {
+      if (++got % 50 === 0) $("#stProg").textContent = "Reading cloud cover of " + got + " / " + fs.length + " scenes…";
+    }));
+  }
   const byDate = new Map();
   fs.forEach(f => {
     if (src === "s2" && !knownPass(f, cc)) return;
     const d = f.id.slice(0, 10);
-    if (!byDate.has(d)) byDate.set(d, []);
-    byDate.get(d).push(f.id);
+    if (!byDate.has(d)) byDate.set(d, { date: d, scenes: [], cloud: null });
+    const e = byDate.get(d), c = cloudPct.get(f.id);
+    e.scenes.push(f.id);
+    if (c != null) e.cloud = e.cloud == null ? c : Math.min(e.cloud, c);
   });
-  return [...byDate.entries()].sort((a, b) => a[0].localeCompare(b[0]))
-    .map(([d, ids]) => ({ date: d, scenes: ids.sort((a, b) => b.localeCompare(a)) }));
+  return [...byDate.values()].map(e => { e.scenes.sort((a, b) => b.localeCompare(a)); return e; })
+    .sort((a, b) => a.date.localeCompare(b.date));
 }
 
 function drawSeries() {
   const r = statRec(stRec);
   const minV = +$("#stMinValid").value;
-  const pts = stSeries.filter(p => p.st && p.valid >= minV);
+  const pts = stSeries.filter(p => p.st && p.valid >= minV).sort((a, b) => a.date.localeCompare(b.date));
   const lab = p => p.date + (p.valid != null ? " · valid " + p.valid.toFixed(0) + " %" : "");
   let series;
   if (r.type === "rgb") {
@@ -2783,6 +2830,15 @@ function drawSeries() {
     yMin: r.source === "vhi" ? 0 : undefined, yMax: r.source === "vhi" ? 100 : undefined });
 }
 
+function seriesSummary(total, stopped) {
+  const withValid = stSeries.filter(p => p.st).length;
+  const notCov = stSeries.filter(p => p.covered === 0).length;
+  const allMasked = stSeries.filter(p => !p.st && p.covered > 0).length;
+  return (stopped ? "Stopped after " + stSeries.length + " of " + total : stSeries.length) + " dates: " +
+    withValid + " with valid pixels, " + allMasked + " fully masked, " + notCov +
+    " not reached by that day's orbit. Dates below the minimum share of valid pixels are hidden; hover a point for details.";
+}
+
 async function runSeries() {
   if (stAbort) stAbort.abort();
   const ctrl = new AbortController();
@@ -2793,38 +2849,36 @@ async function runSeries() {
   stSeries = [];
   $("#stChart").innerHTML = "";
   $("#stProg").textContent = "Looking up acquisitions…";
+  let total = 0;
   try {
-    let dates = await seriesDates(rec, from, to, state.cc);
+    const dates = await seriesDates(rec, from, to, state.cc);
     if (ctrl.signal.aborted) return;
-    const MAXD = 150;
-    if (dates.length > MAXD) {
-      const step = dates.length / MAXD;
-      dates = Array.from({ length: MAXD }, (_, i) => dates[Math.floor(i * step)]);
-    }
     if (!dates.length) { $("#stProg").textContent = "No acquisitions in this range" + (r.source === "s2" ? " with ≤ " + state.cc + " % cloud." : "."); return; }
+    // Every date is read; the least cloudy go first so useful points appear early and Stop keeps them.
+    const todo = dates.slice().sort((a, b) => (a.cloud == null ? 101 : a.cloud) - (b.cloud == null ? 101 : b.cloud) ||
+                                              a.date.localeCompare(b.date));
+    total = todo.length;
     const grid = aoiGrid(140);
-    const opt = { maskClouds: $("#stCloud").checked, maskTerrain: $("#stTerr").checked };
-    let doneN = 0, redraw = null;
-    await pool(dates, 3, async d => {
+    const opt = { maskClouds: $("#stCloud").checked, maskScl: $("#stScl").checked, maskTerrain: $("#stTerr").checked };
+    let redraw = null;
+    await pool(todo, 4, async d => {
       if (ctrl.signal.aborted) return;
       const res = await sampleAoi(r, d.scenes, grid, opt, ctrl.signal);
       const st = res.vals.map(summarize);
       stSeries.push({ date: d.date, st: st[0] ? st : null, valid: st[0] ? 100 * st[0].n / res.total : 0,
-                      masked: 100 * res.masked / res.total });
-      doneN++;
-      $("#stProg").textContent = "Reading " + doneN + " / " + dates.length + " dates (" + grid.res + " m grid)…";
+                      masked: 100 * res.masked / res.total, covered: 100 * res.covered / res.total, cloud: d.cloud });
+      const withValid = stSeries.filter(p => p.st).length;
+      $("#stProg").textContent = "Reading " + stSeries.length + " / " + total + " dates" +
+        (r.source === "s2" ? ", least cloudy first" : "") + " (" + grid.res + " m grid) · " + withValid +
+        " with valid pixels so far. Stop keeps what has been read.";
       clearTimeout(redraw);
-      redraw = setTimeout(drawSeries, 120);
+      redraw = setTimeout(drawSeries, 250);
     });
     if (ctrl.signal.aborted) return;
-    stSeries.sort((a, b) => a.date.localeCompare(b.date));
     drawSeries();
-    const empty = stSeries.filter(p => !p.st).length;
-    $("#stProg").textContent = stSeries.length + " dates" +
-      (empty ? ", " + empty + " without valid pixels (masked, or the orbit does not cover the area)" : "") +
-      ". Dates below the minimum share of valid pixels are hidden. Hover a point for details.";
+    $("#stProg").textContent = seriesSummary(total, false);
   } catch (e) {
-    if (e && e.name === "AbortError") { $("#stProg").textContent = "Stopped after " + stSeries.length + " dates."; drawSeries(); return; }
+    if (e && e.name === "AbortError") { drawSeries(); $("#stProg").textContent = seriesSummary(total, true); return; }
     $("#stProg").textContent = "Time series failed: " + (e.message || e);
   }
 }
@@ -2833,11 +2887,12 @@ $("#stMinValid").onchange = drawSeries;
 $("#stStop").onclick = () => { if (stAbort) stAbort.abort(); };
 $("#stCsv").onclick = () => {
   const r = statRec(stRec);
+  const head = ["date", "scene_cloud_pct", "covered_pct", "valid_pct", "masked_pct"];
   const rows = r.type === "rgb"
-    ? [["date", "valid_pct", "masked_pct"].concat(r.bands.flatMap(b => [b + "_mean", b + "_sd"]))]
-    : [["date", "valid_pct", "masked_pct", "mean", "sd", "median", "min", "max", "p10", "p90"]];
+    ? [head.concat(r.bands.flatMap(b => [b + "_mean", b + "_sd"]))]
+    : [head.concat(["mean", "sd", "median", "min", "max", "p10", "p90"])];
   stSeries.slice().sort((a, b) => a.date.localeCompare(b.date)).forEach(p => {
-    const base = [p.date, p.valid.toFixed(2), p.masked.toFixed(2)];
+    const base = [p.date, p.cloud == null ? "" : p.cloud.toFixed(2), p.covered.toFixed(2), p.valid.toFixed(2), p.masked.toFixed(2)];
     if (!p.st) rows.push(base);
     else if (r.type === "rgb") rows.push(base.concat(p.st.flatMap(s => s ? [s.mean.toFixed(5), s.sd.toFixed(5)] : ["", ""])));
     else { const s = p.st[0]; rows.push(base.concat([s.mean, s.sd, s.median, s.min, s.max, s.p10, s.p90].map(v => v.toFixed(5)))); }
@@ -2855,7 +2910,7 @@ async function runSpectral() {
     if (!scenes.length) { box.innerHTML = '<div class="hint">No S2-SR acquisition on ' + state.date + ".</div>"; return; }
     const grid = aoiGrid(200);
     const r = { type: "spectral", source: "s2", bands: SPEC_BANDS.map(b => b[0]) };
-    const res = await sampleAoi(r, scenes, grid, { maskClouds: $("#spCloud").checked });
+    const res = await sampleAoi(r, scenes, grid, { maskClouds: $("#spCloud").checked, maskScl: $("#spScl").checked });
     const st = res.vals.map(summarize);
     spRows = SPEC_BANDS.map((b, i) => ({ band: b[0].toUpperCase(), nm: b[1], st: st[i] })).filter(x => x.st);
     if (!spRows.length) { box.innerHTML = '<div class="hint">No valid pixels (all masked or outside the swath).</div>'; return; }
@@ -2872,7 +2927,7 @@ async function runSpectral() {
   } catch (e) { box.innerHTML = '<div class="hint">Reading failed: ' + (e.message || e) + "</div>"; }
 }
 $("#aoiSpec").onclick = () => { if (!aoi) return; $("#spMeta").textContent = ""; openModal("specModal"); runSpectral(); };
-$("#spCloud").onchange = runSpectral;
+$("#spCloud").onchange = $("#spScl").onchange = runSpectral;
 $("#spCsv").onclick = () => downloadText("swissEO_aoi_spectrum_" + state.date + ".csv",
   "band,wavelength_nm,mean,sd,min,max\n" + spRows.map(x => [x.band, x.nm, x.st.mean, x.st.sd, x.st.min, x.st.max]
     .map(v => typeof v === "number" ? +v.toFixed(5) : v).join(",")).join("\n"), "text/csv");
@@ -3057,7 +3112,7 @@ map.on("click", async e => {
     if (rec.type === "index") {
       const v = rec.bands.map(b => vals[b]);
       const ok = v.every(x => x != null && x !== 0);
-      tr("<b>" + rec.name + "</b>", ok ? "<b>" + rec.fn(rec.bands.map(b => phys(b, vals[b]))).toFixed(4) + "</b>" : "—");
+      tr("<b>" + rec.name + "</b>", ok ? "<b>" + rec.fn(rec.bands.map(b => physIdx(b, vals[b]))).toFixed(4) + "</b>" : "—");
     }
     tr("SCL", scl == null ? "—" : scl + " · " + (P_SCL[scl] ? P_SCL[scl][0] : "?"));
     tr("Cloud mask", cld == null ? "—" : cld + " · " + (P_CLOUD[cld] ? P_CLOUD[cld][0] : "?"));
