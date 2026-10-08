@@ -182,6 +182,10 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 .tog input:before{content:"";position:absolute;left:2px;top:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:left .15s}
 .tog input:checked{background:var(--blue)}
 .tog input:checked:before{left:18px}
+.seg{display:inline-flex;border:1px solid var(--border);border-radius:4px;overflow:hidden;flex:0 0 auto}
+.seg button{border:0;background:#fff;padding:4px 8px;font-size:11.5px;color:var(--blue);cursor:pointer;font-weight:700}
+.seg button+button{border-left:1px solid var(--border)}
+.seg button.on{background:var(--blue);color:#fff}
 
 /* ---------- compare panel ---------- */
 .cmp-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -426,7 +430,9 @@ table.kv td:first-child{color:var(--muted)}
             <p><b>Spectral layers:</b> the band COGs are read straight from <code>data.geo.admin.ch</code> over HTTP range requests
               (geotiff.js). Only the overview matching the zoom and the tiles in view are fetched.</p>
             <p><b>Masks:</b> <i>Clouds</i> hides cloud-mask codes 1 and 2, <i>Cloud shadows</i> code 3, and <i>Terrain shadow</i>
-              terrain-mask value 200 (cast or self-shadow from swissSURFACE3D at acquisition time).</p>
+              terrain-mask value 200 (cast or self-shadow from swissSURFACE3D at acquisition time).
+              The <i>vegetation mask</i> keeps forest or all vegetation, read from the <code>forest-10m</code> /
+              <code>vegetation-10m</code> COGs of swissEO VHI v100 (inside = value ≠ 255).</p>
             <p><b>VHI:</b> <code>wms.geo.admin.ch</code> layers <code>ch.swisstopo.swisseo_vhi_v100</code> and
               <code>…_vegetation</code> with the <code>item=</code> day selector. Titles and abstracts come from the WMS GetCapabilities document.</p>
             <p><b>Area of interest:</b> the pentagon button on the map draws a rectangle (axis-aligned in LV95) or polygon,
@@ -601,6 +607,7 @@ table.kv td:first-child{color:var(--muted)}
         <label class="chk" id="stCloudRow"><input type="checkbox" id="stCloud" checked> Exclude clouds and cloud shadows (OmniCloudMask 1–3)</label>
         <label class="chk" id="stSclRow"><input type="checkbox" id="stScl" checked> Exclude clouds from the scene classification (SCL 3, 8, 9, 10)</label>
         <label class="chk" id="stTerrRow"><input type="checkbox" id="stTerr"> Exclude terrain shadow (terrain mask 200)</label>
+        <div class="chk" id="stVegRow">Vegetation mask <span id="stVeg"></span></div>
         <div class="msec">Selected date · <span id="stDate"></span></div>
         <div id="stCur"></div>
         <div class="msec">Time series</div>
@@ -622,6 +629,7 @@ table.kv td:first-child{color:var(--muted)}
         <div class="hint" id="spMeta" style="margin-top:0"></div>
         <label class="chk"><input type="checkbox" id="spCloud" checked> Exclude clouds and cloud shadows (OmniCloudMask 1–3)</label>
         <label class="chk"><input type="checkbox" id="spScl" checked> Exclude clouds from the scene classification (SCL 3, 8, 9, 10)</label>
+        <div class="chk">Vegetation mask <span id="spVeg"></span></div>
         <div id="spChart"></div>
         <div class="mrow" style="margin-top:8px"><button class="btn sec sm" id="spCsv">Download CSV</button></div>
       </div></div>
@@ -1163,7 +1171,40 @@ function mdLite(text) {
 }
 LAYERS.forEach(r => { if (r.ramp) r.domain = [r.min, r.max]; });
 const MASKABLE = { rgb: 1, index: 1, cont: 1, terrain: 1 };
-const SCL_CLOUD = { 3: 1, 8: 1, 9: 1, 10: 1 };   // SCL cloud shadow, cloud medium / high probability, cirrus
+const SCL_CLOUD = { 3: 1, 8: 1, 9: 1, 10: 1 };
+
+/* Vegetation masks: the forest-10m / vegetation-10m COGs of swissEO VHI v100 (STAC collection
+   ch.swisstopo.swisseo_vhi_v100). The VHI processor sets every pixel outside its forest / vegetation
+   mask to 255 (no data) and missing VHI inside the mask to 110, so the mask is "value != 255".
+   The v100 mask is identical on every date, so the most recent VHI item serves all dates.
+   Versioned masks will come as COGs with VHI v200 (topo-satromo-v2 "vegetation_masks"). */
+const VEG_LABEL = { forest: "Forest", vegetation: "All vegetation" };
+const vegLayer = kind => kind === "forest" ? LAYER.vhi : LAYER.vhiveg;
+let vegRefReq = null;
+function vegRef() {
+  if (!vegRefReq) {
+    vegRefReq = stacAll(COLL_VHI, addDays(todayStr, -60), todayStr)
+      .then(fs => fs.length ? fs.map(f => f.id).sort().pop() : nearestVhiDay(todayStr))
+      .then(id => { if (!id) throw new Error("no VHI item found"); return id; });
+    vegRefReq.catch(() => { vegRefReq = null; });
+  }
+  return vegRefReq;
+}
+let vegWarned = false;
+/* Mask grid (1 = inside) for a box, or null (with a one-time warning) when the mask cannot be read.
+   `date` is kept for versioned masks (VHI v200); the v100 mask does not change with the date. */
+async function readVegMask(kind, date, bbox, W, H, signal) {
+  try {
+    const a = await readGrid(vhiUrl(await vegRef(), vegLayer(kind)), bbox, W, H, signal, 255);
+    const m = new Uint8Array(a.length);
+    for (let k = 0; k < a.length; k++) m[k] = a[k] !== 255 ? 1 : 0;
+    return m;
+  } catch (e) {
+    if (e && e.name === "AbortError") throw e;
+    if (!vegWarned) { vegWarned = true; setStatus("The " + VEG_LABEL[kind].toLowerCase() + " mask (swissEO VHI v100) could not be loaded — shown without it."); }
+    return null;
+  }
+}   // SCL cloud shadow, cloud medium / high probability, cirrus
 const classesOf = (rec, s) =>
   rec.threshold != null ? [
     ["NDSI > " + +((s && s.thr != null ? s.thr : rec.threshold)).toFixed(3) + " · snow", rec.snow],
@@ -1181,14 +1222,14 @@ const BASE_GAIN = 3.0, BASE_GAMMA = 1.6;
 
 function defaults(rec) {
   return { gain: 1, gamma: 1, r: [0, 1], g: [0, 1], b: [0, 1], min: rec.min, max: rec.max, thr: rec.threshold,
-           opacity: 100, cloud: false, shadow: false, terrain: false };
+           opacity: 100, cloud: false, shadow: false, terrain: false, veg: "off" };
 }
 const settings = {};
 const S = rec => settings[rec.id] || (settings[rec.id] = defaults(rec));
 
 const RNG_KEYS = [["r", "redRange"], ["g", "greenRange"], ["b", "blueRange"]];
 const SETTING_KEYS = ["gain", "gamma", "redRange", "greenRange", "blueRange", "valueRange", "threshold",
-                      "opacity", "cloudMask", "shadowMask", "terrainMask"];
+                      "opacity", "cloudMask", "shadowMask", "terrainMask", "vegetationMask"];
 const r3 = v => +(+v).toFixed(4);
 
 /* Non-default settings as a flat object, named like the Copernicus Browser URL params. */
@@ -1207,6 +1248,7 @@ function settingsToObj(rec, s) {
     if (s.shadow) o.shadowMask = true;
     if (s.terrain) o.terrainMask = true;
   }
+  if (rec.source === "s2" && VEG_LABEL[s.veg]) o.vegetationMask = s.veg;
   return o;
 }
 function objToSettings(rec, o) {
@@ -1227,6 +1269,7 @@ function objToSettings(rec, o) {
   if (rec.threshold != null && num(o.threshold) != null) s.thr = clamp(num(o.threshold), -1, 1);
   if (num(o.opacity) != null) s.opacity = clamp(Math.round(num(o.opacity)), 0, 100);
   s.cloud = bool(o.cloudMask); s.shadow = bool(o.shadowMask); s.terrain = bool(o.terrainMask);
+  if (rec.source === "s2" && VEG_LABEL[o.vegetationMask]) s.veg = o.vegetationMask;
   return s;
 }
 const cloneSettings = s => JSON.parse(JSON.stringify(s));
@@ -1398,11 +1441,12 @@ async function renderScene(rec, s, id, bbox, W, H, signal) {
   const reads = all.map(b => readGrid(assetUrl(id, b), bbox, W, H, signal, b === "terrain" ? 255 : 0));
   reads.push(maskable && (s.cloud || s.shadow) ? readGrid(assetUrl(id, "cloud"), bbox, W, H, signal, 0) : null);
   reads.push(maskable && s.terrain ? readGrid(assetUrl(id, "terrain"), bbox, W, H, signal, 255) : null);
+  reads.push(VEG_LABEL[s.veg] ? readVegMask(s.veg, id.slice(0, 10), bbox, W, H, signal) : null);
   const res = await Promise.all(reads);
-  const tm = res.pop(), cm = res.pop(), a = res;
+  const vm = res.pop(), tm = res.pop(), cm = res.pop(), a = res;
   if (a.some(x => !x)) return null;
 
-  const masked = k =>
+  const masked = k => (vm && vm[k] === 0) ||
     (cm && ((s.cloud && (cm[k] === 1 || cm[k] === 2)) || (s.shadow && cm[k] === 3))) ||
     (tm && tm[k] === 200);
   const img = new ImageData(W, H), d = img.data, n = W * H;
@@ -1464,6 +1508,7 @@ async function renderScene(rec, s, id, bbox, W, H, signal) {
 
   if (rec.type === "class") {
     for (let k = 0; k < n; k++) {
+      if (vm && vm[k] === 0) continue;
       const e = rec.palette[a[0][k]];
       if (e && e[1]) put(k, e[1]);
     }
@@ -1873,6 +1918,23 @@ function classList(box, list) {
   });
 }
 
+/* Segmented Off / Forest / All vegetation control. */
+function vegSeg(value, on) {
+  const g = el("div", "seg");
+  [["off", "Off"], ["forest", "Forest"], ["vegetation", "Vegetation"]].forEach(([v, t]) => {
+    const b = el("button", v === value ? "on" : "", t);
+    b.type = "button";
+    b.onclick = e => {
+      e.preventDefault();
+      g.querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b));
+      on(v);
+    };
+    g.append(b);
+  });
+  g.value = () => (g.querySelector("button.on") || {}).textContent;
+  return g;
+}
+
 function layerBody(rec) {
   const s = S(rec);
   const body = el("div", "lyr-body");
@@ -1930,8 +1992,8 @@ function layerBody(rec) {
   }
 
   /* ---- masks ---- */
+  if (rec.source === "s2") sec("Masks");
   if (MASKABLE[rec.type]) {
-    sec("Masks");
     const tog = (key, label, small) => {
       const l = el("label", "tog");
       l.innerHTML = "<span>" + label + "<small>" + small + "</small></span>";
@@ -1944,6 +2006,12 @@ function layerBody(rec) {
     tog("cloud", "Clouds", "OmniCloudMask thick (1) and thin (2) cloud");
     tog("shadow", "Cloud shadows", "OmniCloudMask cloud shadow (3)");
     tog("terrain", "Terrain shadow", "Terrain mask value 200 — cast or self-shadow");
+  }
+  if (rec.source === "s2") {
+    const l = el("div", "tog");
+    l.innerHTML = "<span>Vegetation mask<small>forest / vegetation mask of swissEO VHI v100</small></span>";
+    l.append(vegSeg(s.veg, v => { s.veg = v; onSettings(rec); }));
+    body.append(l);
   }
 
   /* ---- effects and advanced options ---- */
@@ -2667,9 +2735,13 @@ async function sampleAoi(r, scenes, grid, o, signal) {
   const vals = Array.from({ length: nb }, () => new Float32Array(n).fill(NaN));
   const cls = r.type === "class" ? new Int16Array(n).fill(-1) : null;
   const done = new Uint8Array(n), cov = new Uint8Array(n);
-  let masked = 0, shadow = 0;
+  let masked = 0, shadow = 0, outside = 0;
   const soft = q => q && q.catch(e => { if (e && e.name === "AbortError") throw e; return null; });
   const rd = (id, b) => soft(readGrid(assetUrl(id, b), bbox, W, H, signal, b === "terrain" ? 255 : 0));
+  if (VEG_LABEL[o.veg] && r.source !== "vhi" && scenes.length) {
+    const vm = await readVegMask(o.veg, scenes[0].slice(0, 10), bbox, W, H, signal);
+    if (vm) for (let k = 0; k < n; k++) if (mask[k] && vm[k] === 0) { done[k] = 1; outside++; }
+  }
   for (const id of scenes) {
     let open = 0;
     for (let k = 0; k < n; k++) if (mask[k] && !done[k]) open++;
@@ -2739,7 +2811,7 @@ async function sampleAoi(r, scenes, grid, o, signal) {
       done[k] = 1;
     }
   }
-  return { vals, cls, masked, shadow, covered: cov.reduce((t, v) => t + v, 0), total: grid.n };
+  return { vals, cls, masked, shadow, covered: cov.reduce((t, v) => t + v, 0), total: Math.max(1, grid.n - outside), outside };
 }
 
 function summarize(arr) {
@@ -2831,7 +2903,7 @@ function histChart(sorted, lo, hi, colorOf, xLabel) {
 }
 
 /* ---- statistical info: current date + time series ---- */
-let stAbort = null, stSeries = [], stRec = null;
+let stAbort = null, stSeries = [], stRec = null, stVeg = "off", spVeg = "off";
 const unitOf = r => r.source === "vhi" ? "VHI" : r.type === "terrain" ? "incidence °" : r.type === "rgb" ? "reflectance ρ" :
   r.id === "aot" ? "AOT" : r.name;
 const RGB_COL = ["#d62728", "#2ca02c", "#1f5fbf"];
@@ -2850,6 +2922,9 @@ function openStats() {
   $("#stCloudRow").hidden = !s2 || r.type === "class";
   $("#stSclRow").hidden = !s2 || r.type === "class";
   $("#stTerrRow").hidden = !s2 || r.type === "class" || r.type === "terrain";
+  $("#stVegRow").hidden = !s2;
+  stVeg = s2 ? S(rec).veg : "off";
+  $("#stVeg").replaceChildren(vegSeg(stVeg, v => { stVeg = v; runCurrentStats(); }));
   $("#stTerr").checked = S(rec).terrain;
   $("#stDate").textContent = state.date;
   $("#stTsCtl").hidden = r.type === "class";
@@ -2869,14 +2944,14 @@ $("#stCloud").onchange = $("#stScl").onchange = $("#stTerr").onchange = () => { 
 async function runCurrentStats() {
   const rec = stRec, r = statRec(rec), box = $("#stCur");
   const grid = aoiGrid(320);
-  $("#stMeta").textContent = "Area " + areaLabel(geomArea(aoi)) + " · sampled on a " + grid.W + " × " + grid.H +
+  $("#stMeta").textContent = (VEG_LABEL[stVeg] ? VEG_LABEL[stVeg] + " mask · " : "") + "Area " + areaLabel(geomArea(aoi)) + " · sampled on a " + grid.W + " × " + grid.H +
     " grid at " + grid.res + " m · " + grid.n + " cells inside the area of interest.";
   box.innerHTML = '<div class="hint">Reading the COGs over the area of interest…</div>';
   try {
     const scenes = await scenesFor(rec, state.date, state.cc);
     if (!scenes.length) { box.innerHTML = '<div class="hint">No acquisition on ' + state.date + ".</div>"; return; }
     const res = await sampleAoi(r, scenes, grid, { maskClouds: $("#stCloud").checked, maskScl: $("#stScl").checked,
-                                                   maskTerrain: $("#stTerr").checked });
+                                                   maskTerrain: $("#stTerr").checked, veg: stVeg });
     if (stRec !== rec) return;
     const pct = v => (100 * v / res.total).toFixed(1) + " %";
     if (r.type === "class") {
@@ -3002,7 +3077,7 @@ async function runSeries() {
                                               a.date.localeCompare(b.date));
     total = todo.length;
     const grid = aoiGrid(140);
-    const opt = { maskClouds: $("#stCloud").checked, maskScl: $("#stScl").checked, maskTerrain: $("#stTerr").checked };
+    const opt = { maskClouds: $("#stCloud").checked, maskScl: $("#stScl").checked, maskTerrain: $("#stTerr").checked, veg: stVeg };
     let redraw = null;
     await pool(todo, 4, async d => {
       if (ctrl.signal.aborted) return;
@@ -3053,7 +3128,7 @@ async function runSpectral() {
     if (!scenes.length) { box.innerHTML = '<div class="hint">No S2-SR acquisition on ' + state.date + ".</div>"; return; }
     const grid = aoiGrid(200);
     const r = { type: "spectral", source: "s2", bands: SPEC_BANDS.map(b => b[0]) };
-    const res = await sampleAoi(r, scenes, grid, { maskClouds: $("#spCloud").checked, maskScl: $("#spScl").checked });
+    const res = await sampleAoi(r, scenes, grid, { maskClouds: $("#spCloud").checked, maskScl: $("#spScl").checked, veg: spVeg });
     const st = res.vals.map(summarize);
     spRows = SPEC_BANDS.map((b, i) => ({ band: b[0].toUpperCase(), nm: b[1], st: st[i] })).filter(x => x.st);
     if (!spRows.length) { box.innerHTML = '<div class="hint">No valid pixels (all masked or outside the swath).</div>'; return; }
@@ -3069,7 +3144,14 @@ async function runSpectral() {
         "</td><td>" + x.st.min.toFixed(4) + "</td><td>" + x.st.max.toFixed(4) + "</td></tr>").join("") + "</table>";
   } catch (e) { box.innerHTML = '<div class="hint">Reading failed: ' + (e.message || e) + "</div>"; }
 }
-$("#aoiSpec").onclick = () => { if (!aoi) return; $("#spMeta").textContent = ""; openModal("specModal"); runSpectral(); };
+$("#aoiSpec").onclick = () => {
+  if (!aoi) return;
+  $("#spMeta").textContent = "";
+  spVeg = currentRec.source === "s2" ? S(currentRec).veg : "off";
+  $("#spVeg").replaceChildren(vegSeg(spVeg, v => { spVeg = v; runSpectral(); }));
+  openModal("specModal");
+  runSpectral();
+};
 $("#spCloud").onchange = $("#spScl").onchange = runSpectral;
 $("#spCsv").onclick = () => downloadText("swissEO_aoi_spectrum_" + state.date + ".csv",
   "band,wavelength_nm,mean,sd,min,max\n" + spRows.map(x => [x.band, x.nm, x.st.mean, x.st.sd, x.st.min, x.st.max]
@@ -3260,6 +3342,11 @@ map.on("click", async e => {
     tr("SCL", scl == null ? "—" : scl + " · " + (P_SCL[scl] ? P_SCL[scl][0] : "?"));
     tr("Cloud mask", cld == null ? "—" : cld + " · " + (P_CLOUD[cld] ? P_CLOUD[cld][0] : "?"));
     tr("Terrain mask", TERRAIN_TXT(ter));
+    const ref = await vegRef().catch(() => null);
+    const [vf, vv] = ref ? await Promise.all(["forest", "vegetation"].map(kd =>
+      readPoint(vhiUrl(ref, vegLayer(kd)), p.x, p.y).catch(() => null))) : [null, null];
+    tr("Forest / vegetation mask", (vf == null ? "—" : vf !== 255 ? "forest" : "no forest") + " / " +
+                                   (vv == null ? "—" : vv !== 255 ? "vegetation" : "no vegetation"));
     $("#inspBody").innerHTML = "<table>" + rows + "</table>";
   } catch (err) {
     $("#inspBody").innerHTML = '<div class="hint">Read failed: ' + err.message + "</div>";
@@ -3411,7 +3498,8 @@ function drawCaption(ctx, W, H, desc, overlay) {
     title = currentRec.name + (currentRec.sub ? " — " + currentRec.sub : "");
     const ids = currentCfg ? currentCfg.scenes : [];
     sub = SOURCES[currentRec.source].name + " · " + state.date +
-          (ids.length && currentRec.source === "s2" ? " · " + ids.map(timeOf).join(", ") : "");
+          (ids.length && currentRec.source === "s2" ? " · " + ids.map(timeOf).join(", ") : "") +
+          (currentRec.source === "s2" && VEG_LABEL[S(currentRec).veg] ? " · " + VEG_LABEL[S(currentRec).veg].toLowerCase() + " mask" : "");
   }
   sub += "  |  © swisstopo · contains modified Copernicus Sentinel data" + (overlay ? " · overlay © ASIT VD" : "");
   ctx.font = "700 13px " + FONT;
@@ -3728,7 +3816,7 @@ async function runAnalytical(signal, prog) {
       // the index / physical value itself, with the layer's masks
       const grid = { bbox, W, H, mask: inAoi || new Uint8Array(n).fill(1), n };
       const res = await sampleAoi(rec, scenes, grid, { maskClouds: s.cloud || s.shadow, maskTerrain: s.terrain,
-        cloudCodes: { 1: s.cloud, 2: s.cloud, 3: s.shadow } }, signal);
+        cloudCodes: { 1: s.cloud, 2: s.cloud, 3: s.shadow }, veg: s.veg }, signal);
       files.push({ name: name + ".tif", blob: encodeGeoTiff(Object.assign({ bands: [res.vals[0]], type: "f32", nodata: NaN }, geo)) });
       continue;
     }

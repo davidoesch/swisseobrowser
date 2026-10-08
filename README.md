@@ -22,11 +22,28 @@ the swisstopo WMS/WMTS services directly in the browser.
 | --- | --- | --- |
 | [swissEO S2-SR v200](https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-s2-sr) | COGs on `data.geo.admin.ch`, catalogue via the STAC API `data.geo.admin.ch/api/stac/v0.9` (collection `ch.swisstopo.swisseo_s2-sr_v200`) | Sentinel-2 L2A surface reflectance mosaics (B01–B12, B8A, AOT, SCL, cloud mask, terrain mask), 10/20/60 m, LV95 |
 | [swissEO VHI v100](https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-vhi) | Own collection: `wms.geo.admin.ch` (`ch.swisstopo.swisseo_vhi_v100`, `…_vegetation`) for display; for AOI statistics and analytical downloads the `forest-10m` / `vegetation-10m` COGs, addressed through the STAC items of `ch.swisstopo.swisseo_vhi_v100` | Vegetation Health Index for forest and all vegetation, relative to 1991–2020 |
+| Vegetation masks | The `forest-10m` / `vegetation-10m` COGs of swissEO VHI v100 (STAC collection `ch.swisstopo.swisseo_vhi_v100`, most recent item): inside the mask = value ≠ 255 | Forest / all-vegetation mask for every S2-SR layer, statistics and exports |
 | Basemaps | `wmts.geo.admin.ch` (pixelkarte-farbe, swissimage, pixelkarte-grau) | Background maps on the native LV95 grid |
 | Label overlay | `wmts.asit-asso.ch` (`asitvd.fond_pourortho`) | Roads and place names above the data |
 
 The map runs in **EPSG:2056 (CH1903+ / LV95)**, the native CRS of the tile grid and the COGs, so nothing
 is reprojected.
+
+### Vegetation masks
+
+The vegetation mask option restricts every S2-SR layer, the AOI statistics, time series and spectral
+explorer, and the analytical and print exports to forest or to all vegetation. It is read from the
+`forest-10m` and `vegetation-10m` COGs of **swissEO VHI v100**: the VHI processor writes 255 (no data)
+outside its forest / vegetation mask and 110 where VHI is missing inside it, so *inside = value ≠ 255*.
+The v100 mask is the same on every date, so the most recent VHI item is used for all dates.
+
+> **Needed soon:** the VHI v200 processor ([topo-satromo-v2](https://github.com/swisstopo/topo-satromo-v2))
+> uses versioned masks (`PRODUCT_VHI["vegetation_masks"]` = `s3://s3-topo-satromo-prod/data/MASKS/Vegetation/`,
+> habitat map v1-0 / v1-1 / v1-2 chosen by date in `step1_processor_vhi.py`). Those files are plain
+> 767 MB TIFFs (not cloud-optimised) in a bucket without CORS, so a web page cannot read them. To use
+> them, the masks have to be published as **COGs** (tiled, with overviews) at a CORS-enabled location,
+> e.g. with the VHI v200 STAC items. The browser then only needs the new URLs and the version-by-date
+> rule (`readVegMask` in `swisseo-browser.html` already receives the date).
 
 ### Scaling and no-data
 
@@ -61,8 +78,9 @@ indices stay within −1…1.
   thumbnails as icons.
 - **Layer pull-down** — the Copernicus Browser title, description and "More info" link (Sentinel Hub
   custom-scripts page; swisstopo product page for True color L2A and the swissEO-specific layers), legend,
-  adjustable colour scale (min/max), masks for clouds and cloud shadows (OmniCloudMask) and terrain shadow
-  (terrain mask 200), and *effects and advanced options* (gain, gamma, red/green/blue ranges, opacity).
+  adjustable colour scale (min/max), masks for clouds and cloud shadows (OmniCloudMask), terrain shadow
+  (terrain mask 200) and a vegetation mask (Off / Forest / All vegetation, from swissEO VHI v100), and
+  *effects and advanced options* (gain, gamma, red/green/blue ranges, opacity).
   `</>` shows the formula and scaling. NDSI is rendered as in the Copernicus Browser (snow above an
   adjustable threshold in blue, true color elsewhere).
 - **Compare** — add layers to the compare list; opening the Compare panel (or the ⇄ map button) shows
@@ -74,7 +92,9 @@ indices stay within −1…1.
   download) and a spectral explorer. The time series reads every date in the range, least cloudy first
   (Stop keeps what has been read), and reports which dates were not reached by that day's orbit and
   which were fully masked. Statistics can additionally exclude clouds flagged by the scene
-  classification (SCL 3, 8, 9, 10), which catches clouds OmniCloudMask misses.
+  classification (SCL 3, 8, 9, 10), which catches clouds OmniCloudMask misses, and can be restricted to
+  forest or to all vegetation with the vegetation mask (the share of valid pixels then refers to the
+  masked area).
 - **Image download** — three tabs as in the Copernicus Browser:
   - *Basic*: the current view as PNG or JPG, with captions (datasource, date, scale bar) and an optional
     description, map overlays, legend, crop to AOI and AOI outline; works in compare mode.
@@ -131,6 +151,7 @@ Parameter names follow the Copernicus Browser where an equivalent exists.
 | `redRange`, `greenRange`, `blueRange` | `[0,0.8]` | Advanced RGB effects |
 | `opacity` | `70` | Layer opacity in % |
 | `cloudMask`, `shadowMask`, `terrainMask` | `true` | Masks |
+| `vegetationMask` | `forest` | Vegetation mask: `forest` or `vegetation` (S2-SR layers; from swissEO VHI v100) |
 | `basemap`, `labels` | `swissimage`, `true` | Basemap (`pixelkarte`, `swissimage`, `grey`, `none`) and label overlay |
 | `compareLayers`, `comparedOpacity`, `comparedClipping`, `compareMode` | | Compare list (base64url JSON), per-layer opacity and split range; `compareMode` is `split` / `opacity` when comparing and `off` otherwise (links without it open in compare mode) |
 | `aoi` | | Area of interest as base64url GeoJSON |
