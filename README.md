@@ -1,235 +1,132 @@
-## About
+# swissEO Browser `BETA`
 
-[Copernicus Browser](https://browser.dataspace.copernicus.eu/) is a search tool for satellite imagery, including Sentinel-1, 2, 3 and 5P. It was released as open-source to bring Earth Observation imagery closer to end users.
+A minimal, browser-only viewer for swisstopo's **swissEO** satellite products, modelled on the
+[Copernicus Browser](https://browser.dataspace.copernicus.eu/) workflow.
 
-Some features:
+**Live version: <https://davidoesch.github.io/swisseobrowser/>**
 
-- Search by date, location, source, and cloud cover
-- Tweak imagery rendering parameters and settings on-the-fly and download beautiful visualisations of the data
-- Search full products and download raw data (individual files or entire products)
-- Add products to the workspace for further processing
-- Pin your results and make opacity or split image comparisons
-- Add third-party WMS/WMTS map services and visualise their layers alongside Copernicus data (only the service URL and metadata are stored; its layer list is fetched from the service on demand each session)
-- Explore imagery in 3D
-- Create and share 2D/3D timelapses
-- Analyse the visualised data (measure, statistics, histogram)
+The whole application is a single file: [`swisseo-browser.html`](swisseo-browser.html). There is no
+build step, no backend and no login. The page reads the swissEO Cloud Optimized GeoTIFFs (COGs) and
+the swisstopo WMS/WMTS services directly in the browser.
 
-The use of Copernicus Browser is free of charge. To unlock advanced features, you need to create a free account ([here](https://identity.cloudferro.com/auth/realms/CDSE/protocol/openid-connect/auth?client_id=sh-5f8b63-YOUR-INSTANCEID-HERE&redirect_uri=https%3A%2F%2Fdataspace.copernicus.eu%2Fbrowser%2FoauthCallback.html&response_type=token&state=)).
+> **About the rest of this repository:** this repo started as a clone of
+> [eu-cdse/copernicus-browser](https://github.com/eu-cdse/copernicus-browser). All files other than
+> `swisseo-browser.html` (`src/`, `public/`, `package.json`, …) are the upstream Copernicus Browser
+> sources. They are kept **only as a reference** for its user-interface behaviour and are not built,
+> used or modified by the swissEO Browser. Changes are pushed to this repository only, never upstream.
+> For the Copernicus Browser itself, see the [upstream README](https://github.com/eu-cdse/copernicus-browser#readme).
 
-Copernicus Browser is part of the Copernicus Data Space Ecosystem, a new service for better access to and use of data from the EU's Copernicus satellites. You can find out more about the service [here](https://dataspace.copernicus.eu/about) and in the Copernicus Browser user manual [here](https://documentation.dataspace.copernicus.eu/Applications/Browser.html) you will find a detailed overview of the Browser's functionality.
+## Data
 
-<img src="copernicus_browser.png" />
+| Product | Source | Used for |
+| --- | --- | --- |
+| [swissEO S2-SR v200](https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-s2-sr) | COGs on `data.geo.admin.ch`, catalogue via the STAC API `data.geo.admin.ch/api/stac/v0.9` (collection `ch.swisstopo.swisseo_s2-sr_v200`) | Sentinel-2 L2A surface reflectance mosaics (B01–B12, B8A, AOT, SCL, cloud mask, terrain mask), 10/20/60 m, LV95 |
+| [swissEO VHI v100](https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-vhi) | `wms.geo.admin.ch` (`ch.swisstopo.swisseo_vhi_v100`, `…_vegetation`) for display; `forest-10m` / `vegetation-10m` COGs for statistics | Vegetation Health Index for forest and all vegetation, relative to 1991–2020 |
+| Basemaps | `wmts.geo.admin.ch` (pixelkarte-farbe, swissimage, pixelkarte-grau) | Background maps on the native LV95 grid |
+| Label overlay | `wmts.asit-asso.ch` (`asitvd.fond_pourortho`) | Roads and place names above the data |
 
-Sentinel-2 Quarterly Mosaic for June - August in a True Color visualisation ([link](https://link.dataspace.copernicus.eu/0im))
+The map runs in **EPSG:2056 (CH1903+ / LV95)**, the native CRS of the tile grid and the COGs, so nothing
+is reprojected.
 
-## Development
+### Scaling and no-data
 
-### Requirements
+Physical value = DN × scale + offset, as documented in the swisstopo *Additional Content Information*
+sheets ([S2-SR v200](https://www.swisstopo.admin.ch/dam/en/sd-web/-i2Y10KmboPf/swissEO_S2-SR_AdditionalContentInfo_v200.pdf),
+[VHI](https://www.swisstopo.admin.ch/dam/en/sd-web/vtF6jZqH7L4V/swissEO_VHI_AdditionalContentInfo.pdf)):
 
-- `node` version >= 22
-- `npm` version >= 10
+| Asset | Scale | Offset | No-data / codes |
+| --- | --- | --- | --- |
+| B01–B12, B8A | 0.0001 | −0.1 | 0 |
+| AOT | 0.001 | 0 | 0 |
+| SCL | 1 | 0 | 0 (Sen2Cor classes 1–11) |
+| Cloud mask (OmniCloudMask) | 1 | 0 | 0 clear · 1 thick cloud · 2 thin cloud · 3 cloud shadow |
+| Terrain mask | 1 | 0 | 0–180 solar incidence angle (°) · 200 shadow · 255 no data |
+| VHI | 1 | 0 | 0–100 index · 110 no data (class) · 255 no data (raster) |
 
-### Local development
+## Features
 
-- copy the file `.env.example` and rename the copied file to `.env`, fill out the needed values
-- use your instance ids in `*_themes.js`
-- Run `npm install`
-- Run `npm start` to run the application locally (opens a web browser tab on `http://localhost:3000` and resfreshes the app when any of the .js files are changed)
-- Run `npm run prettier` to prettify `js`, `json`, `css` and `scss` files
-- Run `npm run lint` to lint `js`, `json`, `css` and `scss` files
-- Run `npm run prettier-check` to verify formatting without modifying files (this is what the pre-commit hook runs)
-- Run `npm run build` to build the application sources
-- Run `npm run translate` to add strings to the translation files
-- Run `npm run debug-translations` to replace all translation strings with "XXXXXX"
-- Run `npm run update-metadata-cache` to create getCapabilities and configuration cache
-- Run `npm run update-rrd-configurations` to create getCapabilities and configuration cache for the RRD collections
+- **Date selection as in Copernicus Browser** — opens on today's date (greyed out when there is no
+  acquisition), ‹ › jump to the previous/next date with data, the arrow button jumps to the latest one.
+  The calendar marks days with data, has month/year pull-downs and a maximum cloud-coverage slider
+  (cloud cover from each mosaic's `metadata.json`). Several orbits acquired on the same day are mosaicked.
+- **Layers** — true colour and five false-colour composites; NDVI, NDWI, NDMI, NDSI, NBR and AOT; scene
+  classification, cloud mask, terrain / solar incidence; swissEO VHI forest and vegetation (WMS); a
+  server-rendered true-colour WMS.
+- **Layer pull-down** — description, legend, adjustable colour scale (min/max), masks for clouds, cloud
+  shadows and terrain shadow, and *effects and advanced options* (gain, gamma, red/green/blue ranges,
+  opacity). `</>` shows the formula and scaling.
+- **Compare** — add layers to the compare list and compare them with a split or opacity effect;
+  reorder, remove and zoom to each entry.
+- **Area of interest** — draw a rectangle or polygon, or import KML/KMZ, GPX, WKT, GeoJSON, a zipped
+  Shapefile, an MGRS/GEOREF cell or a bounding box (WGS84, LV95 and LV03 coordinates are detected). For
+  the area: statistics and histogram for the selected date, a time series over a date range (CSV
+  download) and a spectral explorer.
+- **Image download** — PNG of the current view with scale bar, legend and caption; works in compare mode
+  and can be clipped to the area of interest.
+- **Pixel inspector** — band values (DN and physical value), index value, SCL, cloud mask and terrain
+  mask at a clicked location.
+- **Permalink** — the URL is updated on every change, so copying it reproduces the view.
+- Colours follow the Swiss Confederation scheme used by
+  [swisstopo/topo-drought-briefing](https://github.com/swisstopo/topo-drought-briefing).
 
-`npm install` installs a [husky](https://typicode.github.io/husky/) pre-commit hook (`.husky/pre-commit`) that runs
-`npm run lint` and `npm run prettier-check` in parallel and rejects the commit if either fails. Run `npm run prettier`
-to auto-fix formatting errors. To bypass the hook for a single commit use `git commit --no-verify`; to disable husky
-for a shell session use `HUSKY=0`.
+## Running it
 
-### Dependency security
+Use the live version at <https://davidoesch.github.io/swisseobrowser/>, or run it locally by serving the
+folder with any static web server:
 
-`npm install` will never be fully clean of `npm audit` findings: some transitive dependencies have no
-upstream fix yet, and some fixes would require a breaking version bump that is deliberately deferred to
-a separate follow-up issue. `package.json` uses the `overrides` field to force safe versions of
-transitive dependencies where no direct upgrade path exists. Each entry should be removed once its
-condition is met — check `npm audit` after removing an entry to confirm the underlying advisory is
-still resolved before dropping it:
+```bash
+python -m http.server 8000
+# then open http://localhost:8000/swisseo-browser.html
+```
 
-| Override                      | Reason                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Removal condition                                                                                            |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
-| `lodash: 4.18.1`              | Clears a `lodash` high-severity advisory (code injection, prototype pollution) pulled in by `jshint` (via `@sentinel-hub/evalscript-code-editor`). `jshint` declares `~4.17.21`, so this forces a version outside its declared range. Only affects the top-level `lodash` package; it does not touch the separately-published `lodash.clonedeep`, `lodash.merge`, `lodash.round`, `lodash.values` packages this app imports directly, which stay pinned to their own versions. | Drop once `@sentinel-hub/evalscript-code-editor` ships a jshint-free or updated-jshint release.              |
-| `minimatch@<3.1.5: 3.1.5`     | Clears `minimatch` high-severity ReDoS advisories via the same `jshint` chain. `jshint` declares `~3.0.2`; `3.1.x` is API-compatible with `3.0.x`.                                                                                                                                                                                                                                                                                                                             | Same as above.                                                                                               |
-| `babel-plugin-macros: ^3.1.0` | Clears the `ERESOLVE` peer-dependency warning on every install (`dedent` wants `^3.1.0`, `babel-plugin-ttag` pins `^2.8.0`).                                                                                                                                                                                                                                                                                                                                                   | Drop once `ttag-cli` is upgraded to a version whose `babel-plugin-ttag` depends on `babel-plugin-macros ^3`. |
-| `exceljs.uuid: ^11.1.1`       | Clears a moderate `uuid` advisory pulled in by `exceljs` (dev-only, see accepted risks below for why it isn't actually reachable).                                                                                                                                                                                                                                                                                                                                             | Drop once `exceljs` ships with `uuid v11+` natively.                                                         |
+A current desktop browser (Firefox, Chrome, Edge) is required.
 
-An override for the moderate `ajv` ReDoS advisory (via `babel-plugin-ttag`, which pins `ajv` to an
-exact `6.12.3`) was deliberately **not** added: forcing it required a full `node_modules` +
-`package-lock.json` wipe to dedupe reliably, and that wipe also re-resolved unrelated, loosely-pinned
-devDependencies (e.g. bumped `@types/react` past a version this codebase type-checks cleanly against).
-That side effect is worse than the advisory itself, since `ajv` here only runs inside `babel-plugin-ttag`,
-a dev-only tool used solely by `npm run translate`. It is tracked as an accepted risk below instead.
+### Deployment
 
-If an override is ever suspected of masking a real resolution problem, delete `node_modules` and
-`package-lock.json` and run `npm install` twice in a row (a single pass can leave a nested copy
-un-deduped), then re-run `npm audit`.
+GitHub Pages is published by the workflow [`.github/workflows/pages.yml`](.github/workflows/pages.yml)
+on every push to `main` that changes `swisseo-browser.html`, and can be started manually from the
+*Actions* tab. It deploys only `swisseo-browser.html`, as `index.html` (and under its own name), so the
+upstream `index.html` and sources are never published. The repository's *Settings → Pages → Source*
+must be set to **GitHub Actions**.
 
-`src/junk/EOBAdvancedHolder/evalscriptJshint.test.ts` runs the forced `lodash` override through
-`jshint`'s actual `JSHINT()` entry point (the same function and options
-`@sentinel-hub/evalscript-code-editor`'s `CodeEditor` uses to lint evalscripts), so a lodash version
-outside the range `jshint` declares is exercised on every `npm test` run instead of relying on a manual
-UI check. This is treated as sufficient automated coverage of that override; a manual check of the
-CodeEditor's syntax highlighting and lint markers in the running app is not required before merging
-changes that only touch these overrides. The `minimatch` override has no automated coverage, since
-`jshint` only requires `minimatch` from its CLI's `--exclude` glob handling (`src/cli.js`), a code path
-`JSHINT()` never reaches and this app never invokes.
+External libraries are loaded from CDNs: Leaflet, Proj4js, Proj4Leaflet, geotiff.js and Leaflet-Geoman;
+the import formats additionally load togeojson, JSZip, shpjs and mgrs on demand.
 
-The following `npm audit` findings are intentionally left unfixed, with the evidence for why they are
-not exploitable in this app:
+## URL parameters
 
-- **`ajv` via `babel-plugin-ttag` (GHSA-2g4f-4pwh-qvx6)** - a ReDoS when using the `$data` option.
-  `babel-plugin-ttag` only uses `ajv` to validate its own static config schema at build time, as part of
-  `npm run translate` tooling; it never processes attacker-controlled input. See the note above for why
-  this isn't overridden.
-- **`fast-xml-parser` (GHSA-gh4j-gqv2-49f6)** - the advisory is an `XMLBuilder` CDATA/comment injection.
-  `XMLBuilder` is not imported anywhere in this app, nor inside `@sentinel-hub/sentinelhub-js`'s bundle
-  (which only uses `XMLParser`). The app only ever parses XML, never builds it.
-- **`uuid` via `exceljs` (GHSA-w5hq-g745-h8pq)** - the advisory is a missing buffer bounds check in
-  `v3`/`v5`/`v6` when a `buf` argument is supplied. `exceljs` calls only `uuid v4`. `exceljs` is also a
-  devDependency used solely by the manual admin script `scripts/private-collection-access-share.ts`, never
-  bundled and never run in CI.
-- **`elliptic` (GHSA-848j-6mx2-7j84)** - the advisory range is `<=6.6.1`, and `6.6.1` is the latest
-  published version, so no fixed release exists yet. It is pulled in by `vite-plugin-node-polyfills`, a
-  build-time browser polyfill (`nodePolyfills()` called with default options in `vite.config.mts`), so
-  it is not attacker-reachable at runtime.
+Parameter names follow the Copernicus Browser where an equivalent exists.
 
-Remaining moderate/low findings from `react-router` require a major version bump (v6 to v7) and are
-tracked as a separate follow-up issue rather than fixed here.
+| Parameter | Example | Meaning |
+| --- | --- | --- |
+| `lat`, `lng`, `zoom` | `46.55`, `6.70`, `17` | Map centre (WGS84) and zoom level of the LV95 grid (8–27; ≈17–18 for a region) |
+| `fromTime`, `toTime` | `2026-10-05T00:00:00.000Z` | Selected date |
+| `cloudCoverage` | `30` | Maximum cloud coverage in % |
+| `layerId` | `ndvi` | `true`, `nir`, `urban`, `swir`, `agri`, `geo`, `ndvi`, `ndwi`, `ndmi`, `ndsi`, `nbr`, `aot`, `scl`, `cloud`, `terrain`, `vhi`, `vhiveg`, `tciwms` |
+| `valueRange` | `[0,0.9]` | Colour-scale min/max of index and continuous layers |
+| `gain`, `gamma` | `1.2` | Effects for the composites (1 = default) |
+| `redRange`, `greenRange`, `blueRange` | `[0,0.8]` | Advanced RGB effects |
+| `opacity` | `70` | Layer opacity in % |
+| `cloudMask`, `shadowMask`, `terrainMask` | `true` | Masks |
+| `basemap`, `labels` | `swissimage`, `true` | Basemap (`pixelkarte`, `swissimage`, `grey`, `none`) and label overlay |
+| `compareLayers`, `comparedOpacity`, `comparedClipping`, `compareMode` | | Compare list (base64url JSON), per-layer opacity and split range, `split` / `opacity` when compare mode is on |
+| `aoi` | | Area of interest as base64url GeoJSON |
 
-CI runs `npm audit --audit-level=high` in a separate `npm_audit` job (`allow_failure: true`) in the
-`test` stage, rather than inside the required `install_packages_and_run_lint` job, so a newly
-published advisory (unrelated to the changes in a given MR) surfaces as a visible pipeline warning
-without blocking merges (see #1265, #1266).
+Example:
+`swisseo-browser.html?zoom=17&lat=46.55&lng=6.70&fromTime=2026-10-05T00:00:00.000Z&toTime=2026-10-05T23:59:59.999Z&cloudCoverage=77&layerId=ndvi&valueRange=[0,0.9]`
 
-### Building the application
+## Limitations
 
-- Run `npm run build`
-- Use the generated `build` directory - for instance, you can run a simple python server `python -m http.server 3000` or deploy it to your preferred server
+- Not available compared with the Copernicus Browser: timelapse, 3D, pins, product search and download,
+  custom scripts, other satellite collections.
+- The VHI layers are rendered by the WMS with its published styling, so their colour scale cannot be changed.
+- Statistics and time series read the COGs in the browser; large areas and long date ranges take a while.
 
-### Analytics (Fathom event tracking)
+## Credits and terms
 
-The app loads [Fathom Analytics](https://usefathom.com/) as a deferred third-party script (see `index.html`), so `window.fathom` is undefined until it loads and permanently undefined when blocked by an ad blocker. Custom events are tracked through the guarded `handleFathomTrackEvent(event, value?)` helper in `src/utils/fathom.ts`, which optional-chains the call and swallows any error, so a blocked or failing Fathom never breaks the user action it's attached to. Event names are centralised in `FATHOM_TRACK_EVENT_LIST` in `src/const.ts`; when a value is passed it is appended as `"${event}: ${value}"`, matching Fathom's wildcard event grouping (e.g. `External service added: *`).
-
-Currently tracked events cover the external WMS/WMTS layers feature: opening the panel, adding a service (success/failure with a reason code), selecting an external layer, and adding an external layer to Pins or Compare.
-
-### Environment variables in the .env file
-
-The app relies on some values being provided as environment variables. The details are described in the collapsible section below.
-
-<details>
-  <summary>Click to expand</summary>
-
-#### Mandatory
-
-- `VITE_ROOT_URL`: URL at which the app is (publicly) accessible
-
-  - Needed for correctly setting URLs for assets and authentication.
-  - `http://localhost:3000/` for local development, the whole public url for deployments on web servers
-
-- `VITE_SH_SERVICES_URL`: URL at which the Sentinel Hub servicess are accessible
-
-  - `https://sh.dataspace.copernicus.eu`
-
-- OData API endpoints:
-  - `VITE_CDAS_ODATA_SEARCH_URL`: `https://catalogue.dataspace.copernicus.eu/odata/v1/` (documentation [here](https://documentation.dataspace.copernicus.eu/APIs/OData.html))
-  - `VITE_CDAS_ODATA_DOWNLOAD_URL`: `https://zipper.dataspace.copernicus.eu/odata/v1/` (documentation [here](https://documentation.dataspace.copernicus.eu/APIs/OData.html))
-
-Application supports usage with user login or anonymously (without having to log in).
-In case of anonymous usage, the instance ids in `default_themes.js` need to be set.
-The service endpoint that provides access tokens to anonymous users needs to be implemented and run on your own.
-In a nutshell this endpoint:
-
-- Uses client credentials grant to acquire a token from CDSE identity provider and returns it to the caller
-- Tries to prevent abuse of this endpoint by:
-  - Doing it's best to differentiate requests originating from real users vs scripts or bots (by using various fingerprinting mechanisms such as recaptcha, ....)
-  - Prevents overuse through request rate limiting
-
-Environment variables neede for user login:
-
-- `VITE_AUTH_BASEURL`: Base URL for user login (https://identity.dataspace.copernicus.eu/, documentation [here](https://documentation.dataspace.copernicus.eu/APIs/SentinelHub/Overview/Authentication.html#oauth2-endpoints))
-- `VITE_CLIENTID`: ID of the OAuth client created in the [Dashboard](https://shapps.dataspace.copernicus.eu/dashboard/) and designated for user login
-  - create your OAuth client in the [Dashboard](https://shapps.dataspace.copernicus.eu/dashboard/)
-
-Environment variables needed for anonymous usage:
-
-- `VITE_CAPTCHA_SITE_KEY`: Google Captcha site key for anonymous authentication (to enable usage without user login)
-- `VITE_ANON_AUTH_SERVICE_URL`: URL for anonymous authentication (to enable usage without user login)
-
-#### Optional
-
-- `VITE_CDSE_BACKEND`: Backend for saving user pins and timelapses
-
-  - without it, users won't be able to save pins without downloading them or share
-  - represents a simple backend which saves pins as an object to a postgres database
-  - GET endpoint for retrieving user's pins
-  - PUT endpoint for saving and updating user's pins
-
-  - `VITE_REBRANDLY_API_KEY`: URL shortener
-    - add it to your backend enviroment variables
-    - create your account on [Rebrandly's website](https://www.rebrandly.com/)
-    - without it, users won't be able to share the short URL (copying long URL will still work)
-
-- `VITE_GOOGLE_TOKEN`: Google Maps API key for location search
-  - see [Google's documentation](https://developers.google.com/maps/documentation/javascript/get-api-key)
-  - without it, users won't be able to use Google for location search
-
-#### Optional, for maintenance
-
-- `APP_ADMIN_CLIENT_ID`: ID of the OAuth client created in the [Dashboard](https://shapps.dataspace.copernicus.eu/dashboard/) and used for updating configurations cache and preview images
-  - see [Sentinel Hub on Copernicus Dataspace Ecosystem documentation](https://documentation.dataspace.copernicus.eu/APIs/SentinelHub/Overview/Authentication.html)
-  - without it, maintainers won't be able to update configurations cache and preview images
-- `APP_ADMIN_CLIENT_SECRET`: Secret of the OAuth client created in the [Dashboard](https://shapps.dataspace.copernicus.eu/dashboard/) and used for updating configurations cache and preview images
-  - see [Sentinel Hub on Copernicus Dataspace Ecosystem documentation](https://documentation.dataspace.copernicus.eu/APIs/SentinelHub/Overview/Authentication.html)
-  - without it, maintainers won't be able to update configurations cache and preview images
-- `APP_ADMIN_AUTH_BASEURL`: Auth URL to authenticate with client id and secret for updating configurations cache and preview images
-  - `https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token`
-  - see [Copernicus Dataspace Ecosystem documentation](https://documentation.dataspace.copernicus.eu/APIs/Token.html)
-  - see [Sentinel Hub on Copernicus Dataspace Ecosystem documentation](https://documentation.dataspace.copernicus.eu/APIs/SentinelHub/Overview/Authentication.html)
-  - without it, maintainers won't be able to update configurations cache and preview images
-
-</details>
-
-### URL parameters
-
-The Browser can be opened directly to a specific location, dataset, visualisation and date via URL query parameters. See [deep-linking.md](public/deep-linking.md) for the full parameter reference and more examples, or [gallery-links.md](public/gallery-links.md) for a curated collection of ready-made example links.
-
-Example: `https://browser.dataspace.copernicus.eu/?panel=pins`
-
-## Multilanguage support
-
-Thanks to the efforts of various people and institutions, you can use the Copernicus Browser in your native language. Since the Browser is under constant development, not all parts might be already translated in all languages.
-
-Your language is missing or incomplete and you want to help with the translation? Contact us at translation_support@sinergise.com for more information.
-
-Copernicus Browser, the evolution of EO Browser, shares many translations with its predecessor. A big thank you to everyone listed below (including those who didn't want to be publicly named) for their help in translating parts of the respective app.
-
-#### Wall of fame:
-
-- Catalan: Ferran Gascon ([ESA](https://www.esa.int/))
-- Dutch: Bram Janssen, Bart Bomans ([VITO](https://remotesensing.vito.be/))
-- German: ESERO Austria/ESERO Germany
-- French: [CNES](https://cnes.fr/en), ESERO France, ESERO Luxembourg
-- Hungarian: Beata Malyusz, András Zlinszky
-- Italian: Annamaria Luongo, Giuseppe Petricca, Stefano Ippoliti
-- Latvian: Valters Žeižis
-- Lithuanian: [National Paying Agency](https://lrv.lt/lt/) (Ministry of Agriculture)
-- Polish [ESERO Poland](https://esero.kopernik.org.pl/)/[Copernicus Science Centre](https://esero.kopernik.org.pl/)
-- Slovenian: Krištof Oštir ([Faculty of Civil and Geodetic Engineering](https://www.en.fgg.uni-lj.si/), University of Ljubljana)
-- Spanish: ESERO Spain, Jorge Delgado ([University of Jaén](https://www.ujaen.es/en))
-- Ukrainian: [GIS & RS Laboratory of Junior Academy of Sciences of Ukraine](https://man.gov.ua/en/)
-
-#### Disclaimer
-
-The translations in Copernicus Browser are a community effort and are largely provided on a voluntary basis. As the application contains several hundred translations per language, we cannot guarantee the accuracy of every single translation.
+- Data © [swisstopo](https://www.swisstopo.admin.ch) —
+  [open government data](https://www.swisstopo.admin.ch/ogd-conditions). swissEO S2-SR and swissEO VHI
+  contain modified Copernicus Sentinel data. Label overlay © [ASIT VD](https://www.asit-asso.ch).
+- User-interface workflow modelled on the [Copernicus Browser](https://browser.dataspace.copernicus.eu/)
+  by the Copernicus Data Space Ecosystem. This project is not affiliated with or endorsed by the
+  Copernicus Data Space Ecosystem.
+- The repository keeps the upstream MIT license ([LICENSE.md](LICENSE.md)).
