@@ -310,6 +310,8 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 .btn:hover{background:var(--blue-d)}
 .btn.sec{background:var(--white);border:1px solid var(--border);color:var(--blue)}
 .btn.sec:hover{background:var(--hover)}
+.btn.red{background:var(--red);font-size:14px;padding:10px 14px}
+.btn.red:hover{background:#B00000}
 
 .modal .brow{display:flex;gap:8px;margin-top:12px}
 .modal .brow .btn{flex:1;width:auto}
@@ -526,7 +528,7 @@ table.kv td:first-child{color:var(--muted)}
           <label class="chk" title="Place labels, streets and boundaries (ASIT VD overlay)."><input type="checkbox" id="exOvB"> Add map overlays</label>
           <label class="chk"><input type="checkbox" id="exLegB" checked> Show legend</label>
           <label class="chk aoi-only"><input type="checkbox" id="exCropB"> Crop to AOI</label>
-          <label class="chk aoi-only"><input type="checkbox" id="exLineB" checked> Draw AOI on image</label>
+          <label class="chk aoi-only"><input type="checkbox" id="exLineB"> Draw AOI on image</label>
           <div class="mrow" style="margin-top:10px">Image format:
             <select id="exFmtB"><option value="png">PNG (no georeference)</option><option value="jpg">JPG (no georeference)</option></select></div>
           <div class="hint" id="exInfoB"></div>
@@ -567,7 +569,7 @@ table.kv td:first-child{color:var(--muted)}
           <label class="chk"><input type="checkbox" id="exOvP"> Add map overlays</label>
           <label class="chk"><input type="checkbox" id="exLegP" checked> Show legend</label>
           <label class="chk aoi-only"><input type="checkbox" id="exCropP"> Crop to AOI</label>
-          <label class="chk aoi-only"><input type="checkbox" id="exLineP" checked> Draw AOI on image</label>
+          <label class="chk aoi-only"><input type="checkbox" id="exLineP"> Draw AOI on image</label>
           <div class="exgrid" style="margin-top:10px">
             <span>Image format</span>
             <select id="exFmtP"><option value="png">PNG (no georeference)</option><option value="jpg">JPG (no georeference)</option></select>
@@ -679,7 +681,7 @@ table.kv td:first-child{color:var(--muted)}
                 <option value="week" selected>week</option><option value="month">month</option><option value="year">year</option></select>
             </div>
             <div class="tl-months" id="tlMonths"></div>
-            <button class="btn sm" id="tlSearch">Search</button>
+            <button class="btn red" id="tlSearch">Search</button>
             <div class="msec">Images</div>
             <div class="srow"><label>Max. cloud coverage</label><input type="range" id="tlCc" min="0" max="100" step="1" value="100"><span id="tlCcV">100 %</span></div>
             <div class="srow"><label>Min. tile coverage</label><input type="range" id="tlCov" min="0" max="100" step="1" value="50"><span id="tlCovV">50 %</span></div>
@@ -2365,7 +2367,7 @@ function renderCompare() {
 /* ============================================================
    13b. Area of interest (Copernicus Browser AOI tool)
    ============================================================ */
-const AOI_STYLE = { color: "#DC0000", weight: 2, fillColor: "#DC0000", fillOpacity: 0.06, dashArray: "6 4" };
+const AOI_STYLE = { color: "#DC0000", weight: 2, fill: false, dashArray: "6 4" };   // outline only: no tint over the data
 map.createPane("aoiPane");
 map.getPane("aoiPane").style.zIndex = 620;
 proj4.defs("EPSG:21781", "+proj=somerc +lat_0=46.9524055555556 +lon_0=7.43958333333333 +k_0=1 " +
@@ -4313,7 +4315,6 @@ async function tlFrame(it, area, W, H, o, signal) {
   ctx.drawImage(lc, 0, 0);
   ctx.restore();
   if (tl.overlay) ctx.drawImage(tl.overlay, 0, 0);
-  if (rings.length) strokeAoi(ctx, rings, k);
   tlDrawLabel(ctx, it.label, k);
   ctx.save(); ctx.scale(k, k);
   if (o.legend) drawLegendBox(ctx, rec, s, 16, 16, rec.name);
