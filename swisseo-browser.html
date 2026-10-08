@@ -224,8 +224,34 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 .mapbtn:hover{background:var(--hover)}
 .mapbtn.on{background:var(--blue);color:#fff;border-color:var(--blue)}
 .mapbtn svg{width:20px;height:20px}
-#btnExport{top:96px}
-#btnCompare{top:138px}
+#mapTools{position:absolute;right:10px;top:96px;z-index:900;display:flex;flex-direction:column;gap:6px}
+#mapTools .mapbtn{position:static}
+
+/* ---------- timelapse ---------- */
+.modal .box.xwide{width:min(1180px,97%);height:min(800px,95%);display:flex;flex-direction:column;padding-bottom:12px}
+.tl-body{flex:1;min-height:0;display:grid;grid-template-columns:360px 1fr;gap:16px}
+.tl-left{overflow:auto;padding-right:6px;border-right:1px solid var(--border)}
+.tl-right{display:flex;flex-direction:column;min-height:0;min-width:0}
+.tl-lyr{display:flex;align-items:center;gap:10px;font-weight:700;color:var(--blue)}
+.tl-lyr .sw{width:40px;height:40px;flex:0 0 40px}
+.tl-months{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin:8px 0}
+.tl-months button{border:1px solid var(--border);background:#fff;padding:4px 0;font-size:11px;cursor:pointer;color:var(--muted);border-radius:3px}
+.tl-months button.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.tl-item{display:grid;grid-template-columns:20px 64px 1fr;gap:8px;align-items:center;padding:5px 4px;border-bottom:1px solid #0000000d;font-size:12px}
+.tl-item.na{opacity:.45}
+.tl-item .th{width:64px;height:48px;background:#e9ecef;object-fit:cover;display:block}
+.tl-item b{color:var(--blue)}
+.tl-item small{color:var(--muted)}
+.tl-stage{flex:1;min-height:0;background:#e9ecef;display:flex;align-items:center;justify-content:center;position:relative;border:1px solid var(--border)}
+#tlCanvas{max-width:100%;max-height:100%;display:block}
+#tlEmpty{position:absolute;text-align:center;max-width:70%}
+.tl-ctl{display:flex;align-items:center;gap:8px;margin:8px 0}
+.tl-ctl input[type=range]{flex:1}
+.tl-ctl #tlDate{min-width:150px;text-align:right;font-weight:700;color:var(--blue);font-size:12.5px}
+.tl-set{display:grid;grid-template-columns:auto 1fr auto 1fr;gap:6px 12px;align-items:center;font-size:12px}
+.tl-set input[type=number]{width:72px}
+.tl-opts{display:flex;gap:16px;flex-wrap:wrap}
+.tl-opts .chk{margin-top:6px}
 
 /* ---------- area of interest tool (expands to the left, as in Copernicus) ---------- */
 #aoiTool{position:absolute;right:10px;top:54px;z-index:910;display:flex;flex-direction:row-reverse;gap:6px;align-items:center}
@@ -285,8 +311,8 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 .btn.sec{background:var(--white);border:1px solid var(--border);color:var(--blue)}
 .btn.sec:hover{background:var(--hover)}
 
-#expModal .brow{display:flex;gap:8px;margin-top:16px}
-#expModal .brow .btn{flex:1;width:auto}
+.modal .brow{display:flex;gap:8px;margin-top:12px}
+.modal .brow .btn{flex:1;width:auto}
 textarea.exdesc{height:46px;margin:4px 0 2px 24px;width:calc(100% - 24px);font-family:inherit;font-size:12px}
 .exgrid{display:grid;grid-template-columns:auto 1fr;gap:7px 10px;align-items:center;font-size:12px}
 .exgrid select,.exgrid input{width:100%}
@@ -480,8 +506,11 @@ table.kv td:first-child{color:var(--muted)}
         </div>
       </div>
       <div id="drawHint" hidden></div>
-      <button class="mapbtn" id="btnExport" title="Download the current view as PNG"></button>
-      <button class="mapbtn" id="btnCompare" title="Compare mode" hidden></button>
+      <div id="mapTools">
+        <button class="mapbtn" id="btnExport" title="Download the current view as PNG"></button>
+        <button class="mapbtn" id="btnCompare" title="Compare mode" hidden></button>
+        <button class="mapbtn" id="btnTimelapse" title="Create a timelapse of this area"></button>
+      </div>
 
       <div class="modal" id="expModal"><div class="box narrow">
         <div class="mhead"><h3>Image download</h3><button class="x" data-close title="Close">×</button></div>
@@ -632,6 +661,59 @@ table.kv td:first-child{color:var(--muted)}
         <div class="chk">Vegetation mask <span id="spVeg"></span></div>
         <div id="spChart"></div>
         <div class="mrow" style="margin-top:8px"><button class="btn sec sm" id="spCsv">Download CSV</button></div>
+      </div></div>
+
+      <div class="modal" id="tlModal"><div class="box xwide">
+        <div class="mhead"><h3>Timelapse</h3><button class="x" data-close title="Close">×</button></div>
+        <div class="tl-body">
+          <div class="tl-left">
+            <div class="msec" style="margin-top:4px">Visualisation</div>
+            <div class="tl-lyr" id="tlLayer"></div>
+            <div class="hint" id="tlAreaInfo"></div>
+            <div class="msec">Time range</div>
+            <div class="exgrid">
+              <span>From</span><input type="date" id="tlFrom">
+              <span>To</span><input type="date" id="tlTo">
+              <span>Select 1 image per</span>
+              <select id="tlPer"><option value="orbit">orbit</option><option value="day">day</option>
+                <option value="week" selected>week</option><option value="month">month</option><option value="year">year</option></select>
+            </div>
+            <div class="tl-months" id="tlMonths"></div>
+            <button class="btn sm" id="tlSearch">Search</button>
+            <div class="msec">Images</div>
+            <div class="srow"><label>Max. cloud coverage</label><input type="range" id="tlCc" min="0" max="100" step="1" value="100"><span id="tlCcV">100 %</span></div>
+            <div class="srow"><label>Min. tile coverage</label><input type="range" id="tlCov" min="0" max="100" step="1" value="50"><span id="tlCovV">50 %</span></div>
+            <label class="chk"><input type="checkbox" id="tlAll" checked> Select All</label>
+            <div class="hint" id="tlListInfo"></div>
+            <div id="tlList"></div>
+          </div>
+          <div class="tl-right">
+            <div class="tl-stage"><canvas id="tlCanvas" width="10" height="10"></canvas>
+              <div class="hint" id="tlEmpty">Search for images, select the ones to use and press <b>Preview</b>.</div></div>
+            <div class="tl-ctl">
+              <button class="ib" id="tlPrev" title="Previous frame"></button>
+              <button class="ib" id="tlPlay" title="Play / pause"></button>
+              <button class="ib" id="tlNext" title="Next frame"></button>
+              <input type="range" id="tlFrame" min="0" max="0" value="0">
+              <span id="tlDate"></span>
+            </div>
+            <div class="tl-set">
+              <span>Speed</span><span><input type="range" id="tlFps" min="1" max="10" step="1" value="2" style="width:120px;vertical-align:middle"> <b id="tlFpsV">2 fps</b></span>
+              <span>Transition</span><select id="tlTr"><option value="none">None</option><option value="fade">Fade</option></select>
+              <span>Size [px]</span><span><input type="number" id="tlW" min="64" max="2048"> × <input type="number" id="tlH" min="64" max="2048"></span>
+              <span class="tlfade">Fade duration</span><span class="tlfade"><input type="range" id="tlFade" min="0.1" max="1" step="0.1" value="0.5" style="width:120px;vertical-align:middle"> <b id="tlFadeV">50 %</b></span>
+              <span>Format</span><select id="tlFmt"><option value="gif">GIF</option><option value="video">Video (MP4 / WebM)</option></select>
+            </div>
+            <div class="tl-opts">
+              <label class="chk"><input type="checkbox" id="tlDelay" checked> Delay last frame</label>
+              <label class="chk"><input type="checkbox" id="tlLeg"> Show legend</label>
+              <label class="chk"><input type="checkbox" id="tlOv"> Add map overlays</label>
+              <label class="chk"><input type="checkbox" id="tlCap" checked> Show captions</label>
+            </div>
+            <div class="brow"><button class="btn sec" id="tlPreview">Preview</button><button class="btn" id="tlDl">Download</button></div>
+            <div class="hint" id="tlProg"></div>
+          </div>
+        </div>
       </div></div>
 
       <div id="status"></div>
@@ -4030,6 +4112,406 @@ $("#exGo").onclick = async () => {
     $("#exProg").textContent = "";
   } finally { btn.disabled = false; }
 };
+
+/* ============================================================
+   17b. Timelapse (Copernicus Browser behaviour)
+   ============================================================ */
+Object.assign(UI, {
+  film:  svg('<rect x="3" y="4.5" width="18" height="15" rx="1.5"/><path d="M7 4.5v15M17 4.5v15M3 9h4M3 15h4M17 9h4M17 15h4"/>'),
+  play:  '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5l13 7.5-13 7.5z"/></svg>',
+  pause: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4.5" width="4" height="15"/><rect x="14" y="4.5" width="4" height="15"/></svg>'
+});
+$("#btnTimelapse").innerHTML = UI.film;
+$("#tlPrev").innerHTML = UI.left;
+$("#tlNext").innerHTML = UI.right;
+$("#tlPlay").innerHTML = UI.play;
+L.DomEvent.disableClickPropagation($("#tlModal"));
+L.DomEvent.disableScrollPropagation($("#tlModal"));
+
+const tl = { items: [], frames: [], idx: 0, playing: false, timer: null, abort: null, key: "", base: null };
+const TL_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+$("#tlMonths").innerHTML = TL_MONTHS.map((m, i) => '<button class="on" data-m="' + (i + 1) + '">' + m + "</button>").join("");
+$$("#tlMonths button").forEach(b => { b.onclick = () => b.classList.toggle("on"); });
+
+/* The timelapse covers the area of interest when there is one (data clipped to it), otherwise the view. */
+function tlArea() {
+  return aoi ? { bbox: aoiBox(0.04), aoi: true } : { bbox: viewBox(), aoi: false };
+}
+function tlDefaultSize() {
+  const b = tlArea().bbox, asp = (b[3] - b[1]) / (b[2] - b[0]);
+  return asp > 1 ? [Math.round(1024 / asp), 1024] : [1024, Math.round(1024 * asp)];
+}
+function tlSize() {
+  const W = clamp(Math.round(+$("#tlW").value || 1024), 64, 2048), H = clamp(Math.round(+$("#tlH").value || 1024), 64, 2048);
+  return [W, H];
+}
+$("#tlW").oninput = () => { const b = tlArea().bbox; $("#tlH").value = Math.round(+$("#tlW").value * (b[3] - b[1]) / (b[2] - b[0])); };
+$("#tlH").oninput = () => { const b = tlArea().bbox; $("#tlW").value = Math.round(+$("#tlH").value * (b[2] - b[0]) / (b[3] - b[1])); };
+
+/* Coarse grid over the timelapse box (AOI polygon as mask) for coverage and cloud statistics. */
+function tlGrid(bbox, maxCells) {
+  const res = Math.max(10, Math.max(bbox[2] - bbox[0], bbox[3] - bbox[1]) / maxCells);
+  const W = Math.max(1, Math.round((bbox[2] - bbox[0]) / res)), H = Math.max(1, Math.round((bbox[3] - bbox[1]) / res));
+  const n = W * H;
+  let mask = new Uint8Array(n).fill(1);
+  if (aoi) {
+    const cv = makeCanvas(W, H), c = cv.getContext("2d");
+    pathRings(c, aoiRingsPx(bbox, W, H)); c.fill("evenodd");
+    const d = c.getImageData(0, 0, W, H).data;
+    for (let k = 0; k < n; k++) mask[k] = d[k * 4 + 3] >= 128 ? 1 : 0;
+    if (!mask.some(v => v)) mask = new Uint8Array(n).fill(1);
+  }
+  return { bbox, W, H, mask, n: mask.reduce((t, v) => t + v, 0) };
+}
+
+/* Share of the area covered by data and, of that, covered by clouds (OmniCloudMask 1–3). */
+async function tlStats(rec, unit, g, signal) {
+  const { bbox, W, H, mask } = g, n = W * H, cov = new Uint8Array(n), cld = new Uint8Array(n);
+  const soft = q => q.catch(e => { if (e && e.name === "AbortError") throw e; return null; });
+  if (rec.source === "vhi") {
+    const a = await soft(readGrid(vhiUrl(unit.scenes[0], rec), bbox, W, H, signal, 255));
+    if (a) for (let k = 0; k < n; k++) if (mask[k] && a[k] !== 255) cov[k] = 1;
+  } else {
+    for (const id of unit.scenes) {
+      const box = sceneBox(id);
+      if (box && (bbox[2] < box[0] || bbox[0] > box[2] || bbox[3] < box[1] || bbox[1] > box[3])) continue;
+      const [b, c] = await Promise.all([soft(readGrid(assetUrl(id, "b04"), bbox, W, H, signal, 0)),
+                                        soft(readGrid(assetUrl(id, "cloud"), bbox, W, H, signal, 0))]);
+      if (!b) continue;
+      for (let k = 0; k < n; k++) {
+        if (!mask[k] || cov[k] || b[k] === 0) continue;
+        cov[k] = 1;
+        if (c && c[k] >= 1 && c[k] <= 3) cld[k] = 1;
+      }
+    }
+  }
+  const nc = cov.reduce((t, v) => t + v, 0);
+  return { coverage: 100 * nc / g.n, cloud: rec.source === "vhi" ? 0 : (nc ? 100 * cld.reduce((t, v) => t + v, 0) / nc : 100) };
+}
+
+const tlKeyOf = (date, per) => per === "year" ? date.slice(0, 4) : per === "month" ? date.slice(0, 7) :
+  per === "week" ? String(Math.floor((Date.parse(date + "T12:00:00Z") / DAY + 3) / 7)) : date;
+const tlApplicable = it => it.cloud <= +$("#tlCc").value && it.coverage >= +$("#tlCov").value;
+
+async function tlSearch() {
+  if (tl.abort) tl.abort.abort();
+  const ctrl = new AbortController();
+  tl.abort = ctrl;
+  tlStop();
+  const rec = currentRec, src = rec.source, per = $("#tlPer").value;
+  const from = $("#tlFrom").value, to = $("#tlTo").value;
+  const months = new Set($$("#tlMonths button.on").map(b => +b.dataset.m));
+  if (!DATE_RE.test(from) || !DATE_RE.test(to) || from > to) { $("#tlListInfo").textContent = "Choose a valid time range."; return; }
+  tl.items = []; tl.frames = []; tlShowFrame(); $("#tlList").innerHTML = "";
+  $("#tlListInfo").textContent = "Searching…";
+  try {
+    const yms = [];
+    for (let ym = from.slice(0, 7); ym <= to.slice(0, 7); ym = shiftMonth(ym, 1)) if (months.has(+ym.slice(5))) yms.push(ym);
+    const fs = (await Promise.all(yms.map(m => loadMonth(src, m)))).flat()
+      .filter(f => { const d = f.id.slice(0, 10); return d >= from && d <= to; });
+    let units;
+    if (per === "orbit") units = fs.map(f => ({ date: f.id.slice(0, 10), scenes: [f.id], label: f.id.slice(0, 10) + " " + timeOf(f.id) }));
+    else {
+      const byDay = new Map();
+      fs.forEach(f => { const d = f.id.slice(0, 10); if (!byDay.has(d)) byDay.set(d, []); byDay.get(d).push(f.id); });
+      units = [...byDay.entries()].map(([d, ids]) => ({ date: d, scenes: ids.sort((a, b) => b.localeCompare(a)), label: d }));
+    }
+    units.sort((a, b) => a.label.localeCompare(b.label));
+    if (units.length > 400) throw new Error(units.length + " acquisitions — choose a shorter range or a coarser interval than " + per + ".");
+    const g = tlGrid(tlArea().bbox, 48);
+    let done = 0;
+    await pool(units, 4, async u => {
+      if (ctrl.signal.aborted) return;
+      Object.assign(u, await tlStats(rec, u, g, ctrl.signal));
+      $("#tlListInfo").textContent = "Checking coverage and clouds: " + (++done) + " / " + units.length + "…";
+    });
+    if (ctrl.signal.aborted) return;
+    // one image per interval: best coverage x clear sky, as in the Copernicus Browser
+    let chosen = units;
+    if (per !== "orbit" && per !== "day") {
+      const best = new Map();
+      units.forEach(u => {
+        const k = tlKeyOf(u.date, per), sc = u.coverage * (100 - u.cloud), b = best.get(k);
+        if (!b || sc > b.coverage * (100 - b.cloud)) best.set(k, u);
+      });
+      chosen = [...best.values()].sort((a, b) => a.date.localeCompare(b.date));
+    }
+    tl.items = chosen.map(u => Object.assign(u, { selected: true, thumb: null }));
+    tlRenderList();
+    tlThumbs(rec, ctrl.signal);
+  } catch (e) {
+    if (e && e.name === "AbortError") return;
+    $("#tlListInfo").textContent = "Search failed: " + (e.message || e);
+  }
+}
+
+function tlRenderList() {
+  const box = $("#tlList");
+  box.innerHTML = "";
+  tl.items.forEach((it, i) => {
+    const row = el("div", "tl-item" + (tlApplicable(it) ? "" : " na"));
+    const cb = el("input");
+    cb.type = "checkbox"; cb.checked = it.selected;
+    cb.onchange = () => { it.selected = cb.checked; tlListInfo(); };
+    const th = el("img", "th");
+    th.alt = "";
+    if (it.thumb) th.src = it.thumb;
+    it.img = th;
+    const t = el("div");
+    t.innerHTML = "<b>" + it.label + "</b><br><small>" +
+      (currentRec.source === "s2" ? "☁ " + it.cloud.toFixed(0) + " % · " : "") + "coverage " + it.coverage.toFixed(0) + " %" +
+      (it.scenes.length > 1 ? " · " + it.scenes.length + " orbits" : "") + "</small>";
+    row.append(cb, th, t);
+    box.append(row);
+  });
+  tlListInfo();
+}
+function tlListInfo() {
+  const use = tl.items.filter(it => it.selected && tlApplicable(it)).length;
+  $("#tlListInfo").textContent = tl.items.length ? tl.items.length + " images · " + use + " used (selected, within the cloud and coverage limits)"
+                                                  : "No images in this range.";
+}
+async function tlThumbs(rec, signal) {
+  const b = tlArea().bbox, asp = (b[3] - b[1]) / (b[2] - b[0]);
+  const tw = 96, th = Math.max(16, Math.round(96 * asp));
+  await pool(tl.items.slice(), 3, async it => {
+    if (signal.aborted || it.thumb) return;
+    try {
+      const cv = await renderCfgCanvas({ rec, s: S(rec), scenes: it.scenes }, b, tw, th, signal);
+      it.thumb = cv.toDataURL("image/png");
+      if (it.img) it.img.src = it.thumb;
+    } catch (e) { /* keep the empty thumbnail */ }
+  });
+}
+$("#tlCc").oninput = () => { $("#tlCcV").textContent = $("#tlCc").value + " %"; tlRenderList(); };
+$("#tlCov").oninput = () => { $("#tlCovV").textContent = $("#tlCov").value + " %"; tlRenderList(); };
+$("#tlAll").onchange = () => { tl.items.forEach(it => { it.selected = $("#tlAll").checked; }); tlRenderList(); };
+$("#tlSearch").onclick = tlSearch;
+
+/* ---- frames ---- */
+function tlDrawLabel(ctx, text, k) {
+  ctx.save();
+  ctx.font = "700 " + Math.round(20 * k) + "px " + FONT;
+  const w = ctx.measureText(text).width + 24 * k, h = 34 * k, x = W0(ctx) - w - 12 * k, y = 12 * k;
+  ctx.fillStyle = "rgba(255,255,255,.92)"; ctx.fillRect(x, y, w, h);
+  ctx.fillStyle = "#DC0000"; ctx.fillRect(x, y, w, 3 * k);
+  ctx.fillStyle = "#003F6B"; ctx.textBaseline = "middle"; ctx.fillText(text, x + 12 * k, y + h / 2 + 1.5 * k);
+  ctx.restore();
+}
+const W0 = ctx => ctx.canvas.width;
+
+async function tlFrame(it, area, W, H, o, signal) {
+  const rec = currentRec, s = S(rec), cv = makeCanvas(W, H), ctx = cv.getContext("2d");
+  const k = Math.max(1, W / 1000);
+  ctx.fillStyle = "#e9ecef"; ctx.fillRect(0, 0, W, H);
+  if (tl.base) ctx.drawImage(tl.base, 0, 0);
+  const rings = aoi ? aoiRingsPx(area.bbox, W, H) : [];
+  const lc = await renderCfgCanvas({ rec, s, scenes: it.scenes }, area.bbox, W, H, signal);
+  ctx.save();
+  if (area.aoi && rings.length) { pathRings(ctx, rings); ctx.clip("evenodd"); }
+  ctx.globalAlpha = s.opacity / 100;
+  ctx.drawImage(lc, 0, 0);
+  ctx.restore();
+  if (tl.overlay) ctx.drawImage(tl.overlay, 0, 0);
+  if (rings.length) strokeAoi(ctx, rings, k);
+  tlDrawLabel(ctx, it.label, k);
+  ctx.save(); ctx.scale(k, k);
+  if (o.legend) drawLegendBox(ctx, rec, s, 16, 16, rec.name);
+  if (o.caption) {
+    const Wk = W / k, Hk = H / k, mpp = (area.bbox[2] - area.bbox[0]) / W * k;
+    drawScaleBar(ctx, Wk, Hk, mpp, capHeight(""));
+    const h = capHeight("");
+    ctx.fillStyle = "rgba(255,255,255,.93)"; ctx.fillRect(0, Hk - h, Wk, h);
+    ctx.fillStyle = "#DC0000"; ctx.fillRect(0, Hk - h, Wk, 3);
+    ctx.textBaseline = "alphabetic";
+    ctx.font = "700 13px " + FONT; ctx.fillStyle = "#003F6B";
+    ctx.fillText(rec.name + (rec.sub ? " — " + rec.sub : ""), 14, Hk - h + 21);
+    ctx.font = "11px " + FONT; ctx.fillStyle = "#555";
+    ctx.fillText(SOURCES[rec.source].name + (rec.source === "s2" && VEG_LABEL[s.veg] ? " · " + VEG_LABEL[s.veg].toLowerCase() + " mask" : "") +
+      "  |  © swisstopo · contains modified Copernicus Sentinel data" + (o.overlay ? " · overlay © ASIT VD" : ""), 14, Hk - h + 37);
+  }
+  ctx.restore();
+  return cv;
+}
+
+async function tlBuild() {
+  if (tl.abort) tl.abort.abort();
+  const ctrl = new AbortController();
+  tl.abort = ctrl;
+  tlStop();
+  const use = tl.items.filter(it => it.selected && tlApplicable(it));
+  if (!use.length) { $("#tlProg").textContent = "No images to use — search first, or widen the cloud / coverage limits."; return false; }
+  if (use.length > 300) { $("#tlProg").textContent = "At most 300 frames — choose a coarser interval."; return false; }
+  const area = tlArea(), [W, H] = tlSize();
+  const o = { legend: $("#tlLeg").checked, overlay: $("#tlOv").checked, caption: $("#tlCap").checked };
+  $("#tlPreview").disabled = $("#tlDl").disabled = true;
+  try {
+    $("#tlProg").textContent = "Loading the basemap…";
+    tl.base = baseLayer ? await renderWmts(baseLayer, area.bbox, W, H, ctrl.signal) : null;
+    tl.overlay = o.overlay ? await renderWmts(asitLayer, area.bbox, W, H, ctrl.signal) : null;
+    tl.frames = [];
+    for (let i = 0; i < use.length; i++) {
+      if (ctrl.signal.aborted) return false;
+      $("#tlProg").textContent = "Rendering frame " + (i + 1) + " / " + use.length + " (" + use[i].label + ")…";
+      tl.frames.push({ cv: await tlFrame(use[i], area, W, H, o, ctrl.signal), label: use[i].label });
+      tl.idx = tl.frames.length - 1;
+      tlShowFrame();
+    }
+    tl.key = JSON.stringify([use.map(u => u.label), W, H, o, currentRec.id, settingsToObj(currentRec, S(currentRec)), area.bbox]);
+    tl.idx = 0; tlShowFrame();
+    $("#tlProg").textContent = tl.frames.length + " frames · " + W + " × " + H + " px.";
+    return true;
+  } catch (e) {
+    if (e && e.name === "AbortError") return false;
+    $("#tlProg").textContent = "Rendering failed: " + (e.message || e);
+    return false;
+  } finally { $("#tlPreview").disabled = $("#tlDl").disabled = false; }
+}
+
+/* ---- player ---- */
+function tlShowFrame(blendFrom, t) {
+  const cv = $("#tlCanvas"), f = tl.frames[tl.idx];
+  $("#tlEmpty").hidden = !!f;
+  $("#tlFrame").max = Math.max(0, tl.frames.length - 1);
+  $("#tlFrame").value = tl.idx;
+  $("#tlDate").textContent = f ? f.label : "";
+  if (!f) { cv.width = cv.height = 10; cv.getContext("2d").clearRect(0, 0, 10, 10); return; }
+  if (cv.width !== f.cv.width || cv.height !== f.cv.height) { cv.width = f.cv.width; cv.height = f.cv.height; }
+  const ctx = cv.getContext("2d");
+  ctx.globalAlpha = 1;
+  if (blendFrom) { ctx.drawImage(blendFrom.cv, 0, 0); ctx.globalAlpha = t; }
+  ctx.drawImage(f.cv, 0, 0);
+  ctx.globalAlpha = 1;
+}
+const tlFrameMs = () => 1000 / +$("#tlFps").value;
+function tlStop() {
+  tl.playing = false;
+  clearTimeout(tl.timer); cancelAnimationFrame(tl.raf);
+  $("#tlPlay").innerHTML = UI.play;
+}
+function tlStep() {
+  if (!tl.playing || tl.frames.length < 2) return;
+  const last = tl.idx === tl.frames.length - 1;
+  const hold = tlFrameMs() * (last && $("#tlDelay").checked ? 3 : 1);
+  tl.timer = setTimeout(() => {
+    const from = tl.frames[tl.idx];
+    tl.idx = (tl.idx + 1) % tl.frames.length;
+    if ($("#tlTr").value === "fade") {
+      const dur = tlFrameMs() * +$("#tlFade").value, t0 = performance.now();
+      const anim = now => {
+        const t = Math.min(1, (now - t0) / dur);
+        tlShowFrame(from, t);
+        if (t < 1 && tl.playing) tl.raf = requestAnimationFrame(anim); else tlStep();
+      };
+      tl.raf = requestAnimationFrame(anim);
+    } else { tlShowFrame(); tlStep(); }
+  }, hold);
+}
+$("#tlPlay").onclick = () => {
+  if (tl.playing) { tlStop(); return; }
+  if (tl.frames.length < 2) return;
+  tl.playing = true; $("#tlPlay").innerHTML = UI.pause; tlStep();
+};
+$("#tlPrev").onclick = () => { tlStop(); if (tl.frames.length) { tl.idx = (tl.idx - 1 + tl.frames.length) % tl.frames.length; tlShowFrame(); } };
+$("#tlNext").onclick = () => { tlStop(); if (tl.frames.length) { tl.idx = (tl.idx + 1) % tl.frames.length; tlShowFrame(); } };
+$("#tlFrame").oninput = e => { tlStop(); tl.idx = +e.target.value; tlShowFrame(); };
+$("#tlFps").oninput = () => { $("#tlFpsV").textContent = $("#tlFps").value + " fps"; };
+$("#tlFade").oninput = () => { $("#tlFadeV").textContent = Math.round(+$("#tlFade").value * 100) + " %"; };
+$("#tlTr").onchange = () => { $$(".tlfade").forEach(e => { e.hidden = $("#tlTr").value !== "fade"; }); };
+$("#tlPreview").onclick = async () => { if (await tlBuild()) $("#tlPlay").click(); };
+
+/* ---- download: GIF (gifenc) or video (MediaRecorder) ---- */
+function tlSequence() {
+  // [canvas, alpha-blend source or null, blend t, delay ms] for every output frame
+  const ms = tlFrameMs(), fade = $("#tlTr").value === "fade", fr = +$("#tlFade").value, out = [];
+  tl.frames.forEach((f, i) => {
+    const last = i === tl.frames.length - 1;
+    out.push([f.cv, null, 1, ms * (last && $("#tlDelay").checked ? 3 : 1) * (fade && !last ? 1 - fr : 1)]);
+    if (fade && !last) {
+      const steps = Math.max(2, Math.round(fr * ms / 80));
+      for (let s = 1; s <= steps; s++) out.push([tl.frames[i + 1].cv, f.cv, s / steps, fr * ms / steps]);
+    }
+  });
+  return out;
+}
+function tlCompose(ctx, step) {
+  ctx.globalAlpha = 1;
+  if (step[1]) { ctx.drawImage(step[1], 0, 0); ctx.globalAlpha = step[2]; }
+  ctx.drawImage(step[0], 0, 0);
+  ctx.globalAlpha = 1;
+}
+async function tlGif(prog) {
+  const { GIFEncoder, quantize, applyPalette } = await import("https://cdn.jsdelivr.net/npm/gifenc@1.0.3/+esm");
+  const seq = tlSequence(), W = tl.frames[0].cv.width, H = tl.frames[0].cv.height;
+  const cv = makeCanvas(W, H), ctx = cv.getContext("2d", { willReadFrequently: true }), gif = GIFEncoder();
+  for (let i = 0; i < seq.length; i++) {
+    tlCompose(ctx, seq[i]);
+    const rgba = ctx.getImageData(0, 0, W, H).data, palette = quantize(rgba, 256);
+    gif.writeFrame(applyPalette(rgba, palette), W, H, { palette, delay: Math.round(seq[i][3]) });
+    prog("Encoding GIF frame " + (i + 1) + " / " + seq.length + "…");
+    await new Promise(r => setTimeout(r, 0));
+  }
+  gif.finish();
+  return { blob: new Blob([gif.bytes()], { type: "image/gif" }), ext: "gif" };
+}
+async function tlVideo(prog) {
+  const types = ["video/mp4;codecs=avc1", "video/mp4", "video/webm;codecs=vp9", "video/webm"];
+  const mime = window.MediaRecorder && types.find(t => MediaRecorder.isTypeSupported(t));
+  if (!mime) throw new Error("This browser cannot record video — choose GIF.");
+  const seq = tlSequence(), W = tl.frames[0].cv.width, H = tl.frames[0].cv.height;
+  const cv = makeCanvas(W, H), ctx = cv.getContext("2d"), stream = cv.captureStream(30);
+  const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 8e6 }), chunks = [];
+  rec.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+  const done = new Promise(r => { rec.onstop = r; });
+  tlCompose(ctx, seq[0]);
+  rec.start(250);
+  for (let i = 0; i < seq.length; i++) {
+    tlCompose(ctx, seq[i]);
+    prog("Recording frame " + (i + 1) + " / " + seq.length + " (real time)…");
+    const end = performance.now() + seq[i][3];
+    while (performance.now() < end) {                  // keep the stream fed while a frame is held
+      await new Promise(r => setTimeout(r, Math.min(33, end - performance.now())));
+      tlCompose(ctx, seq[i]);
+    }
+  }
+  rec.stop();
+  await done;
+  return { blob: new Blob(chunks, { type: mime.split(";")[0] }), ext: mime.includes("mp4") ? "mp4" : "webm" };
+}
+$("#tlDl").onclick = async () => {
+  const area = tlArea(), [W, H] = tlSize(), use = tl.items.filter(it => it.selected && tlApplicable(it));
+  const o = { legend: $("#tlLeg").checked, overlay: $("#tlOv").checked, caption: $("#tlCap").checked };
+  const key = JSON.stringify([use.map(u => u.label), W, H, o, currentRec.id, settingsToObj(currentRec, S(currentRec)), area.bbox]);
+  if (!tl.frames.length || key !== tl.key) { if (!(await tlBuild())) return; }
+  tlStop();
+  $("#tlPreview").disabled = $("#tlDl").disabled = true;
+  const prog = t => { $("#tlProg").textContent = t; };
+  try {
+    const r = $("#tlFmt").value === "gif" ? await tlGif(prog) : await tlVideo(prog);
+    saveBlob(r.blob, "swissEO_timelapse_" + currentRec.id + "_" + tl.frames[0].label.slice(0, 10) + "_" +
+      tl.frames[tl.frames.length - 1].label.slice(0, 10) + "." + r.ext);
+    prog(tl.frames.length + " frames · " + (r.blob.size / 1e6).toFixed(1) + " MB " + r.ext.toUpperCase() + " ready.");
+  } catch (e) { prog("Download failed: " + (e.message || e)); }
+  finally { $("#tlPreview").disabled = $("#tlDl").disabled = false; }
+};
+
+/* ---- open / close ---- */
+function openTimelapse() {
+  const rec = currentRec, area = tlArea();
+  $("#tlLayer").innerHTML = swatchHtml(rec) + "<span>" + rec.name + "<br><small style='font-weight:400;color:var(--muted)'>" +
+    SOURCES[rec.source].name + "</small></span>";
+  $("#tlAreaInfo").textContent = area.aoi ? "Area: the area of interest (" + areaLabel(geomArea(aoi)) + ")."
+    : "Area: the current map view. To create a timelapse of a custom area, create an AOI first.";
+  if (!$("#tlTo").value) { $("#tlTo").value = state.date; $("#tlFrom").value = addDays(state.date, -182); }
+  const sz = tlDefaultSize();
+  $("#tlW").value = sz[0]; $("#tlH").value = sz[1];
+  $("#tlOv").checked = map.hasLayer(asitLayer);
+  $("#tlCc").disabled = rec.source !== "s2";
+  $("#tlTr").onchange();
+  openModal("tlModal");
+}
+$("#btnTimelapse").onclick = openTimelapse;
+$("#tlModal").onclose = () => { tlStop(); if (tl.abort) tl.abort.abort(); };
 
 /* ============================================================
    18. Tabs + boot

@@ -105,6 +105,14 @@ indices stay within −1…1.
     files are zipped.
   - *High-res print*: the view re-rendered for a printed size (width / height in inches and DPI), with
     the same captions, legend, overlay and AOI options, as PNG or JPG.
+- **Timelapse** — as in the Copernicus Browser, for the current layer and the area of interest (or the
+  current view): time range, *Select 1 image per* orbit / day / week / month / year, month filter, and a
+  list of images with thumbnail, cloud cover and coverage of the area (computed from the cloud mask and
+  the data footprint); per interval the image with the best coverage × clear sky is chosen. Max. cloud
+  coverage and Min. tile coverage filter the list, images can be (de)selected. The preview player has
+  speed (fps), transition None / Fade with fade duration, delay last frame, legend, map overlays and
+  captions (date label, scale bar, source). Download as GIF or as video (MP4 or WebM, depending on the
+  browser), default 1024 px. VHI layers work too (via the WMS).
 - **Pixel inspector** — band values (DN and physical value), index value, SCL, cloud mask and terrain
   mask at a clicked location.
 - **Permalink** — the URL is updated on every change, so copying it reproduces the view.
@@ -133,7 +141,8 @@ published. The repository's *Settings → Pages → Source*
 must be set to **GitHub Actions**.
 
 External libraries are loaded from CDNs: Leaflet, Proj4js, Proj4Leaflet, geotiff.js and Leaflet-Geoman;
-the import formats additionally load togeojson, JSZip, shpjs and mgrs on demand.
+the import formats additionally load togeojson, JSZip, shpjs and mgrs on demand, and the timelapse GIF
+export loads gifenc.
 
 ## URL parameters
 
@@ -161,9 +170,9 @@ Example:
 
 ## Limitations
 
-- Not available compared with the Copernicus Browser: timelapse, 3D, pins, product search and download,
-  custom scripts, other satellite collections; the image download has no OSM background and no choice of
-  coordinate system (always LV95).
+- Not available compared with the Copernicus Browser: 3D, pins, product search and download, custom
+  scripts, other satellite collections, sharing timelapses through a server; the image download has no
+  OSM background and no choice of coordinate system (always LV95).
 - The VHI layers are rendered by the WMS with its published styling, so their colour scale cannot be changed.
 - Statistics, time series, analytical downloads and high-res prints read the COGs in the browser; large
   areas, long date ranges and large prints take a while.
