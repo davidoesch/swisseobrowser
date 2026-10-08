@@ -118,7 +118,8 @@ h4{margin:0 0 9px;font-size:13px;letter-spacing:.3px;text-transform:uppercase;co
 .dc-ico.on{background:var(--blue);color:#fff}
 .dc-ico .badge{position:absolute;top:-6px;right:-6px;background:var(--red);color:#fff;border-radius:9px;font-size:10px;
   font-weight:700;min-width:17px;height:17px;line-height:17px;padding:0 4px;text-align:center}
-.dc-name{margin-top:10px;padding-bottom:5px;border-bottom:1px solid var(--blue);color:var(--blue);font-weight:700;font-size:13px}
+.dc-sel{margin-top:10px;width:100%;border:0;border-bottom:1px solid var(--blue);color:var(--blue);font-weight:700;font-size:13px;
+  padding:5px 2px;background:#fff;cursor:pointer;outline:none}
 
 /* ---------- layer list ---------- */
 .ghead{font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);font-weight:700;
@@ -126,21 +127,21 @@ h4{margin:0 0 9px;font-size:13px;letter-spacing:.3px;text-transform:uppercase;co
 .ghead:first-child{border-top:0;padding-top:0;margin-top:0}
 .lyr{border:1px solid transparent;border-radius:3px;margin-bottom:3px;background:var(--bg)}
 .lyr.on{background:var(--blue-l);border-color:#b9cddc}
-.lyr-head{display:flex;gap:10px;align-items:center;padding:8px 10px;cursor:pointer}
+.lyr-head{display:flex;gap:12px;align-items:center;padding:0 10px 0 0;cursor:pointer;min-height:48px}
 .lyr-head:hover{background:var(--hover)}
 .lyr.on .lyr-head:hover{background:transparent}
 .lyr-head .lt{flex:1;min-width:0}
 .lyr-head .t{font-weight:700;margin-bottom:1px}
 .lyr-head .sub2{color:var(--muted);font-size:11px;line-height:1.3}
 .lyr-head .chk{color:var(--blue);width:20px;height:20px;flex:0 0 20px}
-.sw{width:34px;height:34px;border-radius:4px;flex:0 0 34px;border:1px solid #00000030;
+.sw{width:48px;height:48px;flex:0 0 48px;border:1px solid #00000020;
   display:flex;align-items:center;justify-content:center;overflow:hidden}
-.sw svg{width:21px;height:21px;opacity:.95}
+.sw.th{object-fit:cover;display:block;background:#ddd}
+.sw svg{width:24px;height:24px;opacity:.95}
 .lyr-bar{display:flex;align-items:center;gap:12px;padding:5px 10px 7px;border-top:1px solid #c9d8e3}
 .lyr-bar .spacer{flex:1}
 .lyr-body{padding:4px 12px 12px;border-top:1px solid #c9d8e3;background:#fff}
 .ldesc{overflow:hidden;margin:10px 0 4px;font-size:12px;color:#333}
-.ldesc img{float:left;width:84px;height:84px;object-fit:cover;margin:2px 10px 6px 0;border:1px solid var(--border)}
 .ldesc .dt{font-weight:700;color:var(--blue);font-size:13px;margin-bottom:5px}
 .ldesc p{margin:0 0 7px}
 .lyr-body .sec{font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--blue);font-weight:700;margin:14px 0 7px}
@@ -280,19 +281,14 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 .btn.sec{background:var(--white);border:1px solid var(--border);color:var(--blue)}
 .btn.sec:hover{background:var(--hover)}
 
-#expModal{position:absolute;inset:0;z-index:1500;background:#00000040;display:none;align-items:center;justify-content:center}
-#expModal.on{display:flex}
-#expModal .box{width:340px;background:var(--white);border:1px solid var(--border);border-top:4px solid var(--red);
-  border-radius:4px;padding:16px 18px;box-shadow:0 12px 40px #0004}
-#expModal h3{margin:0 0 14px;font-size:15px;font-weight:700;color:var(--blue)}
-#expModal .frow{display:flex;justify-content:space-between;align-items:center;gap:12px;
-  padding:6px 0;border-bottom:1px solid var(--border);font-size:12px}
-#expModal .frow span{color:var(--muted)}
-#expModal .frow b{font-weight:700;font-family:ui-monospace,Consolas,monospace;color:var(--blue);text-align:right}
-#expModal .chk{display:flex;gap:8px;align-items:center;margin-top:9px;font-size:12px;cursor:pointer}
-#expModal .chk input{width:auto;accent-color:var(--blue)}
 #expModal .brow{display:flex;gap:8px;margin-top:16px}
 #expModal .brow .btn{flex:1;width:auto}
+textarea.exdesc{height:46px;margin:4px 0 2px 24px;width:calc(100% - 24px);font-family:inherit;font-size:12px}
+.exgrid{display:grid;grid-template-columns:auto 1fr;gap:7px 10px;align-items:center;font-size:12px}
+.exgrid select,.exgrid input{width:100%}
+.exl{display:grid;grid-template-columns:1fr 1fr;gap:14px;font-size:12px}
+.exl label{display:flex;gap:6px;align-items:center;margin:3px 0;cursor:pointer}
+.exl input{accent-color:var(--blue)}
 #expMsg{margin-top:10px;font-size:11.5px;color:var(--red);display:none}
 #expMsg.on{display:block}
 #status{position:absolute;left:10px;bottom:22px;z-index:900;background:#ffffffee;max-width:60%;
@@ -371,7 +367,10 @@ table.kv td:first-child{color:var(--muted)}
             <button class="dc-ico on" data-v="layers" id="dcLayers" title="Layers"></button>
             <button class="dc-ico" data-v="compare" id="dcCompare" title="Compare"><span class="badge" id="cmpBadge" hidden></span></button>
           </div>
-          <div class="dc-name" id="dcName">swissEO S2-SR v200</div>
+          <select class="dc-sel" id="dcSel" title="Data collection">
+            <option value="s2">swissEO S2-SR v200</option>
+            <option value="vhi">swissEO VHI v100</option>
+          </select>
         </div>
 
         <div class="card" id="v-layers">
@@ -478,21 +477,77 @@ table.kv td:first-child{color:var(--muted)}
       <button class="mapbtn" id="btnExport" title="Download the current view as PNG"></button>
       <button class="mapbtn" id="btnCompare" title="Compare mode" hidden></button>
 
-      <div id="expModal"><div class="box">
-        <h3>Download image</h3>
-        <div class="frow"><span>Image format</span><b>PNG</b></div>
-        <div class="frow"><span>Dimensions</span><b id="expDim">—</b></div>
-        <div class="frow"><span>Ground resolution</span><b id="expRes">—</b></div>
-        <div class="frow"><span>Layer</span><b id="expLyr">—</b></div>
-        <label class="chk"><input type="checkbox" id="expScale" checked> Show scale bar</label>
-        <label class="chk"><input type="checkbox" id="expLegendChk" checked> Show legend</label>
-        <label class="chk"><input type="checkbox" id="expCaption" checked> Show caption</label>
-        <label class="chk aoi-only"><input type="checkbox" id="expAoiClip"> Clip to area of interest</label>
-        <label class="chk aoi-only"><input type="checkbox" id="expAoiLine" checked> Show area of interest outline</label>
-        <div class="brow">
-          <button class="btn sec" id="expCancel">Cancel</button>
-          <button class="btn" id="expGo">Download</button>
+      <div class="modal" id="expModal"><div class="box narrow">
+        <div class="mhead"><h3>Image download</h3><button class="x" data-close title="Close">×</button></div>
+        <div class="mtabs" id="expTabs">
+          <button data-e="basic" class="on">Basic</button>
+          <button data-e="analytical">Analytical</button>
+          <button data-e="print">High-res print</button>
         </div>
+
+        <div data-ep="basic">
+          <label class="chk" title="Exported image will include datasource and date, scale bar and branding."><input type="checkbox" id="exCapB" checked> Show captions</label>
+          <textarea class="exdesc" id="exDescB" placeholder="Description — a short text added to the caption"></textarea>
+          <label class="chk" title="Place labels, streets and boundaries (ASIT VD overlay)."><input type="checkbox" id="exOvB"> Add map overlays</label>
+          <label class="chk"><input type="checkbox" id="exLegB" checked> Show legend</label>
+          <label class="chk aoi-only"><input type="checkbox" id="exCropB"> Crop to AOI</label>
+          <label class="chk aoi-only"><input type="checkbox" id="exLineB" checked> Draw AOI on image</label>
+          <div class="mrow" style="margin-top:10px">Image format:
+            <select id="exFmtB"><option value="png">PNG (no georeference)</option><option value="jpg">JPG (no georeference)</option></select></div>
+          <div class="hint" id="exInfoB"></div>
+        </div>
+
+        <div data-ep="analytical" hidden>
+          <div class="exgrid">
+            <span>Image format</span>
+            <select id="exFmtA">
+              <option value="png">PNG (no georeference)</option>
+              <option value="jpg">JPG (no georeference)</option>
+              <option value="tiff8">TIFF (8-bit)</option>
+              <option value="tiff16">TIFF (16-bit)</option>
+              <option value="tiff32" selected>TIFF (32-bit float)</option>
+            </select>
+            <span>Image resolution</span>
+            <select id="exResA"><option value="LOW">LOW (40 m/px)</option><option value="MEDIUM">MEDIUM (20 m/px)</option>
+              <option value="HIGH" selected>HIGH (10 m/px)</option><option value="CUSTOM">CUSTOM</option></select>
+            <span class="exc">Resolution X (m/px)</span><input class="exc" type="number" id="exRx" value="10" min="1" step="any">
+            <span class="exc">Resolution Y (m/px)</span><input class="exc" type="number" id="exRy" value="10" min="1" step="any">
+          </div>
+          <div class="hint" id="exInfoA"></div>
+          <div class="hint">Coordinate system: CH1903+ / LV95 (EPSG:2056), the native grid of the swissEO data.</div>
+          <label class="chk aoi-only"><input type="checkbox" id="exCropA"> Crop to AOI</label>
+          <label class="chk" title="A band with 1 = data, 0 = no data is added to TIFF raw layers."><input type="checkbox" id="exMaskA"> Add dataMask band to raw layers</label>
+          <div class="msec">Layers</div>
+          <div class="exl">
+            <div><b>Visualised</b><div id="exVis"></div></div>
+            <div><b>Raw</b><div id="exRaw"></div></div>
+          </div>
+          <div class="hint">TIFF (32-bit float): index layers give the index value, raw bands the physical value
+            (reflectance, AOT). TIFF (16-bit): raw bands give the stored DN. Several layers download as one ZIP.</div>
+        </div>
+
+        <div data-ep="print" hidden>
+          <label class="chk"><input type="checkbox" id="exCapP" checked> Show captions</label>
+          <textarea class="exdesc" id="exDescP" placeholder="Description — a short text added to the caption"></textarea>
+          <label class="chk"><input type="checkbox" id="exOvP"> Add map overlays</label>
+          <label class="chk"><input type="checkbox" id="exLegP" checked> Show legend</label>
+          <label class="chk aoi-only"><input type="checkbox" id="exCropP"> Crop to AOI</label>
+          <label class="chk aoi-only"><input type="checkbox" id="exLineP" checked> Draw AOI on image</label>
+          <div class="exgrid" style="margin-top:10px">
+            <span>Image format</span>
+            <select id="exFmtP"><option value="png">PNG (no georeference)</option><option value="jpg">JPG (no georeference)</option></select>
+            <span>Image width [inches]</span><input type="number" id="exWin" value="10" min="1" step="0.1">
+            <span>Image height [inches]</span><input type="number" id="exHin" min="1" step="0.1">
+            <span>DPI</span><input type="number" id="exDpi" value="300" min="72" max="1200" step="1">
+          </div>
+          <div class="hint" id="exInfoP"></div>
+        </div>
+
+        <div class="brow">
+          <button class="btn sec" data-close>Cancel</button>
+          <button class="btn" id="exGo">Download</button>
+        </div>
+        <div class="hint" id="exProg"></div>
         <div id="expMsg"></div>
       </div></div>
 
@@ -916,10 +971,6 @@ const WMS_META = {
   "ch.swisstopo.swisseo_vhi_v100_vegetation": {
     title: "swissEO VHI vegetation",
     abstract: "Map of vegetation condition based on the VHI (Vegetation Health Index), which reflects the current state of vegetation in relation to historical data 1991-2020. The index is based on satellite data (Meteosat, Landsat 5,7,8, and Sentinel-2) of different spatial resolutions, aggregated to ten and thirty metres respectively. The VHI consists of two components: one part (VCI - Vegetation Condition Index) represents the local biophysical conditions of the vegetation, and the other part (TCI - Thermal Condition Index) characterizes the climatic conditions (temperature). Both components depict the current situation in relation to a reference period. The combined VHI is used to assess drought and other disturbances or stress factors; the lower the value, the greater the stress and its impact on vegetation. Values from 100 down to 60 indicate excellent vegetation condition, values up to 50 are good, and values up to 40 are normal. Below 40, the vegetation shows signs of stress, up to 30 it is lightly stressed, up to 20 stressed, up to 10 severely stressed and values below 10 indicate an extremely stressed vegetation condition. The entire vegetation area is shown on the map view to provide a complete overview of the regional vegetation status. The dataset was developed in collaboration with MeteoSwiss for the federal drought portal. Contains modified Copernicus Sentinel data."
-  },
-  "ch.swisstopo.swisseo_s2-sr_v200": {
-    title: "swissEO S2-SR v200",
-    abstract: "Optical satellite data (Sentinel-2 L2A) with Surface Reflectance (SR) for all available spectral bands (B01-B12, AOT), at spatial resolutions of 10 m, 20 m and 60 m. The spatial coverage includes the territory of Switzerland and Liechtenstein, including adjacent lakes, as well as a 5 km buffer. Switzerland is covered by four satellite orbits, enabling complete coverage approximately every three to five days. One mosaic is created for each flight path. Processing includes: co-registration based on a SWISSIMAGE reference image resampled to 5 m (sub-pixel accuracy), reprojection into LV95, cloud and cloud-shadow masking according to OmniCloudMask, as well as a terrain layer containing the solar incidence angle (0–180°) and cast shadows (value 200), based on swissSURFACE3D. Contains modified Copernicus Sentinel data."
   }
 };
 
@@ -1051,27 +1102,19 @@ const LAYERS = [
     formula:"terrainmask_10m.tif\n0–180 = solar incidence angle in degrees (lit)\n200 = shadow\n255 = no data" },
 
   /* ---- swisstopo WMS products ---- */
-  { id:"vhi", group:"swissEO WMS products", name:WMS_META["ch.swisstopo.swisseo_vhi_v100"].title, type:"wms", source:"vhi",
+  { id:"vhi", group:"Vegetation Health Index", name:WMS_META["ch.swisstopo.swisseo_vhi_v100"].title, type:"wms", source:"vhi",
     wms:"ch.swisstopo.swisseo_vhi_v100", icon:"tree", classes:VHI_CLASSES, sw:VHI_SW, fg:"#1a1206",
     sub:"Vegetation Health Index over forest, vs. 1991–2020",
     desc:WMS_META["ch.swisstopo.swisseo_vhi_v100"].abstract,
     formula:"WMS GetMap\nLAYERS=ch.swisstopo.swisseo_vhi_v100\nCRS=EPSG:2056&item=<day>",
     note:"Rendered by wms.geo.admin.ch. No-data = 110." },
 
-  { id:"vhiveg", group:"swissEO WMS products", name:WMS_META["ch.swisstopo.swisseo_vhi_v100_vegetation"].title, type:"wms", source:"vhi",
+  { id:"vhiveg", group:"Vegetation Health Index", name:WMS_META["ch.swisstopo.swisseo_vhi_v100_vegetation"].title, type:"wms", source:"vhi",
     wms:"ch.swisstopo.swisseo_vhi_v100_vegetation", icon:"crop", classes:VHI_CLASSES, sw:VHI_SW, fg:"#1a1206",
     sub:"Vegetation Health Index over all vegetation, vs. 1991–2020",
     desc:WMS_META["ch.swisstopo.swisseo_vhi_v100_vegetation"].abstract,
     formula:"WMS GetMap\nLAYERS=ch.swisstopo.swisseo_vhi_v100_vegetation\nCRS=EPSG:2056&item=<day>",
-    note:"Rendered by wms.geo.admin.ch. No-data = 110." },
-
-  { id:"tciwms", group:"swissEO WMS products", name:WMS_META["ch.swisstopo.swisseo_s2-sr_v200"].title + " (true colour WMS)",
-    type:"wms", source:"s2", wms:"ch.swisstopo.swisseo_s2-sr_v200", icon:"image",
-    sw:"linear-gradient(135deg,#6f8f5c,#c9bb8e)", fg:"#1d2410",
-    sub:"Based on bands 4, 3, 2, rendered server-side",
-    desc:WMS_META["ch.swisstopo.swisseo_s2-sr_v200"].abstract,
-    formula:"WMS GetMap\nLAYERS=ch.swisstopo.swisseo_s2-sr_v200\nCRS=EPSG:2056&item=<scene>",
-    note:"Renders the tci_10m asset server-side. Fast for browsing; use the band-based layers for physical values." }
+    note:"Rendered by wms.geo.admin.ch. No-data = 110." }
 ];
 const LAYER = Object.fromEntries(LAYERS.map(r => [r.id, r]));
 /* Titles, descriptions and preview thumbnails as in the Copernicus Browser (src/assets/layers_metadata.js,
@@ -1079,7 +1122,7 @@ const LAYER = Object.fromEntries(LAYERS.map(r => [r.id, r]));
    swisstopo product page instead. */
 const COP_META = {
   true: { name: "True color", sub: "Based on bands B4, B3, B2", thumb: "DEFAULT-THEME-a91f72-1_TRUE_COLOR.png",
-    cop: "# True color optimized\n\nThis optimized True color script uses the visible light bands red, green and blue in the corresponding red, green and blue color channels, resulting in a product with natural colours that represents the Earth as humans would naturally see it. The visualisation uses highlight compression and improves the contrast and color vividness through minor contrast and saturation enhancement.\n\n\n\nMore info for [L1C](https://custom-scripts.sentinel-hub.com/sentinel-2/l1c_optimized/) and for [L2A](https://custom-scripts.sentinel-hub.com/sentinel-2/l2a_optimized/)." },
+    cop: "# True color optimized\n\nThis optimized True color script uses the visible light bands red, green and blue in the corresponding red, green and blue color channels, resulting in a product with natural colours that represents the Earth as humans would naturally see it. The visualisation uses highlight compression and improves the contrast and color vividness through minor contrast and saturation enhancement.\n\n\n\nMore info for [L1C](https://custom-scripts.sentinel-hub.com/sentinel-2/l1c_optimized/) and for [L2A](https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-s2-sr)." },
   nir: { name: "False color", sub: "Based on bands B8, B4, B3", thumb: "DEFAULT-THEME-a91f72-2_FALSE_COLOR.png",
     cop: "# False color composite\n\nA false color composite uses at least one non-visible wavelength to image Earth. The false color composite using near infrared, red and green bands is very popular (a band is a region of the electromagnetic spectrum; a satellite sensor can image Earth in different bands). The false colour composite is most commonly used to assess plant density and health, since plants reflect near infrared and green light, while they absorb red. Cities and exposed ground are grey or tan, and water appears blue or black.\n\n\n\nMore info [here](https://custom-scripts.sentinel-hub.com/sentinel-2/false_color_infrared/) and [here.](https://eo.belspo.be/en/colour-composites)" },
   urban: { name: "False color (urban)", sub: "Based on bands B12, B11, B4", thumb: "DEFAULT-THEME-a91f72-4-FALSE-COLOR-URBAN.png",
@@ -1103,8 +1146,7 @@ const COP_META = {
   scl: { name: "Scene classification map", sub: "Classification of Sentinel-2 data as result of ESA's Scene classification algorithm.", thumb: "DEFAULT-THEME-a91f72-SCENE-CLASSIFICATION.png",
     cop: "# Scene classification\n\n\n\nScene classification was developed to distinguish between cloudy pixels, clear pixels and water pixels of Sentinel-2 data and is a result of ESA's Scene classification algorithm. Twelve different classifications are provided including classes of clouds, vegetation, soils/desert, water and snow. It does not constitute a land cover classification map in a strict sense.\n\n\n\nMore info [here](https://custom-scripts.sentinel-hub.com/sentinel-2/scene-classification/)." },
   aot: { more: "https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-s2-sr" }, cloud: { more: "https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-s2-sr" }, terrain: { more: "https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-s2-sr" },
-  vhi: { more: "https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-vhi" }, vhiveg: { more: "https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-vhi" },
-  tciwms: { more: "https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-s2-sr", thumb: "DEFAULT-THEME-a91f72-1_TRUE_COLOR.png" }
+  vhi: { more: "https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-vhi" }, vhiveg: { more: "https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-vhi" }
 };
 Object.keys(COP_META).forEach(id => Object.assign(LAYER[id], COP_META[id]));
 const PREVIEWS = "public/previews/", PREVIEWS_CDSE = "https://browser.dataspace.copernicus.eu/previews/";
@@ -1346,16 +1388,16 @@ const timeOf = id => id.slice(11, 13) + ":" + id.slice(13, 15) + " UTC";
 /* ============================================================
    9. Rendering
    ============================================================ */
-async function renderScene(rec, s, id, bbox, N, signal) {
+async function renderScene(rec, s, id, bbox, W, H, signal) {
   const box = sceneBox(id);
   if (box && (bbox[2] < box[0] || bbox[0] > box[2] || bbox[3] < box[1] || bbox[1] > box[3])) return null;
 
   const bands = rec.bands || [rec.band];
   const all = bands.concat((rec.bg || []).filter(b => !bands.includes(b)));
   const maskable = !!MASKABLE[rec.type];
-  const reads = all.map(b => readTile(assetUrl(id, b), bbox, N, signal, b === "terrain" ? 255 : 0));
-  reads.push(maskable && (s.cloud || s.shadow) ? readTile(assetUrl(id, "cloud"), bbox, N, signal, 0) : null);
-  reads.push(maskable && s.terrain ? readTile(assetUrl(id, "terrain"), bbox, N, signal, 255) : null);
+  const reads = all.map(b => readGrid(assetUrl(id, b), bbox, W, H, signal, b === "terrain" ? 255 : 0));
+  reads.push(maskable && (s.cloud || s.shadow) ? readGrid(assetUrl(id, "cloud"), bbox, W, H, signal, 0) : null);
+  reads.push(maskable && s.terrain ? readGrid(assetUrl(id, "terrain"), bbox, W, H, signal, 255) : null);
   const res = await Promise.all(reads);
   const tm = res.pop(), cm = res.pop(), a = res;
   if (a.some(x => !x)) return null;
@@ -1363,7 +1405,7 @@ async function renderScene(rec, s, id, bbox, N, signal) {
   const masked = k =>
     (cm && ((s.cloud && (cm[k] === 1 || cm[k] === 2)) || (s.shadow && cm[k] === 3))) ||
     (tm && tm[k] === 200);
-  const img = new ImageData(N, N), d = img.data, n = N * N;
+  const img = new ImageData(W, H), d = img.data, n = W * H;
   const put = (k, c) => { d[k*4] = c[0]; d[k*4+1] = c[1]; d[k*4+2] = c[2]; d[k*4+3] = 255; };
 
   if (rec.type === "rgb") {
@@ -1431,8 +1473,8 @@ async function renderScene(rec, s, id, bbox, N, signal) {
 }
 
 /* Mosaic of every scene of the day: the first scene with data wins per pixel. */
-async function renderTile(cfg, bbox, N, signal) {
-  const imgs = await Promise.all(cfg.scenes.map(id => renderScene(cfg.rec, cfg.s, id, bbox, N, signal)));
+async function renderTile(cfg, bbox, W, H, signal) {
+  const imgs = await Promise.all(cfg.scenes.map(id => renderScene(cfg.rec, cfg.s, id, bbox, W, H, signal)));
   let out = null;
   for (const im of imgs) {
     if (!im) continue;
@@ -1458,7 +1500,7 @@ const CogLayer = L.GridLayer.extend({
     const ctrl = new AbortController();
     tile._abort = ctrl;
 
-    renderTile(this.options.cfg, bbox, N, ctrl.signal)
+    renderTile(this.options.cfg, bbox, N, N, ctrl.signal)
       .then(img => { if (img) tile.getContext("2d").putImageData(img, 0, 0); done(null, tile); })
       .catch(err => {
         if (err && err.name !== "AbortError") console.warn("tile", err);
@@ -1574,9 +1616,10 @@ function selectLayer(rec) {
     return;
   }
   currentRec = rec;
+  lastLayer[rec.source] = rec.id;
   expanded.add(rec.id);
   renderLayerList();
-  $("#dcName").textContent = SOURCES[rec.source].name;
+  $("#dcSel").value = rec.source;
   if (srcChanged) { $("#dateTxt").classList.remove("nodata"); updateCcBadge(); renderCal(); }
   applyLayer();
   writeUrlSoon();
@@ -1741,6 +1784,11 @@ async function renderCal() {
    12. Layer list with Copernicus-style pull-down
    ============================================================ */
 function swatchHtml(rec, big) {
+  if (rec.thumb) {
+    return '<img class="sw th" alt="" loading="lazy" src="' + PREVIEWS + rec.thumb + '"' +
+      (big ? ' style="width:100%;height:100%;border:0"' : "") +
+      " onerror=\"this.onerror=null;this.src='" + PREVIEWS_CDSE + rec.thumb + "'\">";
+  }
   return '<div class="sw" style="background:' + rec.sw + ';color:' + (rec.fg || "#11151d") +
     (big ? ';width:100%;height:100%;border:0;border-radius:0' : '') + '">' +
     '<svg ' + (big ? 'class="g" ' : '') + 'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" ' +
@@ -1829,13 +1877,6 @@ function layerBody(rec) {
   const s = S(rec);
   const body = el("div", "lyr-body");
   const d = el("div", "ldesc");
-  if (rec.thumb) {
-    const img = el("img");
-    img.alt = ""; img.loading = "lazy";
-    img.src = PREVIEWS + rec.thumb;
-    img.onerror = () => { img.onerror = null; img.src = PREVIEWS_CDSE + rec.thumb; };
-    d.append(img);
-  }
   d.insertAdjacentHTML("beforeend", rec.cop ? mdLite(rec.cop)
     : '<div class="dt">' + rec.name + "</div><p>" + rec.desc + "</p>" +
       (rec.more ? '<p>More info <a href="' + rec.more + '" target="_blank" rel="noopener">here</a>.</p>' : ""));
@@ -1940,7 +1981,7 @@ function renderLayerList() {
   const scroll = $("#p-vis").scrollTop;
   box.innerHTML = "";
   let group = null;
-  LAYERS.forEach(rec => {
+  LAYERS.filter(r => r.source === currentRec.source).forEach(rec => {
     if (rec.group !== group) { group = rec.group; box.append(el("div", "ghead", group)); }
     const on = rec.id === currentRec.id;
     const w = el("div", "lyr" + (on ? " on" : ""));
@@ -1991,6 +2032,13 @@ function showView(v) {
   if (v === "layers" && compareMode) setCompareMode(false);
 }
 $("#dcLayers").onclick = () => showView("layers");
+/* Data collection pull-down: each collection shows its own layers and its own dates. */
+const lastLayer = {};
+$("#dcSel").onchange = e => {
+  const src = e.target.value;
+  showView("layers");
+  selectLayer(LAYER[lastLayer[src]] || LAYERS.find(r => r.source === src));
+};
 $("#dcCompare").onclick = () => showView("compare");
 
 /* ============================================================
@@ -2572,9 +2620,15 @@ $("#aoiBbGo").onclick = () => {
 
 /* ---- AOI sampling: rasterise the polygon on a grid and read the COGs over it ---- */
 const VHI_DATA = "https://data.geo.admin.ch/" + COLL_VHI + "/";
-const vhiUrl = (id, rec) => VHI_DATA + id + "/" + COLL_VHI + "_mosaic_" + id + "_" +
-  (rec.wms.endsWith("_vegetation") ? "vegetation" : "forest") + "-10m.tif";
-const statRec = rec => rec.id === "tciwms" ? LAYER.true : rec;
+/* VHI COG for AOI extraction: the href of the STAC item's forest-10m / vegetation-10m asset
+   (the documented file name is the fallback). Display stays on the WMS. */
+const vhiUrl = (id, rec) => {
+  const kind = rec.wms.endsWith("_vegetation") ? "vegetation" : "forest";
+  const f = featById.get(id), assets = (f && f.assets) || {};
+  for (const k in assets) if (k.endsWith("_" + kind + "-10m.tif") && assets[k].href) return assets[k].href;
+  return VHI_DATA + id + "/" + COLL_VHI + "_mosaic_" + id + "_" + kind + "-10m.tif";
+};
+const statRec = rec => rec;
 const SPEC_BANDS = [["b01", 443], ["b02", 490], ["b03", 560], ["b04", 665], ["b05", 705], ["b06", 740],
                     ["b07", 783], ["b08", 842], ["b8a", 865], ["b09", 945], ["b11", 1610], ["b12", 2190]];
 
@@ -2655,7 +2709,8 @@ async function sampleAoi(r, scenes, grid, o, signal) {
     let left = 0;
     for (let k = 0; k < n; k++) {
       if (!has[k]) continue;
-      if ((cm && cm[k] >= 1 && cm[k] <= 3) || (tm && tm[k] === 200) || (sm && SCL_CLOUD[sm[k]])) {
+      if ((cm && (o.cloudCodes ? o.cloudCodes[cm[k]] : cm[k] >= 1 && cm[k] <= 3)) || (tm && tm[k] === 200) ||
+          (sm && SCL_CLOUD[sm[k]])) {
         masked++; done[k] = 1; has[k] = 0;
       } else left++;
     }
@@ -3337,8 +3392,10 @@ function drawLegendBox(ctx, rec, s, x, y, title) {
   return h;
 }
 
-function drawCaption(ctx, W, H) {
-  const h = 46;
+const capHeight = desc => desc ? 62 : 46;
+
+function drawCaption(ctx, W, H, desc, overlay) {
+  const h = capHeight(desc);
   ctx.save();
   ctx.fillStyle = "rgba(255,255,255,.93)";
   ctx.fillRect(0, H - h, W, h);
@@ -3356,40 +3413,59 @@ function drawCaption(ctx, W, H) {
     sub = SOURCES[currentRec.source].name + " · " + state.date +
           (ids.length && currentRec.source === "s2" ? " · " + ids.map(timeOf).join(", ") : "");
   }
-  sub += "  |  © swisstopo · contains modified Copernicus Sentinel data" +
-         (map.hasLayer(asitLayer) ? " · overlay © ASIT VD" : "");
+  sub += "  |  © swisstopo · contains modified Copernicus Sentinel data" + (overlay ? " · overlay © ASIT VD" : "");
   ctx.font = "700 13px " + FONT;
   ctx.fillStyle = "#003F6B";
   ctx.fillText(title, 14, H - h + 21);
   ctx.font = "11px " + FONT;
   ctx.fillStyle = "#555";
   ctx.fillText(sub, 14, H - h + 37);
+  if (desc) {
+    ctx.font = "italic 11.5px " + FONT;
+    ctx.fillStyle = "#1A1A1A";
+    ctx.fillText(desc, 14, H - h + 53);
+  }
   ctx.restore();
 }
 
-function buildExportCanvas(o) {
+/* Legend, scale bar and caption. k scales the decorations (DPI / 96 for print). */
+function decorate(cv, o, mpp, k) {
+  const ctx = cv.getContext("2d"), W = cv.width / k, H = cv.height / k;
+  ctx.save();
+  ctx.scale(k, k);
+  if (o.legend) {
+    if (compareMode) {
+      let y = 16;
+      compare.slice(0, 3).forEach(it => {
+        const rec = LAYER[it.layerId];
+        const h = drawLegendBox(ctx, rec, it.s, 16, y, rec.name + " · " + it.date);
+        if (h) y += h + 8;
+      });
+    } else drawLegendBox(ctx, currentRec, S(currentRec), 16, 16, currentRec.name);
+  }
+  if (o.caption) {
+    drawScaleBar(ctx, W, H, mpp * k, capHeight(o.desc));
+    drawCaption(ctx, W, H, o.desc, o.overlay);
+  }
+  ctx.restore();
+}
+
+/* ---- Basic: the current view, composed from the tiles on screen ---- */
+async function buildExportCanvas(o) {
   const size = map.getSize(), pb = map.getPixelBounds(), z = map.getZoom();
   const W = size.x, H = size.y;
-  const cv = document.createElement("canvas");
-  cv.width = W; cv.height = H;
+  const cv = makeCanvas(W, H);
   const ctx = cv.getContext("2d");
-
   ctx.fillStyle = "#e9ecef";
   ctx.fillRect(0, 0, W, H);
 
-  /* AOI outline in container pixels; "clip to AOI" masks the data layers to it
-     and crops the image to its extent, as the Copernicus image download does. */
   const rings = aoi ? polysOf(aoi).flatMap(p => p.map(r => r.map(c => map.latLngToContainerPoint([c[1], c[0]])))) : [];
-  const aoiPath = () => {
-    ctx.beginPath();
-    rings.forEach(r => { r.forEach((q, i) => { if (i) ctx.lineTo(q.x, q.y); else ctx.moveTo(q.x, q.y); }); ctx.closePath(); });
-  };
-  const clipAoi = !!(o.aoiClip && rings.length);
+  const clipAoi = !!(o.crop && rings.length);
 
   // Same paint order as the map: basemap, product layer(s), then the always-on-top overlay.
   drawTileLayer(ctx, baseLayer, pb, z);
   ctx.save();
-  if (clipAoi) { aoiPath(); ctx.clip("evenodd"); }
+  if (clipAoi) { pathRings(ctx, rings); ctx.clip("evenodd"); }
   if (compareMode) {
     for (let i = compare.length - 1; i >= 0; i--) {
       const it = compare[i], l = cmpLayers[i];
@@ -3403,18 +3479,22 @@ function buildExportCanvas(o) {
       } else drawTileLayer(ctx, l, pb, z, it.s.opacity / 100 * it.opacity);
       ctx.restore();
     }
-    if (compareEffect === "split") {
-      ctx.fillStyle = "rgba(255,255,255,.9)";
-      compare.forEach(it => [it.clip[0], it.clip[1]].forEach(f => { if (f > 0 && f < 1) ctx.fillRect(f * W - 1, 0, 2, H); }));
-    }
   } else drawTileLayer(ctx, current, pb, z);
   ctx.restore();
-  if (map.hasLayer(asitLayer)) drawTileLayer(ctx, asitLayer, pb, z);
-  if (rings.length && o.aoiLine) {
-    aoiPath();
-    ctx.setLineDash([6, 4]); ctx.lineWidth = 2; ctx.strokeStyle = "#DC0000"; ctx.stroke(); ctx.setLineDash([]);
+  if (o.overlay) {
+    if (map.hasLayer(asitLayer)) drawTileLayer(ctx, asitLayer, pb, z);
+    else ctx.drawImage(await renderWmts(asitLayer, viewBox(), W, H), 0, 0);
   }
-  return finishExportCanvas(cv, o, clipAoi ? rings : null, z);
+  if (rings.length && o.aoiLine) strokeAoi(ctx, rings, 1);
+
+  let out = cv;
+  const crop = clipAoi ? aoiCrop(rings, W, H) : null;
+  if (crop) {
+    out = makeCanvas(crop.w, crop.h);
+    out.getContext("2d").drawImage(cv, -crop.x, -crop.y);
+  }
+  decorate(out, o, RES[z], 1);
+  return out;
 }
 
 function aoiCrop(rings, W, H) {
@@ -3425,87 +3505,442 @@ function aoiCrop(rings, W, H) {
   return x1 - x0 < 2 || y1 - y0 < 2 ? null : { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
 }
 
-/* Crops to the AOI when asked, then adds legend, scale bar and caption. */
-function finishExportCanvas(src, o, rings, z) {
-  let cv = src;
-  const crop = rings ? aoiCrop(rings, src.width, src.height) : null;
-  if (crop) {
-    cv = document.createElement("canvas");
-    cv.width = crop.w; cv.height = crop.h;
-    cv.getContext("2d").drawImage(src, -crop.x, -crop.y);
-  }
-  const ctx = cv.getContext("2d"), W = cv.width, H = cv.height;
-  const capH = o.caption ? 46 : 0;
-  if (o.legend) {
-    if (compareMode) {
-      let y = 16;
-      compare.slice(0, 3).forEach(it => {
-        const rec = LAYER[it.layerId];
-        const h = drawLegendBox(ctx, rec, it.s, 16, y, rec.name + " · " + it.date);
-        if (h) y += h + 8;
-      });
-    } else drawLegendBox(ctx, currentRec, S(currentRec), 16, 16, currentRec.name);
-  }
-  if (o.scale) drawScaleBar(ctx, W, H, RES[z], capH);
-  if (o.caption) drawCaption(ctx, W, H);
+/* ---- shared helpers for Analytical and High-res print ---- */
+const makeCanvas = (w, h) => { const c = document.createElement("canvas"); c.width = w; c.height = h; return c; };
+const loadImg = url => new Promise((res, rej) => {
+  const im = new Image();
+  im.crossOrigin = "anonymous";
+  im.onload = () => res(im);
+  im.onerror = () => rej(new Error("Image request failed"));
+  im.src = url;
+});
+function pathRings(ctx, rings) {
+  ctx.beginPath();
+  rings.forEach(r => { r.forEach((q, i) => { if (i) ctx.lineTo(q.x, q.y); else ctx.moveTo(q.x, q.y); }); ctx.closePath(); });
+}
+function strokeAoi(ctx, rings, k) {
+  pathRings(ctx, rings);
+  ctx.setLineDash([6 * k, 4 * k]); ctx.lineWidth = 2 * k; ctx.strokeStyle = "#DC0000"; ctx.stroke(); ctx.setLineDash([]);
+}
+/* LV95 box of the map view, from Leaflet's pixel bounds on the swisstopo grid. */
+function viewBox() {
+  const pb = map.getPixelBounds(), r = RES[map.getZoom()];
+  return [ORIGIN[0] + pb.min.x * r, ORIGIN[1] - pb.max.y * r, ORIGIN[0] + pb.max.x * r, ORIGIN[1] - pb.min.y * r];
+}
+function aoiBox(padFrac) {
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  polysOf(aoi).forEach(p => p[0].forEach(c => {
+    const q = proj4("EPSG:4326", "EPSG:2056", c);
+    x0 = Math.min(x0, q[0]); x1 = Math.max(x1, q[0]); y0 = Math.min(y0, q[1]); y1 = Math.max(y1, q[1]);
+  }));
+  const px = (x1 - x0) * (padFrac || 0), py = (y1 - y0) * (padFrac || 0);
+  return [x0 - px, y0 - py, x1 + px, y1 + py];
+}
+function aoiRingsPx(bbox, W, H) {
+  const rx = (bbox[2] - bbox[0]) / W, ry = (bbox[3] - bbox[1]) / H;
+  return polysOf(aoi).flatMap(p => p.map(r => r.map(c => {
+    const q = proj4("EPSG:4326", "EPSG:2056", c);
+    return { x: (q[0] - bbox[0]) / rx, y: (bbox[3] - q[1]) / ry };
+  })));
+}
+
+/* WMTS basemap or overlay for any LV95 box and pixel size: picks the zoom level that
+   matches the output resolution and fetches the tiles it needs. */
+async function renderWmts(layer, bbox, W, H, signal) {
+  const cv = makeCanvas(W, H), ctx = cv.getContext("2d");
+  if (!layer) return cv;
+  ctx.imageSmoothingQuality = "high";
+  const target = (bbox[2] - bbox[0]) / W, maxZ = layer.options.maxNativeZoom || 26;
+  let z = 8;
+  for (let i = 8; i <= maxZ; i++) if (RES[i] >= target * 0.75) z = i;
+  const span = zz => {
+    const t = 256 * RES[zz];
+    return [Math.floor((bbox[0] - ORIGIN[0]) / t), Math.floor((bbox[2] - ORIGIN[0]) / t),
+            Math.floor((ORIGIN[1] - bbox[3]) / t), Math.floor((ORIGIN[1] - bbox[1]) / t)];
+  };
+  let sp = span(z);
+  while (z > 8 && (sp[1] - sp[0] + 1) * (sp[3] - sp[2] + 1) > 900) sp = span(--z);
+  const t = 256 * RES[z], jobs = [];
+  for (let y = sp[2]; y <= sp[3]; y++) for (let x = sp[0]; x <= sp[1]; x++) jobs.push([x, y]);
+  await pool(jobs, 8, async ([x, y]) => {
+    if (signal && signal.aborted) return;
+    try {
+      const im = await loadImg(L.Util.template(layer._url, Object.assign({}, layer.options, { x, y, z })));
+      ctx.drawImage(im, (ORIGIN[0] + x * t - bbox[0]) / target, (bbox[3] - (ORIGIN[1] - y * t)) / target, t / target, t / target);
+    } catch (e) { /* outside the layer's coverage */ }
+  });
   return cv;
 }
 
-function expDims() {
-  const s = map.getSize();
-  let w = s.x, h = s.y;
-  if (aoi && $("#expAoiClip").checked) {
-    const c = aoiCrop(polysOf(aoi).flatMap(p => p.map(r => r.map(q => map.latLngToContainerPoint([q[1], q[0]])))), s.x, s.y);
-    if (c) { w = c.w; h = c.h; }
+/* WMS layers (VHI) for any box: GetMap in chunks of at most 2048 px. */
+async function renderWmsCanvas(cfg, bbox, W, H, signal) {
+  const cv = makeCanvas(W, H), ctx = cv.getContext("2d"), CH = 2048;
+  const rx = (bbox[2] - bbox[0]) / W, ry = (bbox[3] - bbox[1]) / H;
+  for (const id of cfg.scenes.slice().reverse()) {
+    for (let y0 = 0; y0 < H; y0 += CH) for (let x0 = 0; x0 < W; x0 += CH) {
+      if (signal && signal.aborted) return cv;
+      const w = Math.min(CH, W - x0), h = Math.min(CH, H - y0);
+      const b = [bbox[0] + x0 * rx, bbox[3] - (y0 + h) * ry, bbox[0] + (x0 + w) * rx, bbox[3] - y0 * ry];
+      const url = "https://wms.geo.admin.ch/?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true" +
+        "&LAYERS=" + cfg.rec.wms + "&STYLES=&CRS=EPSG%3A2056&BBOX=" + b.map(v => v.toFixed(2)).join(",") +
+        "&WIDTH=" + w + "&HEIGHT=" + h + "&item=" + id + "&lang=en";
+      ctx.drawImage(await loadImg(url), x0, y0);
+    }
   }
-  $("#expDim").textContent = w + " × " + h + " px";
+  return cv;
 }
-$("#expAoiClip").onchange = expDims;
+
+/* A layer configuration rendered from the COGs for any box, in 512 px chunks. */
+async function renderCfgCanvas(cfg, bbox, W, H, signal, onChunk) {
+  if (cfg.rec.type === "wms") return renderWmsCanvas(cfg, bbox, W, H, signal);
+  const cv = makeCanvas(W, H), ctx = cv.getContext("2d"), CH = 512;
+  const rx = (bbox[2] - bbox[0]) / W, ry = (bbox[3] - bbox[1]) / H, chunks = [];
+  for (let y0 = 0; y0 < H; y0 += CH) for (let x0 = 0; x0 < W; x0 += CH)
+    chunks.push({ x: x0, y: y0, w: Math.min(CH, W - x0), h: Math.min(CH, H - y0) });
+  let done = 0;
+  await pool(chunks, 2, async c => {
+    if (signal && signal.aborted) return;
+    const img = await renderTile(cfg, [bbox[0] + c.x * rx, bbox[3] - (c.y + c.h) * ry,
+                                       bbox[0] + (c.x + c.w) * rx, bbox[3] - c.y * ry], c.w, c.h, signal);
+    if (img) ctx.putImageData(img, c.x, c.y);
+    if (onChunk) onChunk(++done, chunks.length);
+  });
+  return cv;
+}
+
+/* Minimal GeoTIFF writer (uncompressed, pixel-interleaved, LV95). geotiff.js only writes 8-bit. */
+function encodeGeoTiff(o) {
+  const SHORT = 3, LONG = 4, DOUBLE = 12, ASCII = 2, size = { 2: 1, 3: 2, 4: 4, 12: 8 };
+  const bps = o.type === "u8" ? 1 : o.type === "u16" ? 2 : 4, spp = o.bands.length, n = o.W * o.H;
+  const photometric = o.rgb ? 2 : 1, extra = spp - (o.rgb ? 3 : 1);
+  const tags = [
+    [256, LONG, [o.W]], [257, LONG, [o.H]], [258, SHORT, Array(spp).fill(bps * 8)], [259, SHORT, [1]],
+    [262, SHORT, [photometric]], [273, LONG, [0]], [277, SHORT, [spp]], [278, LONG, [o.H]],
+    [279, LONG, [n * spp * bps]], [284, SHORT, [1]],
+    [339, SHORT, Array(spp).fill(o.type === "f32" ? 3 : 1)],
+    [33550, DOUBLE, [o.rx, o.ry, 0]], [33922, DOUBLE, [0, 0, 0, o.bbox[0], o.bbox[3], 0]],
+    [34735, SHORT, [1, 1, 0, 3, 1024, 0, 1, 1, 1025, 0, 1, 1, 3072, 0, 1, 2056]]];
+  if (extra > 0) tags.push([338, SHORT, Array(extra).fill(0).map((v, i) => (o.alpha && i === extra - 1 ? 2 : 0))]);
+  if (o.nodata != null) tags.push([42113, ASCII, (Number.isNaN(o.nodata) ? "nan" : String(o.nodata)) + "\0"]);
+  tags.sort((a, b) => a[0] - b[0]);
+  const ifdLen = 2 + tags.length * 12 + 4;
+  let off = 8 + ifdLen;
+  const big = tags.map(t => {
+    const len = (t[1] === ASCII ? t[2].length : t[2].length) * size[t[1]];
+    if (len <= 4) return null;
+    const at = off; off += len + (len % 2); return at;
+  });
+  const dataOff = Math.ceil(off / 8) * 8;
+  tags.find(t => t[0] === 273)[2] = [dataOff];
+  const buf = new ArrayBuffer(dataOff + n * spp * bps), dv = new DataView(buf);
+  dv.setUint16(0, 0x4949); dv.setUint16(2, 42, true); dv.setUint32(4, 8, true); dv.setUint16(8, tags.length, true);
+  const put = (at, type, vals) => vals.forEach((v, i) => {
+    const q = at + i * size[type];
+    if (type === SHORT) dv.setUint16(q, v, true);
+    else if (type === LONG) dv.setUint32(q, v, true);
+    else if (type === DOUBLE) dv.setFloat64(q, v, true);
+    else dv.setUint8(q, v.charCodeAt(0));
+  });
+  tags.forEach((t, i) => {
+    const e = 10 + i * 12, vals = t[1] === ASCII ? t[2].split("") : t[2];
+    dv.setUint16(e, t[0], true); dv.setUint16(e + 2, t[1], true); dv.setUint32(e + 4, vals.length, true);
+    if (big[i] == null) put(e + 8, t[1], vals);
+    else { dv.setUint32(e + 8, big[i], true); put(big[i], t[1], vals); }
+  });
+  dv.setUint32(10 + tags.length * 12, 0, true);
+  const T = o.type === "u8" ? Uint8Array : o.type === "u16" ? Uint16Array : Float32Array;
+  const px = new T(buf, dataOff, n * spp);
+  for (let b = 0; b < spp; b++) { const src = o.bands[b]; for (let k = 0; k < n; k++) px[k * spp + b] = src[k]; }
+  return new Blob([buf], { type: "image/tiff" });
+}
+
+const canvasBlob = (cv, fmt) => new Promise((res, rej) =>
+  cv.toBlob(b => b ? res(b) : rej(new Error("Encoding the image failed.")), fmt === "jpg" ? "image/jpeg" : "image/png", 0.92));
+
+function saveBlob(blob, name) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 20000);
+}
+
+/* ---- Analytical: chosen layers and raw bands at a chosen resolution, georeferenced ---- */
+const RAW_S2 = [["b01", "B01"], ["b02", "B02"], ["b03", "B03"], ["b04", "B04"], ["b05", "B05"], ["b06", "B06"],
+  ["b07", "B07"], ["b08", "B08"], ["b8a", "B8A"], ["b09", "B09"], ["b11", "B11"], ["b12", "B12"], ["aot", "AOT"],
+  ["scl", "SCL"], ["cloud", "Cloud mask"], ["terrain", "Terrain mask"]];
+const RAW_VHI = [["vhi", "VHI forest"], ["vhiveg", "VHI vegetation"]];
+const RES_A = { HIGH: 10, MEDIUM: 20, LOW: 40 };
+
+function analyticalGrid() {
+  const b0 = $("#exCropA").checked && aoi ? aoiBox(0) : viewBox();
+  const custom = $("#exResA").value === "CUSTOM";
+  const rx = custom ? +$("#exRx").value : RES_A[$("#exResA").value], ry = custom ? +$("#exRy").value : rx;
+  if (!(rx > 0 && ry > 0)) return { ok: false, msg: "Enter a resolution above 0 m/px." };
+  const x0 = Math.floor(b0[0] / rx) * rx, y1 = Math.ceil(b0[3] / ry) * ry;
+  const W = Math.max(1, Math.ceil((b0[2] - x0) / rx)), H = Math.max(1, Math.ceil((y1 - b0[1]) / ry));
+  const ok = W <= EXP_MAX_A && H <= EXP_MAX_A;
+  return { bbox: [x0, y1 - H * ry, x0 + W * rx, y1], W, H, rx, ry, ok,
+           msg: ok ? "" : "Image width and height must be between 1px and " + EXP_MAX_A + "px — zoom in, crop to the AOI or lower the resolution." };
+}
+const EXP_MAX_A = 2500;
+
+async function rawGrid(band, scenes, bbox, W, H, signal) {
+  const nod = band === "terrain" ? 255 : 0, out = new Float32Array(W * H).fill(nod);
+  for (const id of scenes) {
+    const box = sceneBox(id);
+    if (box && (bbox[2] < box[0] || bbox[0] > box[2] || bbox[3] < box[1] || bbox[1] > box[3])) continue;
+    const a = await readGrid(assetUrl(id, band), bbox, W, H, signal, nod).catch(e => { if (e.name === "AbortError") throw e; return null; });
+    if (!a) continue;
+    for (let k = 0; k < out.length; k++) if (out[k] === nod && a[k] !== nod) out[k] = a[k];
+  }
+  return out;
+}
+
+async function runAnalytical(signal, prog) {
+  const g = analyticalGrid();
+  if (!g.ok) throw new Error(g.msg);
+  const fmt = $("#exFmtA").value, withMask = $("#exMaskA").checked && fmt.startsWith("tiff");
+  const vis = $$("#exVis input:checked").map(i => i.value), raw = $$("#exRaw input:checked").map(i => i.value);
+  if (!vis.length && !raw.length) throw new Error("Select at least one layer.");
+  const { bbox, W, H, rx, ry } = g, n = W * H, files = [], skipped = [];
+  const inAoi = $("#exCropA").checked && aoi ? (() => {
+    const cv = makeCanvas(W, H), c = cv.getContext("2d");
+    c.fillStyle = "#000"; pathRings(c, aoiRingsPx(bbox, W, H)); c.fill("evenodd");
+    const d = c.getImageData(0, 0, W, H).data, m = new Uint8Array(n);
+    for (let k = 0; k < n; k++) m[k] = d[k * 4 + 3] >= 128 ? 1 : 0;
+    return m;
+  })() : null;
+  const geo = { W, H, bbox, rx, ry };
+  const tag = state.date + (inAoi ? "_aoi" : "");
+  const total = vis.length + raw.length;
+  let step = 0;
+
+  for (const id of vis) {
+    const rec = LAYER[id], s = S(rec);
+    prog("Rendering " + rec.name + " (" + (++step) + "/" + total + ")…");
+    const scenes = await resolveScenes(rec, state.date, state.cc);
+    if (!scenes.length) { skipped.push(rec.name); continue; }
+    const name = "swissEO_" + rec.id + "_" + tag;
+    if (fmt === "tiff32" && (rec.type === "index" || rec.type === "cont" || rec.type === "terrain")) {
+      // the index / physical value itself, with the layer's masks
+      const grid = { bbox, W, H, mask: inAoi || new Uint8Array(n).fill(1), n };
+      const res = await sampleAoi(rec, scenes, grid, { maskClouds: s.cloud || s.shadow, maskTerrain: s.terrain,
+        cloudCodes: { 1: s.cloud, 2: s.cloud, 3: s.shadow } }, signal);
+      files.push({ name: name + ".tif", blob: encodeGeoTiff(Object.assign({ bands: [res.vals[0]], type: "f32", nodata: NaN }, geo)) });
+      continue;
+    }
+    const cv = await renderCfgCanvas({ rec, s, scenes }, bbox, W, H, signal,
+      (d, t) => prog("Rendering " + rec.name + " (" + step + "/" + total + ") · " + Math.round(100 * d / t) + " %"));
+    if (inAoi) {
+      const c = cv.getContext("2d");
+      c.globalCompositeOperation = "destination-in"; c.fillStyle = "#000";
+      pathRings(c, aoiRingsPx(bbox, W, H)); c.fill("evenodd"); c.globalCompositeOperation = "source-over";
+    }
+    if (fmt === "png" || fmt === "jpg") { files.push({ name: name + "." + fmt, blob: await canvasBlob(cv, fmt) }); continue; }
+    const d = cv.getContext("2d").getImageData(0, 0, W, H).data;
+    const T = fmt === "tiff8" ? Uint8Array : fmt === "tiff16" ? Uint16Array : Float32Array;
+    const f = fmt === "tiff8" ? 1 : fmt === "tiff16" ? 257 : 1 / 255;
+    const bands = [0, 1, 2, 3].map(c => { const a = new T(n); for (let k = 0; k < n; k++) a[k] = d[k * 4 + c] * f; return a; });
+    files.push({ name: name + ".tif", blob: encodeGeoTiff(Object.assign({ bands, rgb: true, alpha: true,
+      type: fmt === "tiff8" ? "u8" : fmt === "tiff16" ? "u16" : "f32" }, geo)) });
+  }
+
+  for (const id of raw) {
+    const label = (RAW_S2.concat(RAW_VHI).find(r => r[0] === id) || [id, id])[1];
+    prog("Reading " + label + " (" + (++step) + "/" + total + ")…");
+    const isVhi = id === "vhi" || id === "vhiveg";
+    const scenes = await resolveScenes(isVhi ? LAYER[id] : LAYER.true, state.date, state.cc);
+    if (!scenes.length) { skipped.push(label); continue; }
+    let dn, nod;
+    if (isVhi) {
+      nod = 255; dn = new Float32Array(n).fill(nod);
+      for (const sid of scenes) {
+        const a = await readGrid(vhiUrl(sid, LAYER[id]), bbox, W, H, signal, 255).catch(() => null);
+        if (a) for (let k = 0; k < n; k++) if (dn[k] === nod && a[k] !== nod) dn[k] = a[k];
+      }
+    } else {
+      nod = id === "terrain" ? 255 : 0;
+      dn = await rawGrid(id, scenes, bbox, W, H, signal);
+    }
+    if (inAoi) for (let k = 0; k < n; k++) if (!inAoi[k]) dn[k] = nod;
+    const valid = k => dn[k] !== nod;
+    const scaled = SUFFIX[id] && BAND_LABEL[id];             // reflectance bands and AOT
+    const name = "swissEO_" + label.replace(/\s+/g, "-") + "_" + tag;
+    if (fmt === "png" || fmt === "jpg" || fmt === "tiff8") {
+      // 8-bit as in Copernicus: physical value x 255 for scaled bands, the code itself otherwise
+      const v8 = new Uint8Array(n);
+      for (let k = 0; k < n; k++) v8[k] = valid(k) ? clamp(Math.round(scaled ? phys(id, dn[k]) * 255 : dn[k]), 0, 255) : 0;
+      if (fmt === "tiff8") {
+        const bands = [v8];
+        if (withMask) bands.push(Uint8Array.from(dn, (v, k) => valid(k) ? 1 : 0));
+        files.push({ name: name + ".tif", blob: encodeGeoTiff(Object.assign({ bands, type: "u8", nodata: withMask ? null : 0 }, geo)) });
+      } else {
+        const cv = makeCanvas(W, H), c = cv.getContext("2d"), img = c.createImageData(W, H);
+        for (let k = 0; k < n; k++) { img.data[k * 4] = img.data[k * 4 + 1] = img.data[k * 4 + 2] = v8[k]; img.data[k * 4 + 3] = valid(k) ? 255 : 0; }
+        c.putImageData(img, 0, 0);
+        files.push({ name: name + "." + fmt, blob: await canvasBlob(cv, fmt) });
+      }
+    } else if (fmt === "tiff16") {
+      const bands = [Uint16Array.from(dn)];
+      if (withMask) bands.push(Uint16Array.from(dn, (v, k) => valid(k) ? 1 : 0));
+      files.push({ name: name + ".tif", blob: encodeGeoTiff(Object.assign({ bands, type: "u16", nodata: withMask ? null : nod }, geo)) });
+    } else {
+      const bands = [Float32Array.from(dn, (v, k) => valid(k) ? (scaled ? phys(id, v) : v) : NaN)];
+      if (withMask) bands.push(Float32Array.from(dn, (v, k) => valid(k) ? 1 : 0));
+      files.push({ name: name + ".tif", blob: encodeGeoTiff(Object.assign({ bands, type: "f32", nodata: withMask ? null : NaN }, geo)) });
+    }
+  }
+  if (!files.length) throw new Error("No data for " + state.date + " in this area.");
+  if (files.length === 1) saveBlob(files[0].blob, files[0].name);
+  else {
+    prog("Packing " + files.length + " files…");
+    const JSZip = await lib("JSZip"), zip = new JSZip();
+    files.forEach(f => zip.file(f.name, f.blob));
+    saveBlob(await zip.generateAsync({ type: "blob" }), "swissEO_analytical_" + tag + ".zip");
+  }
+  return skipped.length ? "No data on " + state.date + " for: " + skipped.join(", ") + "." : "";
+}
+
+/* ---- High-res print: the view re-rendered at the printed size ---- */
+function printGrid() {
+  const bbox = $("#exCropP").checked && aoi ? aoiBox(0.05) : viewBox();
+  const wIn = +$("#exWin").value, dpi = +$("#exDpi").value;
+  const W = Math.round(wIn * dpi), H = Math.round(W * (bbox[3] - bbox[1]) / (bbox[2] - bbox[0]));
+  const ok = wIn > 0 && dpi >= 72 && W <= 12000 && H <= 12000 && W * H <= 60e6;
+  return { bbox, W, H, k: dpi / 96, mpp: (bbox[2] - bbox[0]) / W, ok,
+           msg: ok ? "" : "The image is too large (max. 12000 px per side and 60 megapixels) — lower the size or DPI." };
+}
+function printAspect() { const b = $("#exCropP").checked && aoi ? aoiBox(0.05) : viewBox(); return (b[3] - b[1]) / (b[2] - b[0]); }
+
+async function runPrint(signal, prog) {
+  const g = printGrid();
+  if (!g.ok) throw new Error(g.msg);
+  const { bbox, W, H, k } = g;
+  const o = { caption: $("#exCapP").checked, desc: $("#exCapP").checked ? $("#exDescP").value.trim() : "",
+              overlay: $("#exOvP").checked, legend: $("#exLegP").checked,
+              crop: $("#exCropP").checked && !!aoi, aoiLine: $("#exLineP").checked && !!aoi };
+  const cv = makeCanvas(W, H), ctx = cv.getContext("2d");
+  ctx.fillStyle = "#e9ecef"; ctx.fillRect(0, 0, W, H);
+  prog("Loading the basemap…");
+  ctx.drawImage(await renderWmts(baseLayer, bbox, W, H, signal), 0, 0);
+  const rings = aoi ? aoiRingsPx(bbox, W, H) : [];
+  ctx.save();
+  if (o.crop && rings.length) { pathRings(ctx, rings); ctx.clip("evenodd"); }
+  const layerSteps = compareMode ? compare.map((it, i) => ({ it, i })).reverse() : [null];
+  for (const st of layerSteps) {
+    if (signal.aborted) return;
+    const rec = st ? LAYER[st.it.layerId] : currentRec, sset = st ? st.it.s : S(currentRec);
+    const scenes = st ? await resolveScenes(rec, st.it.date, st.it.cc) : (currentCfg ? currentCfg.scenes : []);
+    if (!scenes.length) continue;
+    const lc = await renderCfgCanvas({ rec, s: sset, scenes }, bbox, W, H, signal,
+      (d, t) => prog("Rendering " + rec.name + " · " + Math.round(100 * d / t) + " %"));
+    ctx.save();
+    if (st && compareEffect === "split") {
+      ctx.beginPath(); ctx.rect(st.it.clip[0] * W, 0, (st.it.clip[1] - st.it.clip[0]) * W, H); ctx.clip();
+    }
+    ctx.globalAlpha = sset.opacity / 100 * (st && compareEffect === "opacity" ? st.it.opacity : 1);
+    ctx.drawImage(lc, 0, 0);
+    ctx.restore();
+  }
+  ctx.restore();
+  if (o.overlay) { prog("Loading the map overlay…"); ctx.drawImage(await renderWmts(asitLayer, bbox, W, H, signal), 0, 0); }
+  if (rings.length && o.aoiLine) strokeAoi(ctx, rings, k);
+  decorate(cv, o, g.mpp, k);
+  prog("Encoding…");
+  const fmt = $("#exFmtP").value;
+  saveBlob(await canvasBlob(cv, fmt), "swissEO_print_" + (compareMode ? "compare" : currentRec.id) + "_" + state.date + "_" +
+    $("#exDpi").value + "dpi." + fmt);
+  return "";
+}
+
+/* ---- dialog ---- */
+let exTab = "basic", exAbort = null;
+function exInfo() {
+  const s = map.getSize();
+  if (exTab === "basic") {
+    let w = s.x, h = s.y;
+    if (aoi && $("#exCropB").checked) {
+      const c = aoiCrop(polysOf(aoi).flatMap(p => p.map(r => r.map(q => map.latLngToContainerPoint([q[1], q[0]])))), s.x, s.y);
+      if (c) { w = c.w; h = c.h; }
+    }
+    $("#exInfoB").textContent = "Current view: " + w + " × " + h + " px at " + RES[map.getZoom()] + " m/px · " +
+      (compareMode ? "compare, " + compare.length + " layers" : currentRec.name);
+  } else if (exTab === "analytical") {
+    const g = analyticalGrid();
+    $("#exInfoA").innerHTML = g.ok ? g.W + " × " + g.H + " px at " + g.rx + " × " + g.ry + " m/px · " + state.date
+      : '<span style="color:var(--red)">' + (g.W ? g.W + " × " + g.H + " px. " : "") + g.msg + "</span>";
+    $$(".exc").forEach(e => { e.hidden = $("#exResA").value !== "CUSTOM"; });
+  } else {
+    const g = printGrid();
+    $("#exInfoP").innerHTML = (g.ok ? "" : '<span style="color:var(--red)">') + g.W + " × " + g.H + " px (" +
+      (g.W * g.H / 1e6).toFixed(1) + " MP) · " + g.mpp.toFixed(g.mpp < 10 ? 2 : 1) + " m/px" + (g.ok ? "" : ". " + g.msg + "</span>");
+  }
+}
+function exLists() {
+  const src = currentRec.source;
+  $("#exVis").innerHTML = LAYERS.filter(r => r.source === src).map(r =>
+    '<label><input type="checkbox" value="' + r.id + '"' + (r === currentRec ? " checked" : "") + "> " + r.name + "</label>").join("");
+  $("#exRaw").innerHTML = (src === "s2" ? RAW_S2 : RAW_VHI).map(r =>
+    '<label><input type="checkbox" value="' + r[0] + '"> ' + r[1] + "</label>").join("");
+}
+function exShow(tab) {
+  exTab = tab;
+  $$("#expTabs button").forEach(b => b.classList.toggle("on", b.dataset.e === tab));
+  $$("#expModal [data-ep]").forEach(p => { p.hidden = p.dataset.ep !== tab; });
+  exInfo();
+}
 function openExport() {
-  expDims();
-  $("#expRes").textContent = RES[map.getZoom()] + " m/px";
-  $("#expLyr").textContent = compareMode ? "Compare · " + compare.length + " layers" : currentRec.name;
   $("#expMsg").classList.remove("on");
-  $("#expModal").classList.add("on");
+  $("#exProg").textContent = "";
+  $("#exOvB").checked = $("#exOvP").checked = map.hasLayer(asitLayer);
+  $("#exHin").value = (+$("#exWin").value * printAspect()).toFixed(1);
+  exLists();
+  exShow(exTab);
+  openModal("expModal");
 }
 $("#btnExport").onclick = openExport;
-$("#expCancel").onclick = () => $("#expModal").classList.remove("on");
-$("#expModal").onclick = e => { if (e.target.id === "expModal") $("#expModal").classList.remove("on"); };
+$$("#expTabs button").forEach(b => { b.onclick = () => exShow(b.dataset.e); });
+["#exCropB", "#exResA", "#exRx", "#exRy", "#exCropA", "#exDpi"].forEach(q => { $(q).oninput = $(q).onchange = exInfo; });
+$("#exWin").oninput = () => { $("#exHin").value = (+$("#exWin").value * printAspect()).toFixed(1); exInfo(); };
+$("#exHin").oninput = () => { $("#exWin").value = (+$("#exHin").value / printAspect()).toFixed(1); exInfo(); };
+$("#exCropP").onchange = () => { $("#exHin").value = (+$("#exWin").value * printAspect()).toFixed(1); exInfo(); };
+$("#expModal").onclose = () => { if (exAbort) exAbort.abort(); };
 
-$("#expGo").onclick = () => {
-  const msg = $("#expMsg");
+$("#exGo").onclick = async () => {
+  const msg = $("#expMsg"), btn = $("#exGo");
   msg.classList.remove("on");
+  if (exAbort) exAbort.abort();
+  const ctrl = new AbortController();
+  exAbort = ctrl;
+  btn.disabled = true;
+  const prog = t => { if (!ctrl.signal.aborted) $("#exProg").textContent = t; };
   try {
-    const cv = buildExportCanvas({
-      scale: $("#expScale").checked,
-      legend: $("#expLegendChk").checked,
-      caption: $("#expCaption").checked,
-      aoiClip: !!aoi && $("#expAoiClip").checked,
-      aoiLine: !!aoi && $("#expAoiLine").checked
-    });
-    // Throws SecurityError if any drawn tile tainted the canvas.
-    cv.toBlob(blob => {
-      if (!blob) { msg.textContent = "Encoding the PNG failed."; msg.classList.add("on"); return; }
-      const parts = ["swissEO"];
-      if (compareMode) parts.push("compare", compare.map(it => it.layerId).join("-"));
-      else parts.push(currentRec.id, state.date);
-      if (aoi && $("#expAoiClip").checked) parts.push("aoi");
+    let note = "";
+    if (exTab === "basic") {
+      const o = { caption: $("#exCapB").checked, desc: $("#exCapB").checked ? $("#exDescB").value.trim() : "",
+                  overlay: $("#exOvB").checked, legend: $("#exLegB").checked,
+                  crop: !!aoi && $("#exCropB").checked, aoiLine: !!aoi && $("#exLineB").checked };
+      const cv = await buildExportCanvas(o);
+      const parts = ["swissEO", compareMode ? "compare_" + compare.map(it => it.layerId).join("-") : currentRec.id + "_" + state.date];
+      if (o.crop) parts.push("aoi");
       parts.push("z" + map.getZoom());
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = parts.join("_") + ".png";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(a.href), 10000);
-      $("#expModal").classList.remove("on");
-    }, "image/png");
+      saveBlob(await canvasBlob(cv, $("#exFmtB").value), parts.join("_") + "." + $("#exFmtB").value);
+    } else if (exTab === "analytical") note = await runAnalytical(ctrl.signal, prog);
+    else note = await runPrint(ctrl.signal, prog);
+    if (ctrl.signal.aborted) return;
+    $("#exProg").textContent = note || "Download ready.";
+    if (!note) setTimeout(() => closeModal($("#expModal")), 600);
   } catch (err) {
+    if (err && err.name === "AbortError") return;
     msg.textContent = err && err.name === "SecurityError"
       ? "A tile blocked canvas export (missing CORS headers). Try switching basemap."
-      : "Export failed: " + (err && err.message ? err.message : err);
+      : (err && err.message ? err.message : String(err));
     msg.classList.add("on");
-  }
+    $("#exProg").textContent = "";
+  } finally { btn.disabled = false; }
 };
 
 /* ============================================================
@@ -3524,7 +3959,7 @@ const boot = readUrl();
 $("#ccMax").value = state.cc;
 $("#dateTxt").value = state.date;
 $("#dNext").disabled = state.date >= todayStr;
-$("#dcName").textContent = SOURCES[currentRec.source].name;
+$("#dcSel").value = currentRec.source;
 updateCcBadge();
 renderLayerList();
 renderCompare();

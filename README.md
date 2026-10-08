@@ -21,7 +21,7 @@ the swisstopo WMS/WMTS services directly in the browser.
 | Product | Source | Used for |
 | --- | --- | --- |
 | [swissEO S2-SR v200](https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-s2-sr) | COGs on `data.geo.admin.ch`, catalogue via the STAC API `data.geo.admin.ch/api/stac/v0.9` (collection `ch.swisstopo.swisseo_s2-sr_v200`) | Sentinel-2 L2A surface reflectance mosaics (B01–B12, B8A, AOT, SCL, cloud mask, terrain mask), 10/20/60 m, LV95 |
-| [swissEO VHI v100](https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-vhi) | `wms.geo.admin.ch` (`ch.swisstopo.swisseo_vhi_v100`, `…_vegetation`) for display; `forest-10m` / `vegetation-10m` COGs for statistics | Vegetation Health Index for forest and all vegetation, relative to 1991–2020 |
+| [swissEO VHI v100](https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-vhi) | Own collection: `wms.geo.admin.ch` (`ch.swisstopo.swisseo_vhi_v100`, `…_vegetation`) for display; for AOI statistics and analytical downloads the `forest-10m` / `vegetation-10m` COGs, addressed through the STAC items of `ch.swisstopo.swisseo_vhi_v100` | Vegetation Health Index for forest and all vegetation, relative to 1991–2020 |
 | Basemaps | `wmts.geo.admin.ch` (pixelkarte-farbe, swissimage, pixelkarte-grau) | Background maps on the native LV95 grid |
 | Label overlay | `wmts.asit-asso.ch` (`asitvd.fond_pourortho`) | Roads and place names above the data |
 
@@ -53,14 +53,18 @@ indices stay within −1…1.
   acquisition), ‹ › jump to the previous/next date with data, the arrow button jumps to the latest one.
   The calendar marks days with data, has month/year pull-downs and a maximum cloud-coverage slider
   (cloud cover from each mosaic's `metadata.json`). Several orbits acquired on the same day are mosaicked.
-- **Layers** — true colour and five false-colour composites; NDVI, NDWI, NDMI, NDSI, NBR and AOT; scene
-  classification, cloud mask, terrain / solar incidence; swissEO VHI forest and vegetation (WMS); a
-  server-rendered true-colour WMS.
-- **Layer pull-down** — the Copernicus Browser title, description, preview thumbnail and "More info"
-  link to the Sentinel Hub custom-scripts page (swisstopo product page for the swissEO-specific layers),
-  legend, adjustable colour scale (min/max), masks for clouds and cloud shadows (OmniCloudMask) and
-  terrain shadow (terrain mask 200), and *effects and advanced options* (gain, gamma, red/green/blue
-  ranges, opacity). `</>` shows the formula and scaling.
+- **Data collections** — a pull-down switches between *swissEO S2-SR v200* and *swissEO VHI v100*; each
+  collection has its own layers and its own dates in the calendar.
+- **Layers** — S2-SR: true color and five false-color composites (false color, urban, SWIR, agriculture,
+  geology 12-8-2); NDVI, NDWI, moisture index, NDSI, NBR and AOT; scene classification, cloud mask, terrain /
+  solar incidence. VHI: forest and vegetation. Layers are listed with the Copernicus Browser preview
+  thumbnails as icons.
+- **Layer pull-down** — the Copernicus Browser title, description and "More info" link (Sentinel Hub
+  custom-scripts page; swisstopo product page for True color L2A and the swissEO-specific layers), legend,
+  adjustable colour scale (min/max), masks for clouds and cloud shadows (OmniCloudMask) and terrain shadow
+  (terrain mask 200), and *effects and advanced options* (gain, gamma, red/green/blue ranges, opacity).
+  `</>` shows the formula and scaling. NDSI is rendered as in the Copernicus Browser (snow above an
+  adjustable threshold in blue, true color elsewhere).
 - **Compare** — add layers to the compare list; opening the Compare panel (or the ⇄ map button) shows
   them with a split or opacity effect, going back to Layers shows the single layer again. Reorder,
   remove and zoom to each entry.
@@ -71,8 +75,16 @@ indices stay within −1…1.
   (Stop keeps what has been read), and reports which dates were not reached by that day's orbit and
   which were fully masked. Statistics can additionally exclude clouds flagged by the scene
   classification (SCL 3, 8, 9, 10), which catches clouds OmniCloudMask misses.
-- **Image download** — PNG of the current view with scale bar, legend and caption; works in compare mode
-  and can be clipped to the area of interest.
+- **Image download** — three tabs as in the Copernicus Browser:
+  - *Basic*: the current view as PNG or JPG, with captions (datasource, date, scale bar) and an optional
+    description, map overlays, legend, crop to AOI and AOI outline; works in compare mode.
+  - *Analytical*: any layers of the collection (visualised) and raw bands (B01–B12, B8A, AOT, SCL, cloud
+    mask, terrain mask; VHI values) for the current view or the AOI, at LOW / MEDIUM / HIGH (40 / 20 /
+    10 m) or a custom resolution, up to 2500 × 2500 px, as PNG, JPG or GeoTIFF (8-bit, 16-bit = stored DN,
+    32-bit float = index or physical value) in CH1903+ / LV95, optionally with a dataMask band. Several
+    files are zipped.
+  - *High-res print*: the view re-rendered for a printed size (width / height in inches and DPI), with
+    the same captions, legend, overlay and AOI options, as PNG or JPG.
 - **Pixel inspector** — band values (DN and physical value), index value, SCL, cloud mask and terrain
   mask at a clicked location.
 - **Permalink** — the URL is updated on every change, so copying it reproduces the view.
@@ -112,7 +124,7 @@ Parameter names follow the Copernicus Browser where an equivalent exists.
 | `lat`, `lng`, `zoom` | `46.55`, `6.70`, `17` | Map centre (WGS84) and zoom level of the LV95 grid (8–27; ≈17–18 for a region) |
 | `fromTime`, `toTime` | `2026-10-05T00:00:00.000Z` | Selected date |
 | `cloudCoverage` | `30` | Maximum cloud coverage in % |
-| `layerId` | `ndvi` | `true`, `nir`, `urban`, `swir`, `agri`, `geo`, `ndvi`, `ndwi`, `ndmi`, `ndsi`, `nbr`, `aot`, `scl`, `cloud`, `terrain`, `vhi`, `vhiveg`, `tciwms` |
+| `layerId` | `ndvi` | `true`, `nir`, `urban`, `swir`, `agri`, `geo`, `ndvi`, `ndwi`, `ndmi`, `ndsi`, `nbr`, `aot`, `scl`, `cloud`, `terrain` (S2-SR); `vhi`, `vhiveg` (VHI) — also selects the collection |
 | `valueRange` | `[0,0.9]` | Colour-scale min/max of index and continuous layers |
 | `threshold` | `0.5` | NDSI snow threshold (default 0.42; above it snow is shown in blue, otherwise true colour, as in the Copernicus Browser) |
 | `gain`, `gamma` | `1.2` | Effects for the composites (1 = default) |
@@ -129,9 +141,11 @@ Example:
 ## Limitations
 
 - Not available compared with the Copernicus Browser: timelapse, 3D, pins, product search and download,
-  custom scripts, other satellite collections.
+  custom scripts, other satellite collections; the image download has no OSM background and no choice of
+  coordinate system (always LV95).
 - The VHI layers are rendered by the WMS with its published styling, so their colour scale cannot be changed.
-- Statistics and time series read the COGs in the browser; large areas and long date ranges take a while.
+- Statistics, time series, analytical downloads and high-res prints read the COGs in the browser; large
+  areas, long date ranges and large prints take a while.
 
 ## Credits and terms
 
