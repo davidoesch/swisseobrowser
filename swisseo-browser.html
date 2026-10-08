@@ -139,7 +139,10 @@ h4{margin:0 0 9px;font-size:13px;letter-spacing:.3px;text-transform:uppercase;co
 .lyr-bar{display:flex;align-items:center;gap:12px;padding:5px 10px 7px;border-top:1px solid #c9d8e3}
 .lyr-bar .spacer{flex:1}
 .lyr-body{padding:4px 12px 12px;border-top:1px solid #c9d8e3;background:#fff}
-.lyr-body .desc{color:#333;font-size:12px;margin:8px 0 6px}
+.ldesc{overflow:hidden;margin:10px 0 4px;font-size:12px;color:#333}
+.ldesc img{float:left;width:84px;height:84px;object-fit:cover;margin:2px 10px 6px 0;border:1px solid var(--border)}
+.ldesc .dt{font-weight:700;color:var(--blue);font-size:13px;margin-bottom:5px}
+.ldesc p{margin:0 0 7px}
 .lyr-body .sec{font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--blue);font-weight:700;margin:14px 0 7px}
 code.fx{display:block;background:var(--bg);border:1px solid var(--border);border-radius:3px;margin-top:8px;
   padding:7px 9px;font-family:ui-monospace,Consolas,monospace;font-size:11px;color:var(--blue-d);white-space:pre-wrap}
@@ -977,11 +980,11 @@ const LAYERS = [
     desc:"Crop vigour and bare-field contrast.",
     formula:"R = ρ(B11)\nG = ρ(B08)\nB = ρ(B02)" },
 
-  { id:"geo", group:"Composites", name:"Geology", type:"rgb", source:"s2", bands:["b12","b11","b02"],
+  { id:"geo", group:"Composites", name:"Geology", type:"rgb", source:"s2", bands:["b12","b08","b02"],
     icon:"strata", sw:"linear-gradient(135deg,#a4703f,#6f6f8f)", fg:"#25160a",
     sub:"Based on bands 12, 11, 2",
     desc:"Lithology and surface mineralogy.",
-    formula:"R = ρ(B12)\nG = ρ(B11)\nB = ρ(B02)" },
+    formula:"R = ρ(B12)\nG = ρ(B08)\nB = ρ(B02)" },
 
   /* ---- indices ---- */
   { id:"ndvi", group:"Indices", name:"NDVI", type:"index", source:"s2", bands:["b08","b04"], ramp:R_NDVI,
@@ -1069,6 +1072,51 @@ const LAYERS = [
     note:"Renders the tci_10m asset server-side. Fast for browsing; use the band-based layers for physical values." }
 ];
 const LAYER = Object.fromEntries(LAYERS.map(r => [r.id, r]));
+/* Titles, descriptions and preview thumbnails as in the Copernicus Browser (src/assets/layers_metadata.js,
+   src/assets/cache/configuration.json, public/previews). Layers without a Copernicus equivalent link to the
+   swisstopo product page instead. */
+const COP_META = {
+  true: { name: "True color", sub: "Based on bands B4, B3, B2", thumb: "DEFAULT-THEME-a91f72-1_TRUE_COLOR.png",
+    cop: "# True color optimized\n\nThis optimized True color script uses the visible light bands red, green and blue in the corresponding red, green and blue color channels, resulting in a product with natural colours that represents the Earth as humans would naturally see it. The visualisation uses highlight compression and improves the contrast and color vividness through minor contrast and saturation enhancement.\n\n\n\nMore info for [L1C](https://custom-scripts.sentinel-hub.com/sentinel-2/l1c_optimized/) and for [L2A](https://custom-scripts.sentinel-hub.com/sentinel-2/l2a_optimized/)." },
+  nir: { name: "False color", sub: "Based on bands B8, B4, B3", thumb: "DEFAULT-THEME-a91f72-2_FALSE_COLOR.png",
+    cop: "# False color composite\n\nA false color composite uses at least one non-visible wavelength to image Earth. The false color composite using near infrared, red and green bands is very popular (a band is a region of the electromagnetic spectrum; a satellite sensor can image Earth in different bands). The false colour composite is most commonly used to assess plant density and health, since plants reflect near infrared and green light, while they absorb red. Cities and exposed ground are grey or tan, and water appears blue or black.\n\n\n\nMore info [here](https://custom-scripts.sentinel-hub.com/sentinel-2/false_color_infrared/) and [here.](https://eo.belspo.be/en/colour-composites)" },
+  urban: { name: "False color (urban)", sub: "Based on bands B12, B11, B4", thumb: "DEFAULT-THEME-a91f72-4-FALSE-COLOR-URBAN.png",
+    cop: "# False Color Urban composite\n\nThis composite is used to visualise urbanized areas more clearly. Vegetation is visible in shades of green, while urbanized areas are represented by white, grey, or purple. Soils, sand, and minerals are shown in a variety of colors. Snow and ice appear as dark blue, and water as black or blue. Flooded areas are very dark blue and almost black. The composite is useful for detecting wildfires and calderas of volcanoes, as they are displayed in shades of red and yellow.\n\n\n\nMore info [here](https://custom-scripts.sentinel-hub.com/sentinel-2/false-color-urban-rgb/) and [here.](https://eos.com/false-color/)" },
+  swir: { name: "SWIR", sub: "Based on bands B12, B8A, B4", thumb: "DEFAULT-THEME-a91f72-6-SWIR.png",
+    cop: "# Short wave infrared composite (SWIR)\n\nShort wave infrared (SWIR) measurements can help scientists estimate how much water is present in plants and soil, as water absorbs SWIR wavelengths. Short wave infrared bands (a band is a region of the electromagnetic spectrum; a satellite sensor can image Earth in different bands) are also useful for distinguishing between cloud types (water clouds versus ice clouds), snow and ice, all of which appear white in visible light. In this composite vegetation appears in shades of green, soils and built-up areas are in various shades of brown, and water appears black. Newly burned land reflects strongly in SWIR bands, making them valuable for mapping fire damages. Each rock type reflects shortwave infrared light differently, making it possible to map out geology by comparing reflected SWIR light.\n\n\n\nMore info [here.](https://custom-scripts.sentinel-hub.com/sentinel-2/swir-rgb/)" },
+  agri: { name: "Agriculture", sub: "Based on bands B11, B08, B02", thumb: "AGRICULTURE-3f9be2-FALSE-COLOR-11-8-2.png",
+    cop: "# Agriculture composite\n\nThis composite uses short-wave infrared, near-infrared and blue bands to monitor crop health (a band is a region of the electromagnetic spectrum; a satellite sensor can image Earth in different bands). Both short-wave and near infrared bands are particularly good at highlighting dense vegetation, which appears dark green in the composite. Crops appear in a vibrant green and bare earth appears magenta.\n\n\n\nMore info [here](https://eo.belspo.be/en/colour-composites) and [here.](https://gisgeography.com/sentinel-2-bands-combinations/)" },
+  geo: { name: "Geology 12, 8, 2", sub: "Based on bands B12, B8, B2", thumb: "GEOLOGY-18f7c3-3_GEOLOGY-12-8-2.png",
+    cop: "# Geology 12, 8, 2 composite\n\nThis composite uses short-wave infrared (SWIR) band 12 to differentiate among different rock types (a band is a region of the electromagnetic spectrum; a satellite sensor can image Earth in different bands). Each rock and mineral type reflects short-wave infrared light differently, making it possible to map out geology by comparing reflected SWIR light. Near infrared (NIR) band 8 highlights vegetation and band 2 detects moisture, both contributing to differentiation of ground materials. The composite is useful for finding geological formations and features (e.g. faults, fractures), lithology (e.g. granite, basalt, etc.) and mining applications.\n\n\n\nMore info [here.](https://www.euspaceimaging.com/wp-content/uploads/2018/06/EUSI-SWIR.pdf)" },
+  ndvi: { name: "NDVI", sub: "Based on a combination of bands (B8 - B4)/(B8 + B4)", thumb: "DEFAULT-THEME-a91f72-3_NDVI.png",
+    cop: "# Normalized Difference Vegetation Index (NDVI)\n\nThe normalized difference vegetation index is a simple, but effective index for quantifying green vegetation. It is a measure of the state of vegetation health based on how plants reflect light at certain wavelengths. The value range of the NDVI is -1 to 1. Negative values of NDVI (values approaching -1) correspond to water. Values close to zero (-0.1to 0.1) generally correspond to barren areas of rock, sand, or snow. Low, positive values represent shrub and grassland (approximately 0.2 to 0.4), while high values indicate temperate and tropical rainforests (values approaching 1).\n\nMore info [here](https://custom-scripts.sentinel-hub.com/sentinel-2/ndvi/)." },
+  ndmi: { name: "Moisture index", sub: "Based on a combination of bands (B8A - B11)/(B8A + B11)", thumb: "DEFAULT-THEME-a91f72-5-MOISTURE-INDEX1.png",
+    cop: "# Normalized Difference Moisture Index (NDMI)\n\nThe normalized difference moisture Index (NDMI) is used to determine vegetation water content and monitor droughts. The value range of the NDMI is -1 to 1. Negative values of NDMI (values approaching -1) correspond to barren soil. Values around zero (-0.2 to 0.4) generally correspond to water stress. High, positive values represent high canopy without water stress (approximately 0.4 to 1).\n\n\n\nMore info [here.](https://custom-scripts.sentinel-hub.com/sentinel-2/ndmi/)" },
+  ndwi: { name: "NDWI", sub: "Based on a combination of bands (B3 - B8)/(B3 + B8)", thumb: "DEFAULT-THEME-a91f72-7-NDWI.png",
+    cop: "# Normalized Difference Water Index (NDWI)\n\nThe normalized difference water index is most appropriate for water body mapping. Values of water bodies are larger than 0.5. Vegetation has smaller values. Built-up features have positive values between zero and 0.2.\n\n\n\nMore info [here.](https://custom-scripts.sentinel-hub.com/sentinel-2/ndwi/)" },
+  ndsi: { name: "NDSI", sub: "Based on a combination of bands (B3 - B11)/(B3 + B11)", thumb: "DEFAULT-THEME-a91f72-8-NDSI.png",
+    cop: "# Normalised Difference Snow Index (NDSI)\n\nThe Sentinel-2 normalised difference snow index can be used to differentiate between cloud and snow cover as snow absorbs in the short-wave infrared light, but reflects the visible light, whereas cloud is generally reflective in both wavelengths. Snow cover is represented in bright vivid blue.\n\n\n\nMore info [here](https://custom-scripts.sentinel-hub.com/sentinel-2/ndsi/)." },
+  nbr: { name: "Normalized Burn Ratio (NBR)", sub: "Based on a combination of bands (B8 - B12)/(B8 + B12)", thumb: "WILDFIRES-81ed0b-NORMALIZED-BURN-RATIO-NBR.png",
+    cop: "# Normalized Burn Ratio (NBR)\n\nNormalized Burn Ratio is frequently used to estimate burn severity. It uses near-infrared (NIR) and shortwave-infrared (SWIR) wavelengths. Healthy vegetation has a high reflectance in the near-infrared portion of the spectrum, and a low short-wave infrared reflectance. On the other hand, burned areas have a high shortwave infrared reflectance but low reflectance in the near infrared Darker pixels indicate burned areas.\n\n\n\nMore info [here](https://custom-scripts.sentinel-hub.com/custom-scripts/sentinel-2/nbr/)." },
+  scl: { name: "Scene classification map", sub: "Classification of Sentinel-2 data as result of ESA's Scene classification algorithm.", thumb: "DEFAULT-THEME-a91f72-SCENE-CLASSIFICATION.png",
+    cop: "# Scene classification\n\n\n\nScene classification was developed to distinguish between cloudy pixels, clear pixels and water pixels of Sentinel-2 data and is a result of ESA's Scene classification algorithm. Twelve different classifications are provided including classes of clouds, vegetation, soils/desert, water and snow. It does not constitute a land cover classification map in a strict sense.\n\n\n\nMore info [here](https://custom-scripts.sentinel-hub.com/sentinel-2/scene-classification/)." },
+  aot: { more: "https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-s2-sr" }, cloud: { more: "https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-s2-sr" }, terrain: { more: "https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-s2-sr" },
+  vhi: { more: "https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-vhi" }, vhiveg: { more: "https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-vhi" },
+  tciwms: { more: "https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-s2-sr", thumb: "DEFAULT-THEME-a91f72-1_TRUE_COLOR.png" }
+};
+Object.keys(COP_META).forEach(id => Object.assign(LAYER[id], COP_META[id]));
+const PREVIEWS = "public/previews/", PREVIEWS_CDSE = "https://browser.dataspace.copernicus.eu/previews/";
+
+/* Minimal Markdown for the descriptions: '# ' title, paragraphs, [links](url) and `code`. */
+function mdLite(text) {
+  const esc = t => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const inline = t => esc(t)
+    .replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+    .replace(/`([^`]+)`/g, "<code>$1</code>");
+  return text.split(/\n{2,}/).map(t => t.trim()).filter(Boolean).map(t => t.startsWith("# ")
+    ? '<div class="dt">' + inline(t.slice(2)) + "</div>"
+    : "<p>" + inline(t).replace(/\n/g, "<br>") + "</p>").join("");
+}
 LAYERS.forEach(r => { if (r.ramp) r.domain = [r.min, r.max]; });
 const MASKABLE = { rgb: 1, index: 1, cont: 1, terrain: 1 };
 const SCL_CLOUD = { 3: 1, 8: 1, 9: 1, 10: 1 };   // SCL cloud shadow, cloud medium / high probability, cirrus
@@ -1086,14 +1134,14 @@ const BASE_GAIN = 3.0, BASE_GAMMA = 1.6;
 
 function defaults(rec) {
   return { gain: 1, gamma: 1, r: [0, 1], g: [0, 1], b: [0, 1], min: rec.min, max: rec.max,
-           opacity: 100, cloud: false, shadow: false, terrain: false, scl: false };
+           opacity: 100, cloud: false, shadow: false, terrain: false };
 }
 const settings = {};
 const S = rec => settings[rec.id] || (settings[rec.id] = defaults(rec));
 
 const RNG_KEYS = [["r", "redRange"], ["g", "greenRange"], ["b", "blueRange"]];
 const SETTING_KEYS = ["gain", "gamma", "redRange", "greenRange", "blueRange", "valueRange",
-                      "opacity", "cloudMask", "shadowMask", "terrainMask", "sclMask"];
+                      "opacity", "cloudMask", "shadowMask", "terrainMask"];
 const r3 = v => +(+v).toFixed(4);
 
 /* Non-default settings as a flat object, named like the Copernicus Browser URL params. */
@@ -1110,7 +1158,6 @@ function settingsToObj(rec, s) {
     if (s.cloud) o.cloudMask = true;
     if (s.shadow) o.shadowMask = true;
     if (s.terrain) o.terrainMask = true;
-    if (s.scl) o.sclMask = true;
   }
   return o;
 }
@@ -1130,7 +1177,7 @@ function objToSettings(rec, o) {
   const vr = arr(o.valueRange);
   if (vr && rec.ramp) { s.min = Math.min(vr[0], vr[1]); s.max = Math.max(vr[0], vr[1]); }
   if (num(o.opacity) != null) s.opacity = clamp(Math.round(num(o.opacity)), 0, 100);
-  s.cloud = bool(o.cloudMask); s.shadow = bool(o.shadowMask); s.terrain = bool(o.terrainMask); s.scl = bool(o.sclMask);
+  s.cloud = bool(o.cloudMask); s.shadow = bool(o.shadowMask); s.terrain = bool(o.terrainMask);
   return s;
 }
 const cloneSettings = s => JSON.parse(JSON.stringify(s));
@@ -1301,14 +1348,13 @@ async function renderScene(rec, s, id, bbox, N, signal) {
   const reads = bands.map(b => readTile(assetUrl(id, b), bbox, N, signal, b === "terrain" ? 255 : 0));
   reads.push(maskable && (s.cloud || s.shadow) ? readTile(assetUrl(id, "cloud"), bbox, N, signal, 0) : null);
   reads.push(maskable && s.terrain ? readTile(assetUrl(id, "terrain"), bbox, N, signal, 255) : null);
-  reads.push(maskable && s.scl ? readTile(assetUrl(id, "scl"), bbox, N, signal, 0) : null);
   const res = await Promise.all(reads);
-  const sm = res.pop(), tm = res.pop(), cm = res.pop(), a = res;
+  const tm = res.pop(), cm = res.pop(), a = res;
   if (a.some(x => !x)) return null;
 
   const masked = k =>
     (cm && ((s.cloud && (cm[k] === 1 || cm[k] === 2)) || (s.shadow && cm[k] === 3))) ||
-    (tm && tm[k] === 200) || (sm && SCL_CLOUD[sm[k]]);
+    (tm && tm[k] === 200);
   const img = new ImageData(N, N), d = img.data, n = N * N;
   const put = (k, c) => { d[k*4] = c[0]; d[k*4+1] = c[1]; d[k*4+2] = c[2]; d[k*4+3] = 255; };
 
@@ -1762,7 +1808,18 @@ function classList(box, list) {
 function layerBody(rec) {
   const s = S(rec);
   const body = el("div", "lyr-body");
-  body.append(el("p", "desc", rec.desc));
+  const d = el("div", "ldesc");
+  if (rec.thumb) {
+    const img = el("img");
+    img.alt = ""; img.loading = "lazy";
+    img.src = PREVIEWS + rec.thumb;
+    img.onerror = () => { img.onerror = null; img.src = PREVIEWS_CDSE + rec.thumb; };
+    d.append(img);
+  }
+  d.insertAdjacentHTML("beforeend", rec.cop ? mdLite(rec.cop)
+    : '<div class="dt">' + rec.name + "</div><p>" + rec.desc + "</p>" +
+      (rec.more ? '<p>More info <a href="' + rec.more + '" target="_blank" rel="noopener">here</a>.</p>' : ""));
+  body.append(d);
   if (showCode.has(rec.id)) {
     const note = rec.note || (rec.type === "rgb" || rec.type === "index" ? SCALE_NOTE : "");
     body.append(el("code", "fx", rec.formula + (note ? "\n\n" + note : "")));
@@ -1818,7 +1875,6 @@ function layerBody(rec) {
     tog("cloud", "Clouds", "OmniCloudMask thick (1) and thin (2) cloud");
     tog("shadow", "Cloud shadows", "OmniCloudMask cloud shadow (3)");
     tog("terrain", "Terrain shadow", "Terrain mask value 200 — cast or self-shadow");
-    tog("scl", "SCL clouds", "Scene classification 3, 8, 9, 10 — catches clouds OmniCloudMask misses");
   }
 
   /* ---- effects and advanced options ---- */

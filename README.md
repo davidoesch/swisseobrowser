@@ -56,10 +56,11 @@ indices stay within −1…1.
 - **Layers** — true colour and five false-colour composites; NDVI, NDWI, NDMI, NDSI, NBR and AOT; scene
   classification, cloud mask, terrain / solar incidence; swissEO VHI forest and vegetation (WMS); a
   server-rendered true-colour WMS.
-- **Layer pull-down** — description, legend, adjustable colour scale (min/max), masks for clouds, cloud
-  shadows (OmniCloudMask), terrain shadow (terrain mask 200) and SCL clouds (scene classification 3, 8,
-  9, 10 — catches clouds OmniCloudMask misses), and *effects and advanced options* (gain, gamma,
-  red/green/blue ranges, opacity). `</>` shows the formula and scaling.
+- **Layer pull-down** — the Copernicus Browser title, description, preview thumbnail and "More info"
+  link to the Sentinel Hub custom-scripts page (swisstopo product page for the swissEO-specific layers),
+  legend, adjustable colour scale (min/max), masks for clouds and cloud shadows (OmniCloudMask) and
+  terrain shadow (terrain mask 200), and *effects and advanced options* (gain, gamma, red/green/blue
+  ranges, opacity). `</>` shows the formula and scaling.
 - **Compare** — add layers to the compare list; opening the Compare panel (or the ⇄ map button) shows
   them with a split or opacity effect, going back to Layers shows the single layer again. Reorder,
   remove and zoom to each entry.
@@ -68,7 +69,8 @@ indices stay within −1…1.
   the area: statistics and histogram for the selected date, a time series over a date range (CSV
   download) and a spectral explorer. The time series reads every date in the range, least cloudy first
   (Stop keeps what has been read), and reports which dates were not reached by that day's orbit and
-  which were fully masked.
+  which were fully masked. Statistics can additionally exclude clouds flagged by the scene
+  classification (SCL 3, 8, 9, 10), which catches clouds OmniCloudMask misses.
 - **Image download** — PNG of the current view with scale bar, legend and caption; works in compare mode
   and can be clipped to the area of interest.
 - **Pixel inspector** — band values (DN and physical value), index value, SCL, cloud mask and terrain
@@ -93,8 +95,9 @@ A current desktop browser (Firefox, Chrome, Edge) is required.
 
 GitHub Pages is published by the workflow [`.github/workflows/pages.yml`](.github/workflows/pages.yml)
 on every push to `main` that changes `swisseo-browser.html`, and can be started manually from the
-*Actions* tab. It deploys only `swisseo-browser.html`, as `index.html` (and under its own name), so the
-upstream `index.html` and sources are never published. The repository's *Settings → Pages → Source*
+*Actions* tab. It deploys only `swisseo-browser.html`, as `index.html` (and under its own name), plus the layer
+thumbnails it references from `public/previews/`, so the upstream `index.html` and sources are never
+published. The repository's *Settings → Pages → Source*
 must be set to **GitHub Actions**.
 
 External libraries are loaded from CDNs: Leaflet, Proj4js, Proj4Leaflet, geotiff.js and Leaflet-Geoman;
@@ -114,7 +117,7 @@ Parameter names follow the Copernicus Browser where an equivalent exists.
 | `gain`, `gamma` | `1.2` | Effects for the composites (1 = default) |
 | `redRange`, `greenRange`, `blueRange` | `[0,0.8]` | Advanced RGB effects |
 | `opacity` | `70` | Layer opacity in % |
-| `cloudMask`, `shadowMask`, `terrainMask`, `sclMask` | `true` | Masks |
+| `cloudMask`, `shadowMask`, `terrainMask` | `true` | Masks |
 | `basemap`, `labels` | `swissimage`, `true` | Basemap (`pixelkarte`, `swissimage`, `grey`, `none`) and label overlay |
 | `compareLayers`, `comparedOpacity`, `comparedClipping`, `compareMode` | | Compare list (base64url JSON), per-layer opacity and split range; `compareMode` is `split` / `opacity` when comparing and `off` otherwise (links without it open in compare mode) |
 | `aoi` | | Area of interest as base64url GeoJSON |

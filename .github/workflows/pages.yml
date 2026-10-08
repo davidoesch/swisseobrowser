@@ -9,6 +9,7 @@ on:
     branches: [main]
     paths:
       - swisseo-browser.html
+      - public/previews/**
       - .github/workflows/pages.yml
   workflow_dispatch:
 
@@ -32,9 +33,13 @@ jobs:
 
       - name: Assemble site
         run: |
-          mkdir -p _site
+          mkdir -p _site/public/previews
           cp swisseo-browser.html _site/index.html
           cp swisseo-browser.html _site/swisseo-browser.html
+          # layer thumbnails: only the Copernicus Browser previews the page references
+          grep -oE '"[A-Z-]+-[0-9a-f]{6}-[^"]+\.png"' swisseo-browser.html | tr -d '"' | sort -u |
+            while read -r f; do cp "public/previews/$f" _site/public/previews/; done
+          ls _site/public/previews
           touch _site/.nojekyll
 
       - uses: actions/configure-pages@v5
