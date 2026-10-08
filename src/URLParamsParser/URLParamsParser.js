@@ -1,5 +1,6 @@
 import React from 'react';
 import moment from 'moment';
+import { t } from 'ttag';
 
 import {
   getUrlParams,
@@ -20,6 +21,8 @@ import store, {
   compareLayersSlice,
   tabsSlice,
   clmsSlice,
+  panelSlice,
+  notificationSlice,
 } from '../store';
 import { b64DecodeUnicode, b64EncodeUnicode } from '../utils/base64MDN';
 
@@ -27,6 +30,8 @@ import {
   COMPARE_OPTIONS,
   DATE_MODES,
   DEFAULT_LAT_LNG,
+  PANEL,
+  parsePanelParam,
   PROCESSING_OPTIONS,
   SHOW_TUTORIAL_LC,
   TABS,
@@ -173,6 +178,7 @@ class URLParamsParser extends React.Component {
       clmsSelectedCollection,
       clmsSelectedConsolidationPeriodIndex,
       useEvoland,
+      panel,
     } = params;
     let { lat: parsedLat, lng: parsedLng, zoom: parsedZoom } = parsePosition(lat, lng, zoom);
 
@@ -181,6 +187,19 @@ class URLParamsParser extends React.Component {
       parsedLat = DEFAULT_LAT_LNG.lat;
     }
     store.dispatch(mainMapSlice.actions.setPosition({ zoom: parsedZoom, lat: parsedLat, lng: parsedLng }));
+
+    // Seeds the Highlights/Pins panel from the `panel` URL param before App ever mounts (this
+    // method runs before this.setState({params}) below, and App only mounts once state.params is
+    // set — see render()). Layers is panelSlice's own default initial state, so it needs no
+    // dispatch here. WMS is intentionally not seeded here — see App.jsx's componentDidMount, which
+    // opens it only once external-layer hydration resolves (the server list must exist first).
+    const panelValue = parsePanelParam(panel);
+    if (panelValue === PANEL.HIGHLIGHTS) {
+      store.dispatch(panelSlice.actions.openPanel(PANEL.HIGHLIGHTS));
+    } else if (panelValue === PANEL.PINS) {
+      store.dispatch(panelSlice.actions.openPanel(PANEL.PINS));
+    }
+
     const decryptedVisualisationUrl =
       visualizationUrl && !visualizationUrl.startsWith('https')
         ? decrypt(visualizationUrl)
@@ -305,27 +324,48 @@ class URLParamsParser extends React.Component {
       );
     }
 
-    if (compareShare) {
+    // compareSharedPinsId is written to the URL asynchronously (ComparePanel.jsx POSTs the compared
+    // layers to get an id). Without the id there is nothing to restore, and getSharedPins(undefined)
+    // would reject — see issue #1270.
+    //
+    // The layers are restored whenever compareSharedPinsId is present, regardless of whether Compare
+    // is the currently active panel (compareShare): updatePath keeps compareSharedPinsId in the URL
+    // even while another Visualize sub-panel (e.g. Wms) is active, so a backgrounded compare session
+    // survives a refresh instead of only ever being restorable while Compare itself is on screen.
+    // Only switch to the Compare view when compareShare says it was the active panel at share time —
+    // otherwise the restored layers just sit in Redux, ready for when the user opens Compare.
+    if (compareSharedPinsId) {
       (async () => {
-        const pins = await getSharedPins(compareSharedPinsId);
-        const normalizedLayers = pins.items.map(normalizePin);
-        let compareModeOption = Object.keys(COMPARE_OPTIONS).find(
-          (key) => COMPARE_OPTIONS[key].value === compareMode,
-        );
+        try {
+          const pins = await getSharedPins(compareSharedPinsId);
+          const normalizedLayers = pins.items.map(normalizePin);
+          let compareModeOption = Object.keys(COMPARE_OPTIONS).find(
+            (key) => COMPARE_OPTIONS[key].value === compareMode,
+          );
 
-        store.dispatch(
-          compareLayersSlice.actions.restoreComparedLayers({
-            compareShare: params.compareShare,
-            compareSharedPinsId: params.compareSharedPinsId,
-            layers: normalizedLayers,
-            compareMode: compareModeOption
-              ? COMPARE_OPTIONS[compareModeOption]
-              : COMPARE_OPTIONS.COMPARE_SPLIT,
-            comparedOpacity: JSON.parse(comparedOpacity),
-            comparedClipping: JSON.parse(comparedClipping),
-          }),
-        );
-        store.dispatch(tabsSlice.actions.setTabIndex(TABS.VISUALIZE_TAB));
+          store.dispatch(
+            compareLayersSlice.actions.restoreComparedLayers({
+              compareShare: compareShare ?? null,
+              compareSharedPinsId: params.compareSharedPinsId,
+              layers: normalizedLayers,
+              compareMode: compareModeOption
+                ? COMPARE_OPTIONS[compareModeOption]
+                : COMPARE_OPTIONS.COMPARE_SPLIT,
+              comparedOpacity: JSON.parse(comparedOpacity),
+              comparedClipping: JSON.parse(comparedClipping),
+            }),
+          );
+          if (compareShare) {
+            store.dispatch(tabsSlice.actions.setTabIndex(TABS.VISUALIZE_TAB));
+          }
+        } catch (e) {
+          console.error(e);
+          store.dispatch(
+            notificationSlice.actions.displayError(
+              t`We could not restore the compared layers. Please try opening the link again.`,
+            ),
+          );
+        }
       })();
     }
   };
@@ -336,10 +376,16 @@ class URLParamsParser extends React.Component {
       return null;
     }
 
+    // Whitelist: any other value (including undefined) falls back to the default Layers panel in
+    // panelSlice's initialState. Compare is intentionally not one of these values — it's
+    // represented separately by compareShare (see parsePanelParam in const.ts and issue #1264).
+    const panel = parsePanelParam(params.panel);
+
     return this.props.children({
       themeId: params.themeId,
       sharedPinsListId: params.sharedPinsListId,
       compareShare: params.compareShare,
+      panel,
     });
   }
 }

@@ -19,7 +19,7 @@ import ThemeSelect from './ThemeSelect/ThemeSelect';
 import Loader from '../../Loader/Loader';
 
 import { haveEffectsChangedFromDefault } from './VisualizationPanel.utils';
-import store, { visualizationSlice, compareLayersSlice, pinsSlice, collapsiblePanelSlice } from '../../store';
+import store, { visualizationSlice, collapsiblePanelSlice } from '../../store';
 import { selectActiveExternalLayer } from '../../store/slices/externalLayersSlice';
 import {
   EXPIRED_ACCOUNT,
@@ -33,7 +33,6 @@ import { getAppropriateAuthToken } from '../../App';
 import { resetMessagePanel } from '../../utils';
 import { isOpenEoSupported } from '../../api/openEO/openEOHelpers';
 import { IMAGE_FORMATS } from '../../Controls/ImgDownload/consts';
-import { NOTIFICATION_BADGE_RESET_TIMEOUT } from './const';
 import ExternalWmsLayerContainer from '../../ExternalLayers/ExternalWmsLayerContainer';
 
 const showEffectsText = () => t`Show effects and advanced options`;
@@ -117,19 +116,21 @@ function VisualizationPanel({
   setShowComparePanel,
   setLastAddedPin,
   saveLocalPinsOnLogin,
-  newCompareLayersCount,
-  newPinsCount,
+  comparedLayersCount,
+  pinsCount,
   visibleOnMap,
   authToken,
   dataSourcesInitialized,
   dataSourcesLoading,
   compareShare,
+  compareShareInit,
   selectedTabIndex,
   customSelected,
   selectedProcessing,
   activeExternalServerId,
   wmsLayersPanelOpen,
   activeExternalLayer,
+  panelFromUrlParams,
 }) {
   const selectedTheme = selectedThemesListId
     ? themesLists[selectedThemesListId].find((t) => t.id === selectedThemeId)
@@ -181,40 +182,6 @@ function VisualizationPanel({
     }
   }, [is3D, shouldShowTPDI]);
 
-  useEffect(() => {
-    let resetNewCompareLayerCountTimeout;
-
-    if (showComparePanel && newCompareLayersCount > 0) {
-      resetNewCompareLayerCountTimeout = setTimeout(
-        () => store.dispatch(compareLayersSlice.actions.setNewCompareLayersCount(0)),
-        NOTIFICATION_BADGE_RESET_TIMEOUT,
-      );
-
-      return () => {
-        if (resetNewCompareLayerCountTimeout) {
-          clearTimeout(resetNewCompareLayerCountTimeout);
-        }
-      };
-    }
-  }, [showComparePanel, newCompareLayersCount]);
-
-  useEffect(() => {
-    let resetNewPinsCountTimeout;
-
-    if (showPinPanel && newPinsCount > 0) {
-      resetNewPinsCountTimeout = setTimeout(
-        () => store.dispatch(pinsSlice.actions.setNewPinsCount(0)),
-        NOTIFICATION_BADGE_RESET_TIMEOUT,
-      );
-
-      return () => {
-        if (resetNewPinsCountTimeout) {
-          clearTimeout(resetNewPinsCountTimeout);
-        }
-      };
-    }
-  }, [showPinPanel, newPinsCount]);
-
   const handleTPDIClick = () => {
     setShouldShowTPDI(!shouldShowTPDI);
   };
@@ -230,6 +197,11 @@ function VisualizationPanel({
     authToken
   );
 
+  // `!showPinPanel` here (and above in shouldShowLayerList) is defense-in-depth against a
+  // hand-crafted `?panel=wms&sharedPinsListId=...` URL rendering both panels. App.jsx's panelSlice
+  // guard (see its componentDidMount) already keeps Pins and WMS from both being "open" at once in
+  // the store, but this render-time check costs nothing and protects against any future path that
+  // dispatches them independently again.
   const shouldShowExternalLayerList = !!(
     activeExternalServerId &&
     wmsLayersPanelOpen &&
@@ -271,9 +243,12 @@ function VisualizationPanel({
   useEffect(() => {
     const shouldCollapse = windowHeight >= MIN_SCREEN_HEIGHT_FOR_DATE_AND_COLLECTION_PANEL;
 
+    // Data Collections' own expanded state is owned solely by collapsiblePanelSlice's
+    // panelSlice.openPanel listener now (opening Layers always force-expands it, per issue #1246) -
+    // dispatching setCollectionPanelExpanded here as well would refight that on every window-height
+    // change while Layers is open.
     if (shouldShowLayerList && selectedTimeRef.current) {
       store.dispatch(collapsiblePanelSlice.actions.setDatePanelExpanded(shouldCollapse));
-      store.dispatch(collapsiblePanelSlice.actions.setCollectionPanelExpanded(shouldCollapse));
     }
   }, [windowHeight, shouldShowLayerList, datasetId]);
 
@@ -305,10 +280,14 @@ function VisualizationPanel({
             <div className="date-selection">
               <WmsDateSelection
                 compareShare={compareShare}
+                compareShareInit={compareShareInit}
                 showLayerPanel={showLayerPanel}
                 setShowLayerPanel={setShowLayerPanel}
                 showHighlightPanel={showHighlightPanel}
                 showComparePanel={showComparePanel}
+                showPinPanel={showPinPanel}
+                wmsPanelOpen={wmsLayersPanelOpen}
+                panelFromUrlParams={panelFromUrlParams}
               />
             </div>
           ) : (
@@ -316,10 +295,14 @@ function VisualizationPanel({
               <div className={`date-selection ${wmsLayersPanelOpen ? 'wms-disabled-overlay' : ''}`}>
                 <DateSelection
                   compareShare={compareShare}
+                  compareShareInit={compareShareInit}
                   showLayerPanel={showLayerPanel}
                   setShowLayerPanel={setShowLayerPanel}
                   showHighlightPanel={showHighlightPanel}
                   showComparePanel={showComparePanel}
+                  showPinPanel={showPinPanel}
+                  wmsPanelOpen={wmsLayersPanelOpen}
+                  panelFromUrlParams={panelFromUrlParams}
                 />
               </div>
             )
@@ -332,9 +315,14 @@ function VisualizationPanel({
         <div className={wmsLayersPanelOpen ? 'wms-disabled-overlay' : ''}>
           <ThemeSelect
             compareShare={compareShare}
+            compareShareInit={compareShareInit}
             setShowLayerPanel={setShowLayerPanel}
             highlightsAvailable={highlightsAvailable}
             setShowHighlightPanel={setShowHighlightPanel}
+            showPinPanel={showPinPanel}
+            showComparePanel={showComparePanel}
+            wmsPanelOpen={wmsLayersPanelOpen}
+            panelFromUrlParams={panelFromUrlParams}
           />
         </div>
 
@@ -353,8 +341,8 @@ function VisualizationPanel({
                 setComparePanel={setShowComparePanel}
                 showPinPanel={showPinPanel}
                 setPinPanel={setShowPinPanel}
-                newCompareLayersCount={newCompareLayersCount}
-                newPinsCount={newPinsCount}
+                comparedLayersCount={comparedLayersCount}
+                pinsCount={pinsCount}
               />
             )}
             {showLayerPanel && !displayEffects && shouldShowLayerList && !shouldShowExternalLayerList && (
@@ -405,7 +393,6 @@ function VisualizationPanel({
                 is3D={is3D}
                 showComparePanel={showComparePanel}
                 setComparePanel={setShowComparePanel}
-                newCompareLayersCount={newCompareLayersCount}
               />
             )}
 
@@ -440,15 +427,15 @@ const mapStoreToProps = (store) => ({
   themesLists: store.themes.themesLists,
   selectedThemesListId: store.themes.selectedThemesListId,
   effects: getVisualizationEffectsFromStore(store),
-  newCompareLayersCount: store.compare.newCompareLayersCount,
-  newPinsCount: store.pins.newPinsCount,
+  comparedLayersCount: store.compare.comparedLayers.length,
+  pinsCount: store.pins.items.length,
   authToken: getAppropriateAuthToken(store.auth, store.themes.selectedThemeId),
   dataSourcesInitialized: store.themes.dataSourcesInitialized,
   dataSourcesLoading: store.themes.dataSourcesLoading,
   selectedTabIndex: store.tabs.selectedTabIndex,
   activeExternalLayer: selectActiveExternalLayer(store),
   activeExternalServerId: store.externalLayers.activeServerId,
-  wmsLayersPanelOpen: store.externalLayers.panelOpen,
+  wmsLayersPanelOpen: store.panel.wms,
 });
 
 export default connect(mapStoreToProps, null)(VisualizationPanel);

@@ -1,7 +1,9 @@
 import moment from 'moment';
 import {
   addImageOverlays,
+  addStickerOverlays,
   constructRawBandEvalscript,
+  drawLegendImage,
   fetchImage,
   getImageDimensionFromBoundsWithCap,
   getLayerFromParams,
@@ -9,7 +11,9 @@ import {
   getPixelCoordinates,
   getRawBandsScalingFactor,
   isSimpleImageFormat,
+  LEGEND_SVG_SCALE,
   overrideEvalscriptIfNeeded,
+  resolveComparedLayerTitle,
 } from './ImageDownload.utils';
 import { BBox, CRS_EPSG3857, ApiType, LayersFactory } from '@sentinel-hub/sentinelhub-js';
 import { latLngBounds } from 'leaflet';
@@ -42,10 +46,21 @@ jest.mock('../../utils/parseEvalscript', () => ({
 const actualDataSourceHandlers = jest.requireActual(
   '../../Tools/SearchPanel/dataSourceHandlers/dataSourceHandlers',
 );
+// getDatasetLabel's real implementation resolves the handler for the dataset id and calls its
+// getDatasetLabel method, which (via DataSourceHandler.js) imports `datasetLabels` back from this
+// same module — a circular import that resolves to undefined while this factory is still being
+// evaluated. Read the label straight off the actual module's plain `datasetLabels` map instead, so
+// real dataset labels (e.g. S2_L2A_CDAS -> 'Sentinel-2 L2A') still resolve without hitting the cycle.
 jest.mock('../../Tools/SearchPanel/dataSourceHandlers/dataSourceHandlers', () => ({
   ...jest.requireActual('../../Tools/SearchPanel/dataSourceHandlers/dataSourceHandlers'),
   getDataSourceHandler: jest.fn(
     jest.requireActual('../../Tools/SearchPanel/dataSourceHandlers/dataSourceHandlers').getDataSourceHandler,
+  ),
+  getDatasetLabel: jest.fn(
+    (datasetId) =>
+      jest.requireActual('../../Tools/SearchPanel/dataSourceHandlers/dataSourceHandlers').datasetLabels[
+        datasetId
+      ],
   ),
 }));
 
@@ -877,5 +892,196 @@ describe('getLayerFromParams — data fusion takes precedence over layerId (regr
     );
     expect(constructDataFusionLayer).not.toHaveBeenCalled();
     expect(layer).toBe(madeLayer);
+  });
+});
+
+describe('resolveComparedLayerTitle — rebuilds legacy layerId-as-title compare captions (regression #1202)', () => {
+  const layerId = '2_TONEMAPPED_NATURAL_COLOR';
+  const resolvedLayerTitle = 'Highlight Optimized Natural Color';
+
+  test('legacy shape (title ends with ": " + layerId) is rewritten using the resolved layer title', () => {
+    const cLayer = {
+      title: `Sentinel-2 L2A: ${layerId}`,
+      layerId,
+      datasetId: S2_L2A_CDAS,
+    };
+
+    expect(resolveComparedLayerTitle(cLayer, resolvedLayerTitle)).toBe(
+      'Sentinel-2 L2A: Highlight Optimized Natural Color',
+    );
+  });
+
+  test('pin-sourced title is returned verbatim (does not end with ": " + layerId)', () => {
+    const cLayer = {
+      title: 'Sentinel-2 L2A: Highlight Optimized Natural Color (Default)',
+      layerId,
+      datasetId: S2_L2A_CDAS,
+    };
+
+    expect(resolveComparedLayerTitle(cLayer, resolvedLayerTitle)).toBe(
+      'Sentinel-2 L2A: Highlight Optimized Natural Color (Default)',
+    );
+  });
+
+  test('custom title is returned verbatim regardless of resolvedLayerTitle', () => {
+    const cLayer = {
+      title: 'Sentinel-2 L2A: Custom',
+      layerId: 'someLayerId',
+      datasetId: S2_L2A_CDAS,
+    };
+
+    expect(resolveComparedLayerTitle(cLayer, resolvedLayerTitle)).toBe('Sentinel-2 L2A: Custom');
+  });
+
+  test('missing resolvedLayerTitle keeps the stored title unchanged', () => {
+    const cLayer = {
+      title: `Sentinel-2 L2A: ${layerId}`,
+      layerId,
+      datasetId: S2_L2A_CDAS,
+    };
+
+    expect(resolveComparedLayerTitle(cLayer, undefined)).toBe(`Sentinel-2 L2A: ${layerId}`);
+  });
+
+  test('missing layerId keeps the stored title unchanged', () => {
+    const cLayer = {
+      title: `Sentinel-2 L2A: ${layerId}`,
+      datasetId: S2_L2A_CDAS,
+    };
+
+    expect(resolveComparedLayerTitle(cLayer, resolvedLayerTitle)).toBe(`Sentinel-2 L2A: ${layerId}`);
+  });
+
+  test('missing stored title falls back to the resolved layer title', () => {
+    const cLayer = {
+      layerId,
+      datasetId: S2_L2A_CDAS,
+    };
+
+    expect(resolveComparedLayerTitle(cLayer, resolvedLayerTitle)).toBe(resolvedLayerTitle);
+  });
+
+  test('missing stored title and missing resolvedLayerTitle falls back to an empty string', () => {
+    const cLayer = {
+      layerId,
+      datasetId: S2_L2A_CDAS,
+    };
+
+    expect(resolveComparedLayerTitle(cLayer, undefined)).toBe('');
+  });
+});
+
+describe('drawLegendImage — caps legend height for layers with many discrete legend classes (regression #1269, CLCplus LULUCF Instance)', () => {
+  function createCanvasCtx(width, height) {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    return canvas.getContext('2d');
+  }
+
+  function createLegendImage(logicalWidth, logicalHeight) {
+    const img = document.createElement('img');
+    // drawLegendImage receives the already-rasterized <img>, whose natural width/height are
+    // LEGEND_SVG_SCALE times the SVG's logical size (see createSVGLegendDiscrete/Continous).
+    img.width = logicalWidth * LEGEND_SVG_SCALE;
+    img.height = logicalHeight * LEGEND_SVG_SCALE;
+    return img;
+  }
+
+  function getDrawnDimensions(drawImageSpy) {
+    const call = drawImageSpy.mock.calls[0];
+    return { destWidth: call[7], destHeight: call[8] };
+  }
+
+  it('scales a very tall legend down so it never exceeds 50% of the frame height, preserving aspect ratio', () => {
+    const ctx = createCanvasCtx(800, 600);
+    const drawImageSpy = jest.spyOn(ctx, 'drawImage');
+    const legendImage = createLegendImage(200, 1400);
+
+    drawLegendImage(ctx, legendImage, true, false);
+
+    const { destWidth, destHeight } = getDrawnDimensions(drawImageSpy);
+    expect(destHeight).toBeLessThanOrEqual(600 * 0.5);
+    expect(destWidth / destHeight).toBeCloseTo(legendImage.width / legendImage.height, 2);
+  });
+
+  it('leaves a short legend at the existing width-based ratio floor (unaffected by the height cap)', () => {
+    const ctx = createCanvasCtx(800, 600);
+    const drawImageSpy = jest.spyOn(ctx, 'drawImage');
+    const legendImage = createLegendImage(200, 150);
+
+    drawLegendImage(ctx, legendImage, true, false);
+
+    const { destWidth, destHeight } = getDrawnDimensions(drawImageSpy);
+    expect(destWidth).toBe(Math.round((legendImage.width / LEGEND_SVG_SCALE) * 0.6));
+    expect(destHeight).toBe(Math.round((legendImage.height / LEGEND_SVG_SCALE) * 0.6));
+  });
+});
+
+describe('addStickerOverlays — text removal (regression #1281)', () => {
+  let origCreateElement;
+  let OriginalImage;
+  let originalRevokeObjectURL;
+
+  beforeEach(() => {
+    // URL.createObjectURL is mocked in setupTests.js; define revokeObjectURL too
+    // so that drawBlobOnCanvas's finally-block doesn't throw.
+    originalRevokeObjectURL = global.URL.revokeObjectURL;
+    global.URL.revokeObjectURL = jest.fn();
+
+    // Intercept ALL img element creation (both via new Image() and document.createElement('img'))
+    // so that setting src immediately fires onload — without a real network request. Covers both
+    // drawBlobOnCanvas (sentinelhub-js) and loadImage (ImageDownload.utils.js).
+    origCreateElement = document.createElement.bind(document);
+    document.createElement = function (tag, ...args) {
+      const el = origCreateElement(tag, ...args);
+      if (tag === 'img') {
+        Object.defineProperty(el, 'src', {
+          set(_value) {
+            setTimeout(() => {
+              if (el.onload) {
+                el.onload();
+              }
+            }, 0);
+          },
+          get() {
+            return '';
+          },
+          configurable: true,
+        });
+      }
+      return el;
+    };
+
+    OriginalImage = global.Image;
+    global.Image = function MockImageConstructor() {
+      return document.createElement('img');
+    };
+  });
+
+  afterEach(() => {
+    document.createElement = origCreateElement;
+    global.Image = OriginalImage;
+    global.URL.revokeObjectURL = originalRevokeObjectURL;
+    jest.restoreAllMocks();
+  });
+
+  test('never draws text onto the sticker canvas, for either logo variant', async () => {
+    const fillTextSpy = jest.spyOn(CanvasRenderingContext2D.prototype, 'fillText');
+    const blob = new Blob(['fake-image'], { type: 'image/png' });
+
+    await addStickerOverlays(blob, 'image/png', 'light');
+    await addStickerOverlays(blob, 'image/png', 'dark');
+
+    expect(fillTextSpy).not.toHaveBeenCalled();
+  });
+
+  test('still draws the logo onto the sticker canvas', async () => {
+    const drawImageSpy = jest.spyOn(CanvasRenderingContext2D.prototype, 'drawImage');
+    const blob = new Blob(['fake-image'], { type: 'image/png' });
+
+    await addStickerOverlays(blob, 'image/png', 'light');
+
+    expect(drawImageSpy).toHaveBeenCalled();
   });
 });

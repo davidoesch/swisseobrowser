@@ -18,6 +18,7 @@ import {
   getAllProductAttributes,
   getProductErrorMessage,
   productAttributesSections,
+  showProductActionError,
 } from './ProductInfo.utils';
 import Select, { components } from 'react-select';
 import { CustomDropdownIndicator } from '../../../components/CustomSelectInput/CustomDropdownIndicator';
@@ -26,6 +27,7 @@ import ChevronDown from '../../../icons/chevron-down.svg?react';
 import ChevronUp from '../../../icons/chevron-up.svg?react';
 import { textColor, mainMedium } from '../../../variables.module.scss';
 import { getLoggedInErrorMsg } from '../../../junk/ConstMessages';
+import { openLoginPrompt } from '../../../Auth/LoginPrompt/loginPrompt.utils';
 
 const DropdownIndicator = (props) => {
   return (
@@ -72,20 +74,29 @@ const ProductInfo = ({ product, onDownload, downloadInProgress, onClose, userTok
   const downloadDisabled = downloadInProgress || downloadProductErrorMessage;
 
   useEffect(() => {
+    if (!userToken) {
+      setAvailableProcessors([]);
+      setSelectedWorkflow(null);
+      return;
+    }
+
     (async () => {
       const workflows = await getAvailableProcesorsForProducts([product.oDataProductId ?? product.id]);
       setAvailableProcessors(workflows);
     })();
-  }, [product]);
+  }, [product, userToken]);
 
   const onDisabledClickOrderProcessing = () => {
-    let errorMessage = !userToken
-      ? getLoggedInErrorMsg()
-      : !availableProcessors.length
-        ? ResultItemLabels.noAvailableProcessors()
-        : !selectedWorkflow
-          ? ResultItemLabels.noWorkspaceSelected()
-          : t`Unknown error`;
+    if (!userToken) {
+      openLoginPrompt(getLoggedInErrorMsg(), t`Order Processing`);
+      return;
+    }
+
+    let errorMessage = !availableProcessors.length
+      ? ResultItemLabels.noAvailableProcessors()
+      : !selectedWorkflow
+        ? ResultItemLabels.noWorkflowSelected()
+        : t`Unknown error`;
 
     store.dispatch(notificationSlice.actions.displayError(`${t`Order Processing`}\n${errorMessage}`));
   };
@@ -207,9 +218,11 @@ const ProductInfo = ({ product, onDownload, downloadInProgress, onClose, userTok
                     </>
                   )) || (
                     <div className="error-message">
-                      {!availableProcessors.length
-                        ? ResultItemLabels.noAvailableProcessors()
-                        : ResultItemLabels.noWorkspaceSelected()}
+                      {!userToken
+                        ? getLoggedInErrorMsg()
+                        : !availableProcessors.length
+                          ? ResultItemLabels.noAvailableProcessors()
+                          : ResultItemLabels.noWorkflowSelected()}
                     </div>
                   )}
                 </div>
@@ -254,9 +267,7 @@ const ProductInfo = ({ product, onDownload, downloadInProgress, onClose, userTok
               onClose();
             }}
             onDisabledClick={() => {
-              if (workspaceProductErrorMessage) {
-                store.dispatch(notificationSlice.actions.displayError(workspaceProductErrorMessage));
-              }
+              showProductActionError(ResultItemLabels.addProductsToWorkspace(), accessValidation);
             }}
           ></EOBButton>
           <EOBButton
@@ -267,9 +278,7 @@ const ProductInfo = ({ product, onDownload, downloadInProgress, onClose, userTok
             title={ResultItemLabels.downloadProductLabel()}
             onClick={onDownload}
             onDisabledClick={() => {
-              if (downloadProductErrorMessage) {
-                store.dispatch(notificationSlice.actions.displayError(downloadProductErrorMessage));
-              }
+              showProductActionError(ResultItemLabels.downloadProductLabel(), accessValidation);
             }}
           ></EOBButton>
         </div>

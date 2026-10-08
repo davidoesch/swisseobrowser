@@ -417,52 +417,6 @@
     ],
     "058c10-YOUR-INSTANCEID-HERE": [
         {
-            "id": "SSF",
-            "title": "SWI-SSF",
-            "description": "Surface State Flag",
-            "styles": [
-                {
-                    "name": "default",
-                    "description": "Default layer style",
-                    "evalScript": "//VERSION=3\nconst factor = 1; // EDIT FACTOR\nconst offset = 0; // EDIT OFFSET\n\nfunction setup() {\n  return {\n    // EDIT VARIABLE NAME\n    input: [\"SSF\", \"dataMask\"],\n    output: [\n      { id: \"default\", bands: 4, sampleType: \"UINT8\" },\n      { id: \"index\", bands: 1, sampleType: \"FLOAT32\" },\n      { id: \"browserStats\", bands: 1, sampleType: \"FLOAT32\" },\n      { id: \"dataMask\", bands: 1 },\n    ],\n  };\n}\n\nfunction evaluatePixel(samples) {\n  // EDIT VARIABLE NAME\n  var originalValue = samples.SSF;\n\n  let val = originalValue * factor + offset;\n\n  let dataMask = samples.dataMask;\n\n  const indexVal = dataMask === 1 ? val : NaN;\n  const imgVals = getColor(originalValue);\n\n  return {\n    default: imgVals.concat(dataMask * 255),\n    index: [indexVal],\n    browserStats: [val],\n    dataMask: [dataMask],\n  };\n}\n\n// LOOKUP TABLE FOR COLOURS, TO BE ADAPTED\nconst exactColorMap = [\n  [0, [243, 243, 243]],\n  [1, [246, 182, 86]],\n  [2, [86, 129, 246]],\n  [3, [236, 136, 136]],\n];\n\n// Function to fetch color for a given value\nfunction getColor(value) {\n  const entry = exactColorMap.find(([v, _]) => v === Math.floor(value));\n  if (entry) {\n    const [_, color] = entry;\n    return [color[0], color[1], color[2]];\n  } else {\n    return [0, 0, 0];\n  }\n}\n",
-                    "legend": {
-                        "type": "discrete",
-                        "items": [
-                            {
-                                "color": "rgb(95.29%,95.29%,95.29%)",
-                                "label": "Unknown"
-                            },
-                            {
-                                "color": "rgb(96.47%,71.37%,33.73%)",
-                                "label": "Unfrozen"
-                            },
-                            {
-                                "color": "rgb(33.73%,50.59%,96.47%)",
-                                "label": "Frozen"
-                            },
-                            {
-                                "color": "rgb(92.55%,53.33%,53.33%)",
-                                "label": "Temporary melting / Water on the surface"
-                            }
-                        ]
-                    }
-                }
-            ],
-            "orderHint": 0,
-            "instanceId": "058c10-YOUR-INSTANCEID-HERE",
-            "lastUpdated": "2026-05-28T11:54:50.334161Z",
-            "collectionType": "CUSTOM",
-            "collectionId": "byoc-bd0258-YOUR-INSTANCEID-HERE",
-            "datasetSourceId": 10,
-            "defaultStyleName": "default",
-            "datasourceDefaults": {
-                "mosaickingOrder": "mostRecent",
-                "temporal": false,
-                "collectionId": "bd0258-YOUR-INSTANCEID-HERE",
-                "type": "CUSTOM"
-            }
-        },
-        {
             "id": "SWI002",
             "title": "SWI-SWI002",
             "description": "Soil Water Index at different time lengths",
@@ -1155,6 +1109,52 @@
             "orderHint": 0,
             "instanceId": "058c10-YOUR-INSTANCEID-HERE",
             "lastUpdated": "2026-05-28T11:54:50.788988Z",
+            "collectionType": "CUSTOM",
+            "collectionId": "byoc-bd0258-YOUR-INSTANCEID-HERE",
+            "datasetSourceId": 10,
+            "defaultStyleName": "default",
+            "datasourceDefaults": {
+                "mosaickingOrder": "mostRecent",
+                "temporal": false,
+                "collectionId": "bd0258-YOUR-INSTANCEID-HERE",
+                "type": "CUSTOM"
+            }
+        },
+        {
+            "id": "Z_SSF",
+            "title": "SWI-SSF",
+            "description": "Surface State Flag",
+            "styles": [
+                {
+                    "name": "default",
+                    "description": "Default layer style",
+                    "evalScript": "//VERSION=3\nconst factor = 1; // EDIT FACTOR\nconst offset = 0; // EDIT OFFSET\n\nfunction setup() {\n  return {\n    // EDIT VARIABLE NAME\n    input: [\"SSF\", \"dataMask\"],\n    output: [\n      { id: \"default\", bands: 4, sampleType: \"UINT8\" },\n      { id: \"index\", bands: 1, sampleType: \"FLOAT32\" },\n      { id: \"browserStats\", bands: 1, sampleType: \"FLOAT32\" },\n      { id: \"dataMask\", bands: 1 },\n    ],\n  };\n}\n\nfunction evaluatePixel(samples) {\n  // EDIT VARIABLE NAME\n  var originalValue = samples.SSF;\n\n  let val = originalValue * factor + offset;\n\n  let dataMask = samples.dataMask;\n\n  const indexVal = dataMask === 1 ? val : NaN;\n  const imgVals = getColor(originalValue);\n\n  return {\n    default: imgVals.concat(dataMask * 255),\n    index: [indexVal],\n    browserStats: [val],\n    dataMask: [dataMask],\n  };\n}\n\n// LOOKUP TABLE FOR COLOURS, TO BE ADAPTED\nconst exactColorMap = [\n  [0, [243, 243, 243]],\n  [1, [246, 182, 86]],\n  [2, [86, 129, 246]],\n  [3, [236, 136, 136]],\n];\n\n// Function to fetch color for a given value\nfunction getColor(value) {\n  const entry = exactColorMap.find(([v, _]) => v === Math.floor(value));\n  if (entry) {\n    const [_, color] = entry;\n    return [color[0], color[1], color[2]];\n  } else {\n    return [0, 0, 0];\n  }\n}\n",
+                    "legend": {
+                        "type": "discrete",
+                        "items": [
+                            {
+                                "color": "rgb(95.29%,95.29%,95.29%)",
+                                "label": "Unknown"
+                            },
+                            {
+                                "color": "rgb(96.47%,71.37%,33.73%)",
+                                "label": "Unfrozen"
+                            },
+                            {
+                                "color": "rgb(33.73%,50.59%,96.47%)",
+                                "label": "Frozen"
+                            },
+                            {
+                                "color": "rgb(92.55%,53.33%,53.33%)",
+                                "label": "Temporary melting / Water on the surface"
+                            }
+                        ]
+                    }
+                }
+            ],
+            "orderHint": 0,
+            "instanceId": "058c10-YOUR-INSTANCEID-HERE",
+            "lastUpdated": "2026-09-18T09:15:20.823242Z",
             "collectionType": "CUSTOM",
             "collectionId": "byoc-bd0258-YOUR-INSTANCEID-HERE",
             "datasetSourceId": 10,
@@ -12054,13 +12054,13 @@
             ],
             "orderHint": 0,
             "instanceId": "274a99-YOUR-INSTANCEID-HERE",
-            "lastUpdated": "2024-08-28T12:27:01.701571Z",
+            "lastUpdated": "2026-09-10T10:50:01.135952Z",
             "collectionType": "S2L1C",
             "collectionId": "sentinel-2-l1c",
             "datasetSourceId": 1,
             "defaultStyleName": "default",
             "datasourceDefaults": {
-                "upsampling": "BICUBIC",
+                "upsampling": "BILINEAR",
                 "downsampling": "NEAREST",
                 "mosaickingOrder": "mostRecent",
                 "temporal": false,
@@ -12081,13 +12081,13 @@
             ],
             "orderHint": 0,
             "instanceId": "274a99-YOUR-INSTANCEID-HERE",
-            "lastUpdated": "2024-08-28T12:23:31.773540Z",
+            "lastUpdated": "2026-09-10T10:48:25.077743Z",
             "collectionType": "S2L1C",
             "collectionId": "sentinel-2-l1c",
             "datasetSourceId": 1,
             "defaultStyleName": "default",
             "datasourceDefaults": {
-                "upsampling": "BICUBIC",
+                "upsampling": "BILINEAR",
                 "downsampling": "NEAREST",
                 "mosaickingOrder": "mostRecent",
                 "temporal": false,
@@ -12108,13 +12108,13 @@
             ],
             "orderHint": 0,
             "instanceId": "274a99-YOUR-INSTANCEID-HERE",
-            "lastUpdated": "2025-01-09T16:20:40.593530Z",
+            "lastUpdated": "2026-09-10T10:48:45.237540Z",
             "collectionType": "S2L1C",
             "collectionId": "sentinel-2-l1c",
             "datasetSourceId": 1,
             "defaultStyleName": "default",
             "datasourceDefaults": {
-                "upsampling": "BICUBIC",
+                "upsampling": "BILINEAR",
                 "downsampling": "NEAREST",
                 "mosaickingOrder": "mostRecent",
                 "temporal": false,
@@ -12162,12 +12162,14 @@
             ],
             "orderHint": 0,
             "instanceId": "274a99-YOUR-INSTANCEID-HERE",
-            "lastUpdated": "2026-08-10T12:21:41.865231Z",
+            "lastUpdated": "2026-09-10T10:50:25.572621Z",
             "collectionType": "S2L1C",
             "collectionId": "sentinel-2-l1c",
             "datasetSourceId": 1,
             "defaultStyleName": "default",
             "datasourceDefaults": {
+                "upsampling": "BILINEAR",
+                "downsampling": "NEAREST",
                 "mosaickingOrder": "mostRecent",
                 "temporal": false,
                 "maxCloudCoverage": 50,
@@ -12187,13 +12189,13 @@
             ],
             "orderHint": 0,
             "instanceId": "274a99-YOUR-INSTANCEID-HERE",
-            "lastUpdated": "2024-08-28T12:24:31.747622Z",
+            "lastUpdated": "2026-09-10T10:48:32.952416Z",
             "collectionType": "S2L1C",
             "collectionId": "sentinel-2-l1c",
             "datasetSourceId": 1,
             "defaultStyleName": "default",
             "datasourceDefaults": {
-                "upsampling": "BICUBIC",
+                "upsampling": "BILINEAR",
                 "downsampling": "NEAREST",
                 "mosaickingOrder": "mostRecent",
                 "temporal": false,
@@ -12241,13 +12243,13 @@
             ],
             "orderHint": 0,
             "instanceId": "274a99-YOUR-INSTANCEID-HERE",
-            "lastUpdated": "2024-08-28T12:25:55.905958Z",
+            "lastUpdated": "2026-09-10T10:49:47.272025Z",
             "collectionType": "S2L1C",
             "collectionId": "sentinel-2-l1c",
             "datasetSourceId": 1,
             "defaultStyleName": "default",
             "datasourceDefaults": {
-                "upsampling": "BICUBIC",
+                "upsampling": "BILINEAR",
                 "downsampling": "NEAREST",
                 "mosaickingOrder": "mostRecent",
                 "temporal": false,
@@ -19292,52 +19294,6 @@
     ],
     "3606ef-YOUR-INSTANCEID-HERE": [
         {
-            "id": "SSF",
-            "title": "SWI-SSF",
-            "description": "Surface State Flag",
-            "styles": [
-                {
-                    "name": "default",
-                    "description": "Default layer style",
-                    "evalScript": "//VERSION=3\nconst factor = 1; // EDIT FACTOR\nconst offset = 0; // EDIT OFFSET\n\nfunction setup() {\n  return {\n    // EDIT VARIABLE NAME\n    input: [\"SSF\", \"dataMask\"],\n    output: [\n      { id: \"default\", bands: 4, sampleType: \"UINT8\" },\n      { id: \"index\", bands: 1, sampleType: \"FLOAT32\" },\n      { id: \"browserStats\", bands: 1, sampleType: \"FLOAT32\" },\n      { id: \"dataMask\", bands: 1 },\n    ],\n  };\n}\n\nfunction evaluatePixel(samples) {\n  // EDIT VARIABLE NAME\n  var originalValue = samples.SSF;\n\n  let val = originalValue * factor + offset;\n\n  let dataMask = samples.dataMask;\n\n  const indexVal = dataMask === 1 ? val : NaN;\n  const imgVals = getColor(originalValue);\n\n  return {\n    default: imgVals.concat(dataMask * 255),\n    index: [indexVal],\n    browserStats: [val],\n    dataMask: [dataMask],\n  };\n}\n\n// LOOKUP TABLE FOR COLOURS, TO BE ADAPTED\nconst exactColorMap = [\n  [1, [243, 243, 243]],\n  [2, [246, 182, 86]],\n  [3, [86, 129, 246]],\n  [4, [236, 136, 136]],\n];\n\n// Function to fetch color for a given value\nfunction getColor(value) {\n  const entry = exactColorMap.find(([v, _]) => v === Math.floor(value));\n  if (entry) {\n    const [_, color] = entry;\n    return [color[0], color[1], color[2]];\n  } else {\n    return [0, 0, 0];\n  }\n}\n",
-                    "legend": {
-                        "type": "discrete",
-                        "items": [
-                            {
-                                "color": "rgb(95.29%,95.29%,95.29%)",
-                                "label": "Unknown"
-                            },
-                            {
-                                "color": "rgb(96.47%,71.37%,33.73%)",
-                                "label": "Unfrozen"
-                            },
-                            {
-                                "color": "rgb(33.73%,50.59%,96.47%)",
-                                "label": "Frozen"
-                            },
-                            {
-                                "color": "rgb(92.55%,53.33%,53.33%)",
-                                "label": "Temporary melting / Water on the surface"
-                            }
-                        ]
-                    }
-                }
-            ],
-            "orderHint": 0,
-            "instanceId": "3606ef-YOUR-INSTANCEID-HERE",
-            "lastUpdated": "2026-05-28T11:54:57.709911Z",
-            "collectionType": "CUSTOM",
-            "collectionId": "byoc-4bd995-YOUR-INSTANCEID-HERE",
-            "datasetSourceId": 10,
-            "defaultStyleName": "default",
-            "datasourceDefaults": {
-                "mosaickingOrder": "mostRecent",
-                "temporal": false,
-                "collectionId": "4bd995-YOUR-INSTANCEID-HERE",
-                "type": "CUSTOM"
-            }
-        },
-        {
             "id": "SWI002",
             "title": "SWI-SWI002",
             "description": "Soil Water Index at different time lengths",
@@ -20030,6 +19986,52 @@
             "orderHint": 0,
             "instanceId": "3606ef-YOUR-INSTANCEID-HERE",
             "lastUpdated": "2026-05-28T11:54:58.117797Z",
+            "collectionType": "CUSTOM",
+            "collectionId": "byoc-4bd995-YOUR-INSTANCEID-HERE",
+            "datasetSourceId": 10,
+            "defaultStyleName": "default",
+            "datasourceDefaults": {
+                "mosaickingOrder": "mostRecent",
+                "temporal": false,
+                "collectionId": "4bd995-YOUR-INSTANCEID-HERE",
+                "type": "CUSTOM"
+            }
+        },
+        {
+            "id": "Z_SSF",
+            "title": "SWI-SSF",
+            "description": "Surface State Flag",
+            "styles": [
+                {
+                    "name": "default",
+                    "description": "Default layer style",
+                    "evalScript": "//VERSION=3\nconst factor = 1; // EDIT FACTOR\nconst offset = 0; // EDIT OFFSET\n\nfunction setup() {\n  return {\n    // EDIT VARIABLE NAME\n    input: [\"SSF\", \"dataMask\"],\n    output: [\n      { id: \"default\", bands: 4, sampleType: \"UINT8\" },\n      { id: \"index\", bands: 1, sampleType: \"FLOAT32\" },\n      { id: \"browserStats\", bands: 1, sampleType: \"FLOAT32\" },\n      { id: \"dataMask\", bands: 1 },\n    ],\n  };\n}\n\nfunction evaluatePixel(samples) {\n  // EDIT VARIABLE NAME\n  var originalValue = samples.SSF;\n\n  let val = originalValue * factor + offset;\n\n  let dataMask = samples.dataMask;\n\n  const indexVal = dataMask === 1 ? val : NaN;\n  const imgVals = getColor(originalValue);\n\n  return {\n    default: imgVals.concat(dataMask * 255),\n    index: [indexVal],\n    browserStats: [val],\n    dataMask: [dataMask],\n  };\n}\n\n// LOOKUP TABLE FOR COLOURS, TO BE ADAPTED\nconst exactColorMap = [\n  [1, [243, 243, 243]],\n  [2, [246, 182, 86]],\n  [3, [86, 129, 246]],\n  [4, [236, 136, 136]],\n];\n\n// Function to fetch color for a given value\nfunction getColor(value) {\n  const entry = exactColorMap.find(([v, _]) => v === Math.floor(value));\n  if (entry) {\n    const [_, color] = entry;\n    return [color[0], color[1], color[2]];\n  } else {\n    return [0, 0, 0];\n  }\n}\n",
+                    "legend": {
+                        "type": "discrete",
+                        "items": [
+                            {
+                                "color": "rgb(95.29%,95.29%,95.29%)",
+                                "label": "Unknown"
+                            },
+                            {
+                                "color": "rgb(96.47%,71.37%,33.73%)",
+                                "label": "Unfrozen"
+                            },
+                            {
+                                "color": "rgb(33.73%,50.59%,96.47%)",
+                                "label": "Frozen"
+                            },
+                            {
+                                "color": "rgb(92.55%,53.33%,53.33%)",
+                                "label": "Temporary melting / Water on the surface"
+                            }
+                        ]
+                    }
+                }
+            ],
+            "orderHint": 0,
+            "instanceId": "3606ef-YOUR-INSTANCEID-HERE",
+            "lastUpdated": "2026-09-18T09:20:30.991267Z",
             "collectionType": "CUSTOM",
             "collectionId": "byoc-4bd995-YOUR-INSTANCEID-HERE",
             "datasetSourceId": 10,
@@ -52322,13 +52324,13 @@
             ],
             "orderHint": 0,
             "instanceId": "65330d-YOUR-INSTANCEID-HERE",
-            "lastUpdated": "2026-06-23T09:26:44.519786Z",
+            "lastUpdated": "2026-09-10T10:52:49.892533Z",
             "collectionType": "CUSTOM",
             "collectionId": "byoc-65d4af-YOUR-INSTANCEID-HERE",
             "datasetSourceId": 10,
             "defaultStyleName": "default",
             "datasourceDefaults": {
-                "upsampling": "BICUBIC",
+                "upsampling": "BILINEAR",
                 "downsampling": "NEAREST",
                 "mosaickingOrder": "mostRecent",
                 "temporal": false,
@@ -52403,13 +52405,13 @@
             ],
             "orderHint": 0,
             "instanceId": "65330d-YOUR-INSTANCEID-HERE",
-            "lastUpdated": "2026-06-23T09:24:46.804569Z",
+            "lastUpdated": "2026-09-10T10:52:55.728043Z",
             "collectionType": "CUSTOM",
             "collectionId": "byoc-65d4af-YOUR-INSTANCEID-HERE",
             "datasetSourceId": 10,
             "defaultStyleName": "default",
             "datasourceDefaults": {
-                "upsampling": "BICUBIC",
+                "upsampling": "BILINEAR",
                 "downsampling": "NEAREST",
                 "mosaickingOrder": "mostRecent",
                 "temporal": false,
@@ -55887,52 +55889,6 @@
     ],
     "73f8ed-YOUR-INSTANCEID-HERE": [
         {
-            "id": "SSF",
-            "title": "SWI-SSF",
-            "description": "Surface State Flag",
-            "styles": [
-                {
-                    "name": "default",
-                    "description": "Default layer style",
-                    "evalScript": "//VERSION=3\nconst factor = 1; // EDIT FACTOR\nconst offset = 0; // EDIT OFFSET\n\nfunction setup() {\n  return {\n    // EDIT VARIABLE NAME\n    input: [\"SSF\", \"dataMask\"],\n    output: [\n      { id: \"default\", bands: 4, sampleType: \"UINT8\" },\n      { id: \"index\", bands: 1, sampleType: \"FLOAT32\" },\n      { id: \"browserStats\", bands: 1, sampleType: \"FLOAT32\" },\n      { id: \"dataMask\", bands: 1 },\n    ],\n  };\n}\n\nfunction evaluatePixel(samples) {\n  // EDIT VARIABLE NAME\n  var originalValue = samples.SSF;\n\n  let val = originalValue * factor + offset;\n\n  let dataMask = samples.dataMask;\n\n  const indexVal = dataMask === 1 ? val : NaN;\n  const imgVals = getColor(originalValue);\n\n  return {\n    default: imgVals.concat(dataMask * 255),\n    index: [indexVal],\n    browserStats: [val],\n    dataMask: [dataMask],\n  };\n}\n\n// LOOKUP TABLE FOR COLOURS, TO BE ADAPTED\nconst exactColorMap = [\n  [0, [243, 243, 243]],\n  [1, [246, 182, 86]],\n  [2, [86, 129, 246]],\n  [3, [236, 136, 136]],\n];\n\n// Function to fetch color for a given value\nfunction getColor(value) {\n  const entry = exactColorMap.find(([v, _]) => v === Math.floor(value));\n  if (entry) {\n    const [_, color] = entry;\n    return [color[0], color[1], color[2]];\n  } else {\n    return [0, 0, 0];\n  }\n}\n",
-                    "legend": {
-                        "type": "discrete",
-                        "items": [
-                            {
-                                "color": "rgb(95.29%,95.29%,95.29%)",
-                                "label": "Unknown"
-                            },
-                            {
-                                "color": "rgb(96.47%,71.37%,33.73%)",
-                                "label": "Unfrozen"
-                            },
-                            {
-                                "color": "rgb(33.73%,50.59%,96.47%)",
-                                "label": "Frozen"
-                            },
-                            {
-                                "color": "rgb(92.55%,53.33%,53.33%)",
-                                "label": "Temporary melting / Water on the surface"
-                            }
-                        ]
-                    }
-                }
-            ],
-            "orderHint": 0,
-            "instanceId": "73f8ed-YOUR-INSTANCEID-HERE",
-            "lastUpdated": "2026-05-28T11:55:06.846469Z",
-            "collectionType": "CUSTOM",
-            "collectionId": "byoc-f22784-YOUR-INSTANCEID-HERE",
-            "datasetSourceId": 10,
-            "defaultStyleName": "default",
-            "datasourceDefaults": {
-                "mosaickingOrder": "mostRecent",
-                "temporal": false,
-                "collectionId": "f22784-YOUR-INSTANCEID-HERE",
-                "type": "CUSTOM"
-            }
-        },
-        {
             "id": "SWI001",
             "title": "SWI-SWI001",
             "description": "Soil Water Index at different time lengths",
@@ -56625,6 +56581,52 @@
             "orderHint": 0,
             "instanceId": "73f8ed-YOUR-INSTANCEID-HERE",
             "lastUpdated": "2026-05-28T11:55:07.337193Z",
+            "collectionType": "CUSTOM",
+            "collectionId": "byoc-f22784-YOUR-INSTANCEID-HERE",
+            "datasetSourceId": 10,
+            "defaultStyleName": "default",
+            "datasourceDefaults": {
+                "mosaickingOrder": "mostRecent",
+                "temporal": false,
+                "collectionId": "f22784-YOUR-INSTANCEID-HERE",
+                "type": "CUSTOM"
+            }
+        },
+        {
+            "id": "Z_SSF",
+            "title": "SWI-SSF",
+            "description": "Surface State Flag",
+            "styles": [
+                {
+                    "name": "default",
+                    "description": "Default layer style",
+                    "evalScript": "//VERSION=3\nconst factor = 1; // EDIT FACTOR\nconst offset = 0; // EDIT OFFSET\n\nfunction setup() {\n  return {\n    // EDIT VARIABLE NAME\n    input: [\"SSF\", \"dataMask\"],\n    output: [\n      { id: \"default\", bands: 4, sampleType: \"UINT8\" },\n      { id: \"index\", bands: 1, sampleType: \"FLOAT32\" },\n      { id: \"browserStats\", bands: 1, sampleType: \"FLOAT32\" },\n      { id: \"dataMask\", bands: 1 },\n    ],\n  };\n}\n\nfunction evaluatePixel(samples) {\n  // EDIT VARIABLE NAME\n  var originalValue = samples.SSF;\n\n  let val = originalValue * factor + offset;\n\n  let dataMask = samples.dataMask;\n\n  const indexVal = dataMask === 1 ? val : NaN;\n  const imgVals = getColor(originalValue);\n\n  return {\n    default: imgVals.concat(dataMask * 255),\n    index: [indexVal],\n    browserStats: [val],\n    dataMask: [dataMask],\n  };\n}\n\n// LOOKUP TABLE FOR COLOURS, TO BE ADAPTED\nconst exactColorMap = [\n  [0, [243, 243, 243]],\n  [1, [246, 182, 86]],\n  [2, [86, 129, 246]],\n  [3, [236, 136, 136]],\n];\n\n// Function to fetch color for a given value\nfunction getColor(value) {\n  const entry = exactColorMap.find(([v, _]) => v === Math.floor(value));\n  if (entry) {\n    const [_, color] = entry;\n    return [color[0], color[1], color[2]];\n  } else {\n    return [0, 0, 0];\n  }\n}\n",
+                    "legend": {
+                        "type": "discrete",
+                        "items": [
+                            {
+                                "color": "rgb(95.29%,95.29%,95.29%)",
+                                "label": "Unknown"
+                            },
+                            {
+                                "color": "rgb(96.47%,71.37%,33.73%)",
+                                "label": "Unfrozen"
+                            },
+                            {
+                                "color": "rgb(33.73%,50.59%,96.47%)",
+                                "label": "Frozen"
+                            },
+                            {
+                                "color": "rgb(92.55%,53.33%,53.33%)",
+                                "label": "Temporary melting / Water on the surface"
+                            }
+                        ]
+                    }
+                }
+            ],
+            "orderHint": 0,
+            "instanceId": "73f8ed-YOUR-INSTANCEID-HERE",
+            "lastUpdated": "2026-09-18T09:19:10.494500Z",
             "collectionType": "CUSTOM",
             "collectionId": "byoc-f22784-YOUR-INSTANCEID-HERE",
             "datasetSourceId": 10,
@@ -67762,13 +67764,13 @@
             ],
             "orderHint": 0,
             "instanceId": "867895-YOUR-INSTANCEID-HERE",
-            "lastUpdated": "2026-06-23T09:28:11.925572Z",
+            "lastUpdated": "2026-09-10T10:52:11.702166Z",
             "collectionType": "CUSTOM",
             "collectionId": "byoc-5460de-YOUR-INSTANCEID-HERE",
             "datasetSourceId": 10,
             "defaultStyleName": "default",
             "datasourceDefaults": {
-                "upsampling": "BICUBIC",
+                "upsampling": "BILINEAR",
                 "downsampling": "NEAREST",
                 "mosaickingOrder": "mostRecent",
                 "temporal": false,
@@ -67843,13 +67845,13 @@
             ],
             "orderHint": 0,
             "instanceId": "867895-YOUR-INSTANCEID-HERE",
-            "lastUpdated": "2026-06-23T09:28:28.947264Z",
+            "lastUpdated": "2026-09-10T10:52:29.005135Z",
             "collectionType": "CUSTOM",
             "collectionId": "byoc-5460de-YOUR-INSTANCEID-HERE",
             "datasetSourceId": 10,
             "defaultStyleName": "default",
             "datasourceDefaults": {
-                "upsampling": "BICUBIC",
+                "upsampling": "BILINEAR",
                 "downsampling": "NEAREST",
                 "mosaickingOrder": "mostRecent",
                 "temporal": false,
@@ -82119,13 +82121,13 @@
             ],
             "orderHint": 0,
             "instanceId": "a91f72-YOUR-INSTANCEID-HERE",
-            "lastUpdated": "2024-08-28T12:35:26.530470Z",
+            "lastUpdated": "2026-09-10T10:51:35.395198Z",
             "collectionType": "S2L2A",
             "collectionId": "sentinel-2-l2a",
             "datasetSourceId": 2,
             "defaultStyleName": "default",
             "datasourceDefaults": {
-                "upsampling": "BICUBIC",
+                "upsampling": "BILINEAR",
                 "downsampling": "NEAREST",
                 "mosaickingOrder": "mostRecent",
                 "temporal": false,
@@ -82146,13 +82148,13 @@
             ],
             "orderHint": 0,
             "instanceId": "a91f72-YOUR-INSTANCEID-HERE",
-            "lastUpdated": "2024-08-28T12:34:26.391705Z",
+            "lastUpdated": "2026-09-10T10:50:44.026508Z",
             "collectionType": "S2L2A",
             "collectionId": "sentinel-2-l2a",
             "datasetSourceId": 2,
             "defaultStyleName": "default",
             "datasourceDefaults": {
-                "upsampling": "BICUBIC",
+                "upsampling": "BILINEAR",
                 "downsampling": "NEAREST",
                 "mosaickingOrder": "mostRecent",
                 "temporal": false,
@@ -82173,13 +82175,13 @@
             ],
             "orderHint": 0,
             "instanceId": "a91f72-YOUR-INSTANCEID-HERE",
-            "lastUpdated": "2025-01-09T16:16:13.341903Z",
+            "lastUpdated": "2026-09-10T10:50:55.928326Z",
             "collectionType": "S2L2A",
             "collectionId": "sentinel-2-l2a",
             "datasetSourceId": 2,
             "defaultStyleName": "default",
             "datasourceDefaults": {
-                "upsampling": "BICUBIC",
+                "upsampling": "BILINEAR",
                 "downsampling": "NEAREST",
                 "mosaickingOrder": "mostRecent",
                 "temporal": false,
@@ -82227,12 +82229,14 @@
             ],
             "orderHint": 0,
             "instanceId": "a91f72-YOUR-INSTANCEID-HERE",
-            "lastUpdated": "2026-08-10T12:20:36.927531Z",
+            "lastUpdated": "2026-09-10T10:51:49.907400Z",
             "collectionType": "S2L2A",
             "collectionId": "sentinel-2-l2a",
             "datasetSourceId": 2,
             "defaultStyleName": "default",
             "datasourceDefaults": {
+                "upsampling": "BILINEAR",
+                "downsampling": "NEAREST",
                 "mosaickingOrder": "mostRecent",
                 "temporal": false,
                 "maxCloudCoverage": 50,
@@ -82252,13 +82256,13 @@
             ],
             "orderHint": 0,
             "instanceId": "a91f72-YOUR-INSTANCEID-HERE",
-            "lastUpdated": "2024-08-28T12:34:40.360322Z",
+            "lastUpdated": "2026-09-10T10:50:50.083505Z",
             "collectionType": "S2L2A",
             "collectionId": "sentinel-2-l2a",
             "datasetSourceId": 2,
             "defaultStyleName": "default",
             "datasourceDefaults": {
-                "upsampling": "BICUBIC",
+                "upsampling": "BILINEAR",
                 "downsampling": "NEAREST",
                 "mosaickingOrder": "mostRecent",
                 "temporal": false,
@@ -82306,13 +82310,13 @@
             ],
             "orderHint": 0,
             "instanceId": "a91f72-YOUR-INSTANCEID-HERE",
-            "lastUpdated": "2024-08-28T12:35:39.674734Z",
+            "lastUpdated": "2026-09-10T10:51:28.577335Z",
             "collectionType": "S2L2A",
             "collectionId": "sentinel-2-l2a",
             "datasetSourceId": 2,
             "defaultStyleName": "default",
             "datasourceDefaults": {
-                "upsampling": "BICUBIC",
+                "upsampling": "BILINEAR",
                 "downsampling": "NEAREST",
                 "mosaickingOrder": "mostRecent",
                 "temporal": false,
@@ -93467,52 +93471,6 @@
     ],
     "cbf041-YOUR-INSTANCEID-HERE": [
         {
-            "id": "SSF",
-            "title": "SWI-SSF",
-            "description": "Surface State Flag",
-            "styles": [
-                {
-                    "name": "default",
-                    "description": "Default layer style",
-                    "evalScript": "//VERSION=3\nconst factor = 1; // EDIT FACTOR\nconst offset = 0; // EDIT OFFSET\n\nfunction setup() {\n  return {\n    // EDIT VARIABLE NAME\n    input: [\"SSF\", \"dataMask\"],\n    output: [\n      { id: \"default\", bands: 4, sampleType: \"UINT8\" },\n      { id: \"index\", bands: 1, sampleType: \"FLOAT32\" },\n      { id: \"browserStats\", bands: 1, sampleType: \"FLOAT32\" },\n      { id: \"dataMask\", bands: 1 },\n    ],\n  };\n}\n\nfunction evaluatePixel(samples) {\n  // EDIT VARIABLE NAME\n  var originalValue = samples.SSF;\n\n  let val = originalValue * factor + offset;\n\n  let dataMask = samples.dataMask;\n\n  const indexVal = dataMask === 1 ? val : NaN;\n  const imgVals = getColor(originalValue);\n\n  return {\n    default: imgVals.concat(dataMask * 255),\n    index: [indexVal],\n    browserStats: [val],\n    dataMask: [dataMask],\n  };\n}\n\n// LOOKUP TABLE FOR COLOURS, TO BE ADAPTED\nconst exactColorMap = [\n  [0, [243, 243, 243]],\n  [1, [246, 182, 86]],\n  [2, [86, 129, 246]],\n  [3, [236, 136, 136]],\n];\n\n// Function to fetch color for a given value\nfunction getColor(value) {\n  const entry = exactColorMap.find(([v, _]) => v === Math.floor(value));\n  if (entry) {\n    const [_, color] = entry;\n    return [color[0], color[1], color[2]];\n  } else {\n    return [0, 0, 0];\n  }\n}\n",
-                    "legend": {
-                        "type": "discrete",
-                        "items": [
-                            {
-                                "color": "rgb(95.29%,95.29%,95.29%)",
-                                "label": "Unknown"
-                            },
-                            {
-                                "color": "rgb(96.47%,71.37%,33.73%)",
-                                "label": "Unfrozen"
-                            },
-                            {
-                                "color": "rgb(33.73%,50.59%,96.47%)",
-                                "label": "Frozen"
-                            },
-                            {
-                                "color": "rgb(92.55%,53.33%,53.33%)",
-                                "label": "Temporary melting / Water on the surface"
-                            }
-                        ]
-                    }
-                }
-            ],
-            "orderHint": 0,
-            "instanceId": "cbf041-YOUR-INSTANCEID-HERE",
-            "lastUpdated": "2026-05-28T11:55:19.304662Z",
-            "collectionType": "CUSTOM",
-            "collectionId": "byoc-59c08c-YOUR-INSTANCEID-HERE",
-            "datasetSourceId": 10,
-            "defaultStyleName": "default",
-            "datasourceDefaults": {
-                "mosaickingOrder": "mostRecent",
-                "temporal": false,
-                "collectionId": "59c08c-YOUR-INSTANCEID-HERE",
-                "type": "CUSTOM"
-            }
-        },
-        {
             "id": "SWI001",
             "title": "SWI-SWI001",
             "description": "Soil Water Index at different time lengths",
@@ -94205,6 +94163,52 @@
             "orderHint": 0,
             "instanceId": "cbf041-YOUR-INSTANCEID-HERE",
             "lastUpdated": "2026-05-28T11:55:19.750288Z",
+            "collectionType": "CUSTOM",
+            "collectionId": "byoc-59c08c-YOUR-INSTANCEID-HERE",
+            "datasetSourceId": 10,
+            "defaultStyleName": "default",
+            "datasourceDefaults": {
+                "mosaickingOrder": "mostRecent",
+                "temporal": false,
+                "collectionId": "59c08c-YOUR-INSTANCEID-HERE",
+                "type": "CUSTOM"
+            }
+        },
+        {
+            "id": "Z_SSF",
+            "title": "SWI-SSF",
+            "description": "Surface State Flag",
+            "styles": [
+                {
+                    "name": "default",
+                    "description": "Default layer style",
+                    "evalScript": "//VERSION=3\nconst factor = 1; // EDIT FACTOR\nconst offset = 0; // EDIT OFFSET\n\nfunction setup() {\n  return {\n    // EDIT VARIABLE NAME\n    input: [\"SSF\", \"dataMask\"],\n    output: [\n      { id: \"default\", bands: 4, sampleType: \"UINT8\" },\n      { id: \"index\", bands: 1, sampleType: \"FLOAT32\" },\n      { id: \"browserStats\", bands: 1, sampleType: \"FLOAT32\" },\n      { id: \"dataMask\", bands: 1 },\n    ],\n  };\n}\n\nfunction evaluatePixel(samples) {\n  // EDIT VARIABLE NAME\n  var originalValue = samples.SSF;\n\n  let val = originalValue * factor + offset;\n\n  let dataMask = samples.dataMask;\n\n  const indexVal = dataMask === 1 ? val : NaN;\n  const imgVals = getColor(originalValue);\n\n  return {\n    default: imgVals.concat(dataMask * 255),\n    index: [indexVal],\n    browserStats: [val],\n    dataMask: [dataMask],\n  };\n}\n\n// LOOKUP TABLE FOR COLOURS, TO BE ADAPTED\nconst exactColorMap = [\n  [0, [243, 243, 243]],\n  [1, [246, 182, 86]],\n  [2, [86, 129, 246]],\n  [3, [236, 136, 136]],\n];\n\n// Function to fetch color for a given value\nfunction getColor(value) {\n  const entry = exactColorMap.find(([v, _]) => v === Math.floor(value));\n  if (entry) {\n    const [_, color] = entry;\n    return [color[0], color[1], color[2]];\n  } else {\n    return [0, 0, 0];\n  }\n}\n",
+                    "legend": {
+                        "type": "discrete",
+                        "items": [
+                            {
+                                "color": "rgb(95.29%,95.29%,95.29%)",
+                                "label": "Unknown"
+                            },
+                            {
+                                "color": "rgb(96.47%,71.37%,33.73%)",
+                                "label": "Unfrozen"
+                            },
+                            {
+                                "color": "rgb(33.73%,50.59%,96.47%)",
+                                "label": "Frozen"
+                            },
+                            {
+                                "color": "rgb(92.55%,53.33%,53.33%)",
+                                "label": "Temporary melting / Water on the surface"
+                            }
+                        ]
+                    }
+                }
+            ],
+            "orderHint": 0,
+            "instanceId": "cbf041-YOUR-INSTANCEID-HERE",
+            "lastUpdated": "2026-09-18T09:19:59.627750Z",
             "collectionType": "CUSTOM",
             "collectionId": "byoc-59c08c-YOUR-INSTANCEID-HERE",
             "datasetSourceId": 10,

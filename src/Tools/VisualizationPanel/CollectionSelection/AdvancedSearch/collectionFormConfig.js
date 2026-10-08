@@ -374,6 +374,54 @@ export const collections = [
         ],
       },
       {
+        id: 'DORIS',
+        label: 'DORIS',
+        supportsCloudCover: false,
+        productTypes: [
+          {
+            id: 'DO_0_DOP___',
+            name: 'DO_0_DOP___',
+            label: 'DO_0_DOP___',
+            productTypeIds: ['DO_0_DOP___', 'DO_0_DOP____PRIVATE'],
+          },
+          {
+            id: 'DO_0_NAV___',
+            name: 'DO_0_NAV___',
+            label: 'DO_0_NAV___',
+            productTypeIds: ['DO_0_NAV___', 'DO_0_NAV____PRIVATE'],
+          },
+        ],
+        hasAccess: ({ userToken }) => hasRole(userToken, EXPERT_ROLES.S3C_COMMISSIONING),
+      },
+      {
+        id: 'GNSS',
+        label: 'GNSS',
+        supportsCloudCover: false,
+        productTypes: [
+          {
+            id: 'GN_0_GNS',
+            name: 'GN_0_GNS',
+            label: 'GN_0_GNS',
+            productTypeIds: ['GN_0_GNS', 'GN_0_GNS____PRIVATE'],
+          },
+        ],
+        hasAccess: ({ userToken }) => hasRole(userToken, EXPERT_ROLES.S3C_COMMISSIONING),
+      },
+      {
+        id: 'NAVATT',
+        label: 'NAVATT',
+        supportsCloudCover: false,
+        productTypes: [
+          {
+            id: 'TM_0_NAT',
+            name: 'TM_0_NAT',
+            label: 'TM_0_NAT',
+            productTypeIds: ['TM_0_NAT', 'TM_0_NAT____PRIVATE'],
+          },
+        ],
+        hasAccess: ({ userToken }) => hasRole(userToken, EXPERT_ROLES.S3C_COMMISSIONING),
+      },
+      {
         id: 'Demo Products',
         label: 'Demo Products',
         supportsInstrumentName: false,
@@ -3403,7 +3451,7 @@ export const recursiveCollectionCLMS = [
                 items: [
                   {
                     id: COPERNICUS_CLMS_VLCC_GRASSLAND_CHANGE_EUROPE_20M_3YEARLY_V1_DATASET_IDENTIFIERS.GRAC,
-                    label: 'GRAC, Europe, 20m, 3-yearly, (2018–2021), V1',
+                    label: 'GRAC, Europe, 20m, 3-yearly, V1',
                     type: 'productType',
                     customFilterExpression: `(${FilterElement.Attribute(
                       ODataAttributes.datasetIdentifier,
@@ -3413,7 +3461,7 @@ export const recursiveCollectionCLMS = [
                   },
                   {
                     id: COPERNICUS_CLMS_VLCC_GRASSLAND_CHANGE_EUROPE_20M_3YEARLY_V1_DATASET_IDENTIFIERS.GRACCL,
-                    label: 'GRAC Confidence Layer, Europe, 20m, 3-yearly, (2018–2021), V1',
+                    label: 'GRAC Confidence Layer, Europe, 20m, 3-yearly, V1',
                     type: 'productType',
                     customFilterExpression: `(${FilterElement.Attribute(
                       ODataAttributes.datasetIdentifier,
@@ -3602,7 +3650,7 @@ export const recursiveCollectionCLMS = [
                 items: [
                   {
                     id: COPERNICUS_CLMS_DLTC_EUROPE_20M_3YEARLY_V1_DATASET_IDENTIFIER,
-                    label: 'Dominant Leaf Type Change, Europe, 20m, 3-yearly, (2018–2021), V1',
+                    label: 'Dominant Leaf Type Change, Europe, 20m, 3-yearly, V1',
                     type: 'productType',
                     customFilterExpression: `(${FilterElement.Attribute(
                       ODataAttributes.datasetIdentifier,
@@ -3726,7 +3774,7 @@ export const recursiveCollectionCLMS = [
                 items: [
                   {
                     id: COPERNICUS_CLMS_VLCC_TCPC_20M_3YEARLY_V1_DATASET_IDENTIFIERS.TCPC,
-                    label: 'TCPC, Europe, 20m, 3-yearly, (2018–2021), V1',
+                    label: 'TCPC, Europe, 20m, 3-yearly, V1',
                     type: 'productType',
                     customFilterExpression: `(${FilterElement.Attribute(
                       ODataAttributes.datasetIdentifier,
@@ -3736,7 +3784,7 @@ export const recursiveCollectionCLMS = [
                   },
                   {
                     id: COPERNICUS_CLMS_VLCC_TCPC_20M_3YEARLY_V1_DATASET_IDENTIFIERS.TCPCCL,
-                    label: 'TCPC Confidence Layer, Europe, 20m, 3-yearly, (2018–2021), V1',
+                    label: 'TCPC Confidence Layer, Europe, 20m, 3-yearly, V1',
                     type: 'productType',
                     customFilterExpression: `(${FilterElement.Attribute(
                       ODataAttributes.datasetIdentifier,

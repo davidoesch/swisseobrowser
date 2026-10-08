@@ -6,7 +6,7 @@ import request from 'axios';
 import { b64EncodeUnicode } from './base64MDN';
 import { getDataSourceHandler } from '../Tools/SearchPanel/dataSourceHandlers/dataSourceHandlers';
 import { BAND_UNIT } from '../Tools/SearchPanel/dataSourceHandlers/dataSourceConstants';
-import { PROCESSING_OPTIONS, TABS, STICKER_URL_PARAM_VALUE } from '../const';
+import { PROCESSING_OPTIONS, TABS, STICKER_URL_PARAM_VALUE, PANEL } from '../const';
 import { ModalId } from '../const';
 import store, { authSlice, notificationSlice, themesSlice, visualizationSlice } from '../store';
 import { encrypt } from './encrypt';
@@ -18,43 +18,50 @@ export function getUrlParams() {
   return Object.fromEntries(searchParams.entries());
 }
 
+// Returns a new search string with paramNames removed, preserving every other param.
+export function removeSearchParams(search, paramNames) {
+  const searchParams = new URLSearchParams(search);
+  paramNames.forEach((p) => searchParams.delete(p));
+  return searchParams.toString();
+}
+
+// Removes paramNames from the current URL's search string via history.replaceState, preserving
+// every other param and the pathname. Mirrors getUrlParams's hash fallback above: if params are
+// carried in the hash instead (legacy EOB2 URLs with no search string), strips them from there
+// instead, preserving the (empty) search string.
+// `precomputedSearch` lets a caller that already stripped paramNames from window.location.search
+// (e.g. via removeSearchParams) skip re-parsing it here. It's ignored when the URL uses hash
+// params instead (legacy EOB2 links with no search string), since it wasn't computed against the hash.
+export function stripSearchParamsFromUrl(paramNames, precomputedSearch) {
+  const usesHashParams = window.location.search.length === 0 && window.location.hash.length > 0;
+  const newParams = usesHashParams
+    ? removeSearchParams(window.location.hash.substring(1), paramNames)
+    : (precomputedSearch ?? removeSearchParams(window.location.search, paramNames));
+  window.history.replaceState(
+    null,
+    '',
+    usesHashParams
+      ? `${window.location.pathname}${window.location.search}${newParams ? `#${newParams}` : ''}`
+      : `${window.location.pathname}${newParams ? `?${newParams}` : ''}${window.location.hash}`,
+  );
+}
+
 /*
-  List of all supported URL parameters: (with exception of legacy EOB2 parameters)
-  - themesUrl: URL of the JSON file which contains the themes definitions. If not
-    specified, one of the included JSON files is used (default_themes.js).
-  - themeId: value of the id field in the theme definition
-  - datasetId: id of the dataset that was chosen when searching. It is specified so
-    that we know which layers to list in Visualization panel.
-  - visualizationUrl: WMS URL from the selected theme (the information about the
-    layerId is available through GetCapabilities request there)
-  - layerId: id of the selected layer. If not set, "custom layer" is selected and
-    either evalscript, evalscriptUrl, or processGraph parameters must be set.
-  - zoom: zoom level
-  - lat: latitude
-  - lng: longitude
-  - fromTime: date and time of the start of timespan, or null if toTime is a date
-    or if layer doesn't support time dimension.
-  - toTime: date and time of the end of timespan, or date if a single date is selected,
-    or null if layer doesn't support time dimension.
-  - evalscript: evalscript of the layer (if layerId and evalscriptUrl are not specified)
-  - evalscriptUrl: evalscriptUrl of the layer (if layerId is not specified)
-  - processGraph: OpenEO process graph of the layer (if layerId and processGraphUrl are not specified)
-  - processGraphUrl: URL to fetch OpenEO process graph from (if layerId is not specified)
-  - gain: gain effect
-  - gamma: gamma effect
-  - redRangeEffect: red range effect (slider)
-  - greenRangeEffect: green range effect (slider)
-  - blueRangeEffect: blue range effect (slider)
-  - minQa: minQa (min quality) for Sentinel-5P
-  - upsampling: upsampling (SH datasets only)
-  - downsampling: downsampling (SH datasets only)
-  - speckleFilter: speckle filter (Sentinel 1)
-  - orthorectification: orthorectification (Sentinel 1 only)
-  - backscatterCoeff: backscatterCoeff (Sentinel 1 only)
-  - dataFusion: dataFusion settings
-  - handlePositions: positions of pins in index feature.
-  - gradient: gradient used to calculate color in index feature. 
- 
+  For the full list of supported URL parameters, see public/deep-linking.md.
+
+  Notes on specific params:
+  - panel: which Visualize sub-panel is open — "layers", "highlights", "pins", or "wms". Written
+    explicitly even for Layers (the default) so a refresh can tell a deliberate Layers visit apart
+    from no panel info at all — see ThemeSelect.jsx. Compare is represented separately, by
+    compareShare.
+
+  NOTE: sharedPinsListId is deliberately NOT read from props/written here. Its absence from
+  updatePath's destructured props below already drops it from the rebuilt query string on the very
+  next render after a shared-pins import starts — this implicit omission is load-bearing for the
+  #1184 fix (it's what keeps the id from ever reaching a login redirect and re-triggering the
+  import). See e2e/fixtures/sharedPins.ts's runSharedPinsImportAssertions comment for the full
+  explanation before adding sharedPinsListId handling here "for completeness".
+
 */
 
 export function updatePath(props, shouldPushToHistoryStack = true) {
@@ -104,6 +111,9 @@ export function updatePath(props, shouldPushToHistoryStack = true) {
     compareSharedPinsId,
     comparedClipping,
     comparedOpacity,
+    showHighlightPanel,
+    showPinPanel,
+    wmsPanelOpen,
     clmsSelectedPath,
     clmsSelectedCollection,
     clmsSelectedConsolidationPeriodIndex,
@@ -156,6 +166,29 @@ export function updatePath(props, shouldPushToHistoryStack = true) {
   }
   if (layerId) {
     params.layerId = layerId;
+  }
+
+  // compareSharedPinsId is produced by an async backend POST (ComparePanel.jsx) and is only ever
+  // set once there are compared layers (it's cleared to null otherwise, see ComparePanel.jsx), so
+  // its presence alone means there is a restorable compare session. Keep it (and the layers'
+  // mode/opacity/clipping) in the URL regardless of which top-level tab or Visualize sub-panel is
+  // currently active — ComparePanel.jsx flips the `compareShare` Redux flag to false on unmount as
+  // soon as the user looks at another panel or tab (e.g. Wms, Search, the RRD Order tab), so gating
+  // this on that flag (or on selectedTabIndex, like the rest of this section) would drop the compare
+  // session from the URL the moment the user navigates away, losing it on the next refresh even
+  // though the compared layers themselves are still live in Redux (issue #1270).
+  if (compareSharedPinsId) {
+    params.compareSharedPinsId = compareSharedPinsId;
+
+    if (comparedOpacity) {
+      params.comparedOpacity = JSON.stringify(comparedOpacity);
+    }
+    if (comparedClipping) {
+      params.comparedClipping = JSON.stringify(comparedClipping);
+    }
+    if (compareMode?.value) {
+      params.compareMode = compareMode.value;
+    }
   }
 
   if (selectedTabIndex === TABS.VISUALIZE_TAB) {
@@ -225,28 +258,34 @@ export function updatePath(props, shouldPushToHistoryStack = true) {
     if (dateMode !== undefined) {
       params.dateMode = dateMode;
     }
+
+    // compareShare/panel describe which Visualize sub-panel is currently active, so they're only
+    // meaningful while the Visualize tab is actually active. Writing them regardless of
+    // selectedTabIndex left them (and PANEL.LAYERS as a default) in the URL after switching to
+    // Search or Order, which Tools.jsx's shouldSwitchToRapidResponseDeskTab then misread as "the URL
+    // says Visualize", so it never restored the RRD tab on refresh (see issue #1184 follow-up).
+    //
+    // Compare is only the active panel once compareSharedPinsId also exists, so a refresh before
+    // that id resolves (or with zero compared layers) falls through to panel=layers instead of
+    // advertising an unrestorable Compare view (issue #1270).
+    if (compareShare && compareSharedPinsId) {
+      params.compareShare = compareShare;
+    } else if (showPinPanel) {
+      // Compare is fully represented by compareShare above, so `panel` only needs to distinguish
+      // Layers/Highlights/Pins/Wms from it. Layers is written explicitly too (not left absent) so a
+      // refresh can tell a deliberate Layers visit apart from no panel info at all — see ThemeSelect.jsx.
+      params.panel = PANEL.PINS;
+    } else if (showHighlightPanel) {
+      params.panel = PANEL.HIGHLIGHTS;
+    } else if (wmsPanelOpen) {
+      params.panel = PANEL.WMS;
+    } else {
+      params.panel = PANEL.LAYERS;
+    }
   }
 
   if (modalId === ModalId.TIMELAPSE) {
     params.timelapse = JSON.stringify(timelapse);
-  }
-
-  // If compareShare is enabled add all compare parameters
-  if (compareShare) {
-    params.compareShare = compareShare;
-
-    if (comparedOpacity) {
-      params.comparedOpacity = JSON.stringify(comparedOpacity);
-    }
-    if (comparedClipping) {
-      params.comparedClipping = JSON.stringify(comparedClipping);
-    }
-    if (compareMode?.value) {
-      params.compareMode = compareMode.value;
-    }
-    if (compareSharedPinsId) {
-      params.compareSharedPinsId = compareSharedPinsId;
-    }
   }
 
   if (clmsSelectedPath) {

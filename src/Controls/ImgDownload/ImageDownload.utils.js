@@ -14,18 +14,20 @@ import { t } from 'ttag';
 import { point as turfPoint } from '@turf/helpers';
 import L from 'leaflet';
 import JSZip from 'jszip';
+import moment from 'moment';
 import {
   getDataSourceHandler,
+  getDatasetLabel,
   datasetLabels,
   checkIfCustom,
 } from '../../Tools/SearchPanel/dataSourceHandlers/dataSourceHandlers';
 import { CUSTOM, BAND_UNIT } from '../../Tools/SearchPanel/dataSourceHandlers/dataSourceConstants';
 import { isDataFusionEnabled } from '../../utils';
 import { overlayTileLayers } from '../../Map/Layers';
-import { createGradients } from '../../Tools/VisualizationPanel/legendUtils';
+import { createGradients, resolveLegendForLayer } from '../../Tools/VisualizationPanel/legendUtils';
 import { b64EncodeUnicode } from '../../utils/base64MDN';
-import { findMatchingLayerMetadata } from '../../Tools/VisualizationPanel/legendUtils';
 import { isTimespanModeSelected } from '../../Tools/VisualizationPanel/VisualizationPanel.utils';
+import { constructGetMapParamsEffects } from '../../utils/effectsUtils';
 import { IMAGE_FORMATS, IMAGE_FORMATS_INFO } from './consts';
 import {
   fetchExternalLayerBlob,
@@ -260,11 +262,17 @@ export async function fetchImage(layer, options) {
       reqConfig,
     );
   } else {
+    // `layer.isCustomVisualization` (set by `getLayerFromParams`) catches pins/layers that carry a
+    // custom script but weren't flagged `customSelected` (e.g. compare-panel layers built from
+    // pins) — without this, now that `getLayerFromParams` no longer blanks `layer.layerId` for the
+    // no-layerId branch, `isOpenEoSupported` could find a cached process graph for the wrong
+    // (predefined) layer and silently drop the custom evalscript. `layer.evalscript` itself can't be
+    // used here: Sentinel Hub's own predefined layers carry one too once hydrated.
     const shouldUseOpenEO = isOpenEoSupported(
       layer.instanceId,
       layer.layerId,
       imageFormat,
-      customSelected && selectedProcessing !== PROCESSING_OPTIONS.OPENEO,
+      (customSelected || !!layer.isCustomVisualization) && selectedProcessing !== PROCESSING_OPTIONS.OPENEO,
     );
 
     if (shouldUseOpenEO) {
@@ -344,6 +352,19 @@ export async function fetchImage(layer, options) {
   }
 }
 
+// Shared compare-layer normalisation: moment-ifies fromTime/toTime and attaches per-layer effects,
+// so a compare composite (download or preview) sees the same shape fetchImageFromParams expects for
+// each layer. Used by the compare download, the sticker compare download and the compare preview.
+export function normalizeComparedLayersForDownload(comparedLayers) {
+  return comparedLayers.map((cLayer) => {
+    const newCLayer = Object.assign({}, cLayer);
+    newCLayer.fromTime = cLayer.fromTime ? moment(cLayer.fromTime) : undefined;
+    newCLayer.toTime = cLayer.toTime ? moment(cLayer.toTime) : undefined;
+    newCLayer.effects = constructGetMapParamsEffects(cLayer);
+    return newCLayer;
+  });
+}
+
 /**
  * This function is used only for downloading images in the compare mode (patching them together)
  */
@@ -365,6 +386,7 @@ export async function fetchAndPatchImagesFromParams(params, setWarnings, setErro
     addMapOverlays,
     showOSMBackgroundLayer,
     baseLayerUrl,
+    baseLayerMaxNativeZoom,
     userDescription,
     enabledOverlaysId,
     toTime,
@@ -394,7 +416,9 @@ export async function fetchAndPatchImagesFromParams(params, setWarnings, setErro
   // null) so it isn't drawn once per layer.
   if (baseLayerUrl) {
     try {
-      const baseCanvas = await getMapOverlayXYZ(baseLayerUrl, bounds, zoom, width, height);
+      const baseCanvas = await getMapOverlayXYZ(baseLayerUrl, bounds, zoom, width, height, {
+        maxNativeZoom: baseLayerMaxNativeZoom,
+      });
       ctx.drawImage(baseCanvas, 0, 0, width, height);
     } catch (e) {
       console.warn('[ImgDownload] Could not add OSM background to compare download:', e);
@@ -448,17 +472,12 @@ export async function fetchAndPatchImagesFromParams(params, setWarnings, setErro
             },
             cancelToken,
           );
-          legendUrl = l.legendUrl;
-          const predefinedLayerMetadata = findMatchingLayerMetadata(
+          ({ legendDefinition, legendUrl } = resolveLegendForLayer(
+            l,
             cLayer.datasetId,
-            cLayer.layerId,
             cLayer.themeId,
             toTime,
-          );
-          legendDefinition =
-            predefinedLayerMetadata && predefinedLayerMetadata.legend
-              ? predefinedLayerMetadata.legend
-              : l.legend;
+          ));
         }
         if (showCaptions) {
           let cText;
@@ -468,7 +487,7 @@ export async function fetchAndPatchImagesFromParams(params, setWarnings, setErro
           }
         }
 
-        imageTitles.push(cLayer.title);
+        imageTitles.push(resolveComparedLayerTitle(cLayer, image.layerTitle));
       }
 
       imgObjectUrl = window.URL.createObjectURL(image.blob);
@@ -554,6 +573,21 @@ export async function fetchAndPatchImagesFromParams(params, setWarnings, setErro
   };
 }
 
+// Builds the descriptor fetchExternalLayerBlob expects from an activeExternalLayer store object.
+// Shared by the Basic, Sticker and preview external-layer paths, so they can't drift from what
+// fetchExternalLayerBlob actually needs.
+export function getExternalLayerFetchDescriptor(activeExternalLayer) {
+  return {
+    url: activeExternalLayer.server.url,
+    layerName: activeExternalLayer.layerName,
+    type: activeExternalLayer.server.type,
+    tileUrl: activeExternalLayer.tileUrl,
+    tileSize: activeExternalLayer.tileSize ?? undefined,
+    time: activeExternalLayer.time,
+    style: activeExternalLayer.style,
+  };
+}
+
 // Shared post-processing for external WMS/WMTS image downloads (single layer and compare). Given a
 // rendered base image, it optionally draws an OSM/base tile layer underneath (for the single path,
 // whose imagery is transparent — the compare composite bakes its own base in), applies the AOI
@@ -566,6 +600,7 @@ export async function finalizeExternalDownloadImage(blob, opts) {
     height,
     mimeType,
     baseTileUrl, // OSM/base {z}/{x}/{y} template to draw under the imagery (single path only)
+    baseTileMaxNativeZoom, // highest level that base service serves; above it its tiles 404
     aoiGeometry,
     cropToAoi,
     drawGeoToImg,
@@ -588,7 +623,9 @@ export async function finalizeExternalDownloadImage(blob, opts) {
 
   // Draw the transparent imagery over a stitched OSM/base layer so it shows through nodata areas.
   if (baseTileUrl) {
-    const baseBlob = await compositeWmtsImage(baseTileUrl, bounds, width, height);
+    const baseBlob = await compositeWmtsImage(baseTileUrl, bounds, width, height, {
+      maxNativeZoom: baseTileMaxNativeZoom,
+    });
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
@@ -663,7 +700,6 @@ export async function fetchImageFromParams(params, raiseWarning) {
     showCaptions,
     addMapOverlays,
     showLogo,
-    layerId,
     selectedThemeId,
     lat,
     lng,
@@ -684,6 +720,7 @@ export async function fetchImageFromParams(params, raiseWarning) {
     mapWidthInMeters,
     selectedCrs,
     baseLayerUrl,
+    baseLayerMaxNativeZoom,
     cropToAoi,
     selectedProcessing,
     processGraph,
@@ -807,12 +844,7 @@ export async function fetchImageFromParams(params, raiseWarning) {
   let legendUrl, legendDefinition, copyrightText, title;
 
   if (showLegend) {
-    legendUrl = layer.legendUrl;
-    const predefinedLayerMetadata = findMatchingLayerMetadata(datasetId, layerId, selectedThemeId, toTime);
-    legendDefinition =
-      predefinedLayerMetadata && predefinedLayerMetadata.legend
-        ? predefinedLayerMetadata.legend
-        : layer.legend;
+    ({ legendDefinition, legendUrl } = resolveLegendForLayer(layer, datasetId, selectedThemeId, toTime));
   }
 
   const dsh = getDataSourceHandler(datasetId);
@@ -891,7 +923,9 @@ export async function fetchImageFromParams(params, raiseWarning) {
       mergeCanvas.height = height;
       const mergeCtx = mergeCanvas.getContext('2d');
 
-      const baseCanvas = await getMapOverlayXYZ(baseLayerUrl, bounds, zoom, width, height);
+      const baseCanvas = await getMapOverlayXYZ(baseLayerUrl, bounds, zoom, width, height, {
+        maxNativeZoom: baseLayerMaxNativeZoom,
+      });
       mergeCtx.drawImage(baseCanvas, 0, 0, width, height);
 
       const sentinelUrl = URL.createObjectURL(blob);
@@ -946,7 +980,7 @@ export async function fetchImageFromParams(params, raiseWarning) {
       isRawBand,
       bandName,
     );
-    return { blob: imageWithOverlays, nicename: nicename };
+    return { blob: imageWithOverlays, nicename: nicename, layerTitle: layer.title };
   }
 
   if (blobArray.length > 1 && params.mergeImages === false) {
@@ -1058,6 +1092,23 @@ export function getNicename(fromTime, toTime, datasetId, layerTitle, customSelec
     .format(format)}_${datasetLabel ? sanitizeFilenameSegment(datasetLabel) + '_' : ''}${layerName}`;
 }
 
+// Compare layers created before #1202 stored the raw layerId as their display name
+// ("Sentinel-2 L2A: 2_TONEMAPPED_NATURAL_COLOR"). Those titles are persisted in shared compare
+// links, so rebuild the caption from the resolved layer title when we detect that shape.
+// Any other stored title (pins, highlights, custom evalscripts) is kept verbatim.
+export function resolveComparedLayerTitle(cLayer, resolvedLayerTitle) {
+  if (!cLayer.title) {
+    return resolvedLayerTitle ?? '';
+  }
+  if (!resolvedLayerTitle || !cLayer.layerId) {
+    return cLayer.title;
+  }
+  if (cLayer.title.endsWith(`: ${cLayer.layerId}`)) {
+    return `${getDatasetLabel(cLayer.datasetId)}: ${resolvedLayerTitle}`;
+  }
+  return cLayer.title;
+}
+
 export async function getLayerFromParams(params, cancelToken, authToken) {
   /// Check if BYOC works!!!!!!!
   const {
@@ -1130,13 +1181,24 @@ export async function getLayerFromParams(params, cancelToken, authToken) {
       await layer.updateLayerFromServiceIfNeeded(reqConfig);
       layer.evalscript = evalscript;
       layer.evalscriptUrl = evalscriptUrl;
-      layer.layerId = layerId;
+      // `layerId` is always falsy in this branch (it's only reached when the caller didn't supply
+      // one), so assigning it here would just stomp the real layerId that `layers[0]` already
+      // carries from LayersFactory.makeLayers with `undefined`. A caller that later calls
+      // updateLayerFromServiceIfNeeded() again on this layer (e.g. TerrainViewer.jsx) would then
+      // get `layersParams.find(l => l.layerId === this.layerId)` failing with "Layer params could
+      // not be found", since no real layer's id is ever undefined.
     }
   }
 
   if (layer) {
     layer.selectedProcessing = selectedProcessing;
     layer.processGraph = processGraph;
+    // Sentinel Hub's own predefined layers carry an internal `evalscript`/`evalscriptUrl` too (SH
+    // implements predefined visualizations server-side via evalscripts), so `layer.evalscript` can
+    // never safely mean "user-authored custom script" once `updateLayerFromServiceIfNeeded` has run.
+    // Stamp the params-derived signal computed above so downstream consumers (legend matching,
+    // openEO routing) have a reliable flag instead of re-deriving it from the hydrated layer.
+    layer.isCustomVisualization = isCustomVisualization;
   }
   if (layer) {
     if (dsh && dsh.getAdditionalParamsForGetMap) {
@@ -1284,20 +1346,11 @@ export async function addImageOverlays(
     await drawCaptions(ctx, userDescription, title, copyrightText, scalebar, logos, drawCopernicusLogo);
   }
   if (showLegend) {
-    const legendImageUrl = legendDefinition
-      ? 'data:image/svg+xml;base64,' + b64EncodeUnicode(createSVGLegend(legendDefinition))
-      : legendUrl
-        ? legendUrl
-        : null;
-    if (legendImageUrl !== null) {
-      // Best-effort: a legend image that fails to load (e.g. an external server without CORS
-      // headers, which would taint the canvas) must not abort the whole download.
-      try {
-        const legendImage = await loadImage(legendImageUrl);
-        drawLegendImage(ctx, legendImage, true, showCaptions);
-      } catch (e) {
-        console.warn('[ImgDownload] Could not load legend image:', e);
-      }
+    // Best-effort: a legend image that fails to load (e.g. an external server without CORS
+    // headers, which would taint the canvas) must not abort the whole download.
+    const legendImage = await loadLegendImageSafely(legendDefinition, legendUrl);
+    if (legendImage) {
+      drawLegendImage(ctx, legendImage, true, showCaptions);
     }
   }
   if (showLogo) {
@@ -1536,16 +1589,12 @@ export const drawMapOverlaysOnCanvas = async (ctx, bounds, zoom, width, enabledO
     if (overlay.urlType === 'VECTOR') {
       overlayCanvas = await getGlOverlay(overlay.pane);
     } else {
-      overlayCanvas = await getMapOverlayXYZ(
-        overlay.url,
-        bounds,
-        zoom,
-        canvasWidth,
-        canvasHeight,
-        overlay.tileSize,
-        overlay.makeReadable,
-        overlay.zoomOffset,
-      );
+      overlayCanvas = await getMapOverlayXYZ(overlay.url, bounds, zoom, canvasWidth, canvasHeight, {
+        tileSize: overlay.tileSize,
+        makeReadable: overlay.makeReadable,
+        zoomOffset: overlay.zoomOffset,
+        maxNativeZoom: overlay.maxNativeZoom,
+      });
     }
     ctx.drawImage(overlayCanvas, 0, 0, canvasWidth, canvasHeight);
   }
@@ -1871,9 +1920,8 @@ const STICKER_WIDTH_CM = 10.2;
 const STICKER_HEIGHT_CM = 7.6;
 export const STICKER_WIDTH_PX = Math.round((STICKER_WIDTH_CM / 2.54) * STICKER_DPI);
 export const STICKER_HEIGHT_PX = Math.round((STICKER_HEIGHT_CM / 2.54) * STICKER_DPI);
-const STICKER_TEXT = 'My favourite place!';
 
-export async function addStickerOverlays(blob, mimeType, logoVariant, showText = true) {
+export async function addStickerOverlays(blob, mimeType, logoVariant) {
   const canvas = document.createElement('canvas');
   canvas.width = STICKER_WIDTH_PX;
   canvas.height = STICKER_HEIGHT_PX;
@@ -1890,24 +1938,6 @@ export async function addStickerOverlays(blob, mimeType, logoVariant, showText =
   const logoHeight = Math.round(STICKER_HEIGHT_PX * 0.22);
   const logoWidth = Math.round(logoHeight * (logo.width / logo.height));
   ctx.drawImage(logo, padding, padding, logoWidth, logoHeight);
-
-  if (showText) {
-    const isDark = logoVariant === 'dark';
-    const fontSize = Math.round(STICKER_HEIGHT_PX * 0.1);
-    const textY = Math.round(STICKER_HEIGHT_PX * 0.85);
-    ctx.font = `${fontSize}px "Arial Black", sans-serif`;
-    ctx.fillStyle = isDark ? '#0a4393' : 'white';
-    ctx.textBaseline = 'middle';
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-    ctx.shadowBlur = Math.round(fontSize * 0.05);
-    ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = 0;
-    ctx.textAlign = 'right';
-    ctx.fillText(STICKER_TEXT, STICKER_WIDTH_PX - padding * 2, textY);
-    ctx.textAlign = 'start';
-    ctx.shadowColor = 'transparent';
-    ctx.shadowBlur = 0;
-  }
 
   return await canvasToBlob(canvas, mimeType);
 }
@@ -1968,12 +1998,36 @@ export async function loadImage(url) {
   });
 }
 
+// Discrete legends grow linearly with class count (e.g. CLCplus LULUCF Instance has dozens of
+// classes) with no cap of their own, so without this the legend can end up taller than the frame.
+// Only kicks in when the legend would otherwise exceed this share of the canvas height — a legend
+// that's naturally smaller is left at its natural size.
+const LEGEND_MAX_HEIGHT_RATIO = 0.5;
+
+// The legend SVG is rasterized into an <img> at its own declared width/height before being drawn
+// onto the (often much larger) export canvas. Rendering it at LEGEND_SVG_SCALE times its logical
+// size — via a <g transform="scale(...)"> wrapper — gives the canvas a higher-resolution source
+// bitmap to downscale from, so text and lines stay crisp instead of looking soft/pixelated on large
+// exported images and GIF frames. drawLegendImage divides the loaded image's width/height by this
+// factor before doing any layout math, so the on-canvas legend size is unaffected by it.
+export const LEGEND_SVG_SCALE = 3;
+
+// Font size (in the SVG's own logical units, before LEGEND_SVG_SCALE) used by both
+// createSVGLegendDiscrete and createSVGLegendContinous.
+const LEGEND_FONT_SIZE_PX = 18;
+
 export function drawLegendImage(ctx, legendImage, left, showCaptions) {
   if (legendImage === null || legendImage === undefined) {
     return;
   }
+  // legendImage.width/height are the supersampled raster size (LEGEND_SVG_SCALE times the SVG's
+  // logical size) — layout must be computed against the logical size, or the legend is drawn
+  // LEGEND_SVG_SCALE times too big whenever the ratio below is floored to 0.6.
+  const logicalWidth = legendImage.width / LEGEND_SVG_SCALE;
+  const logicalHeight = legendImage.height / LEGEND_SVG_SCALE;
+
   const initialWidth = ctx.canvas.width * 0.05; //5%
-  let ratio = initialWidth / legendImage.width;
+  let ratio = initialWidth / logicalWidth;
   if (ratio < 0.6) {
     ratio = 0.6;
   }
@@ -1981,8 +2035,13 @@ export function drawLegendImage(ctx, legendImage, left, showCaptions) {
     ratio = 1;
   }
 
-  const legendWidth = Math.round(legendImage.width * ratio);
-  const legendHeight = Math.round(legendImage.height * ratio);
+  const maxHeight = ctx.canvas.height * LEGEND_MAX_HEIGHT_RATIO;
+  if (logicalHeight * ratio > maxHeight) {
+    ratio = maxHeight / logicalHeight;
+  }
+
+  const legendWidth = Math.round(logicalWidth * ratio);
+  const legendHeight = Math.round(logicalHeight * ratio);
   let legendX;
   let legendY;
   if (left) {
@@ -1990,16 +2049,20 @@ export function drawLegendImage(ctx, legendImage, left, showCaptions) {
   } else {
     legendX = ctx.canvas.width - legendWidth - SCALEBAR_LEFT_PADDING;
   }
-  legendY =
+  legendY = Math.max(
+    SCALEBAR_LEFT_PADDING,
     (showCaptions ? getLowerYAxis(ctx) : ctx.canvas.height) -
-    legendHeight -
-    (showCaptions ? getScalebarHeight(ctx) + 10 : 10);
+      legendHeight -
+      (showCaptions ? getScalebarHeight(ctx) + 10 : 10),
+  );
 
   ctx.lineJoin = 'round';
   ctx.lineWidth = '1';
   ctx.strokeStyle = 'black';
   ctx.strokeRect(legendX - 1, legendY - 1, legendWidth + 2, legendHeight + 2);
 
+  const previousImageSmoothingQuality = ctx.imageSmoothingQuality;
+  ctx.imageSmoothingQuality = 'high';
   ctx.drawImage(
     legendImage,
     0,
@@ -2011,6 +2074,27 @@ export function drawLegendImage(ctx, legendImage, left, showCaptions) {
     legendWidth,
     legendHeight,
   );
+  ctx.imageSmoothingQuality = previousImageSmoothingQuality;
+}
+
+export function getLegendImageUrl(legendDefinition, legendUrl) {
+  if (legendDefinition) {
+    return 'data:image/svg+xml;base64,' + b64EncodeUnicode(createSVGLegend(legendDefinition));
+  }
+  return legendUrl || null;
+}
+
+export async function loadLegendImageSafely(legendDefinition, legendUrl, warnPrefix = '[ImgDownload]') {
+  const legendImageUrl = getLegendImageUrl(legendDefinition, legendUrl);
+  if (legendImageUrl === null) {
+    return null;
+  }
+  try {
+    return await loadImage(legendImageUrl);
+  } catch (err) {
+    console.warn(`${warnPrefix} Could not load legend image:`, err);
+    return null;
+  }
 }
 
 // METHODS IN THIS FILE ARE ALMOST UNCHANGED FROM EOB2
@@ -2026,7 +2110,7 @@ function createSVGLegendDiscrete(legend) {
   const LEGEND_ITEM_BORDER = 'rgb(119,119,119);';
   const LEGEND_ITEM_WIDTH = '3px';
   const FONT_COLOR = 'black';
-  const FONT_SIZE = '18px';
+  const FONT_SIZE = `${LEGEND_FONT_SIZE_PX}px`;
   const FONT_FAMILY = 'Arial';
   const BACKGROUND_COLOR = 'white';
 
@@ -2034,9 +2118,13 @@ function createSVGLegendDiscrete(legend) {
 
   const svg = createSVGElement('svg');
   setSVGElementAttributes(svg, {
-    height: `${items.length * LEGEND_ITEM_HEIGHT + 2 * MARGIN_TOP}px`,
+    height: `${(items.length * LEGEND_ITEM_HEIGHT + 2 * MARGIN_TOP) * LEGEND_SVG_SCALE}px`,
     style: `background-color: ${BACKGROUND_COLOR}`,
   });
+
+  const group = createSVGElement('g');
+  setSVGElementAttributes(group, { transform: `scale(${LEGEND_SVG_SCALE})` });
+  svg.appendChild(group);
 
   items.forEach((item, index) => {
     let circle = createSVGElement('circle');
@@ -2046,7 +2134,7 @@ function createSVGLegendDiscrete(legend) {
       r: LEGEND_ITEM_HEIGHT / 2 - 4,
       style: `fill: ${item.color}; stroke: ${LEGEND_ITEM_BORDER}; stroke-width: ${LEGEND_ITEM_WIDTH};`,
     });
-    svg.appendChild(circle);
+    group.appendChild(circle);
 
     let text = createSVGElement('text');
     setSVGElementAttributes(text, {
@@ -2057,7 +2145,7 @@ function createSVGLegendDiscrete(legend) {
     });
 
     text.textContent = item.label;
-    svg.appendChild(text);
+    group.appendChild(text);
   });
 
   let maxLabelWidth = 0;
@@ -2067,7 +2155,7 @@ function createSVGLegendDiscrete(legend) {
       .map((item) => getLabelWidth(item.label, FONT_SIZE, FONT_FAMILY) + 5),
     maxLabelWidth,
   );
-  svg.setAttribute('width', `${maxLabelWidth + 2 * MARGIN_LEFT + LEGEND_ITEM_HEIGHT}px`);
+  svg.setAttribute('width', `${(maxLabelWidth + 2 * MARGIN_LEFT + LEGEND_ITEM_HEIGHT) * LEGEND_SVG_SCALE}px`);
 
   return svg;
 }
@@ -2108,7 +2196,7 @@ function createSVGLegendContinous(legend) {
   const LEGEND_BORDER_COLOR = 'black';
   const LEGEND_BORDER_WIDTH = '2px';
   const FONT_COLOR = 'black';
-  const FONT_SIZE = '18px';
+  const FONT_SIZE = `${LEGEND_FONT_SIZE_PX}px`;
   const FONT_FAMILY = 'Arial';
   const BACKGROUND_COLOR = 'white';
 
@@ -2122,9 +2210,13 @@ function createSVGLegendContinous(legend) {
   //svg container
   const svg = createSVGElement('svg');
   setSVGElementAttributes(svg, {
-    height: `${HEIGHT}px`,
+    height: `${HEIGHT * LEGEND_SVG_SCALE}px`,
     style: `background-color: ${BACKGROUND_COLOR}`,
   });
+
+  const group = createSVGElement('g');
+  setSVGElementAttributes(group, { transform: `scale(${LEGEND_SVG_SCALE})` });
+  svg.appendChild(group);
 
   //add border
   const border = createSVGElement('rect');
@@ -2135,7 +2227,7 @@ function createSVGLegendContinous(legend) {
     height: LEGEND_HEIGHT + 1,
     style: `fill:none;stroke:${LEGEND_BORDER_COLOR}; stroke-width:${LEGEND_BORDER_WIDTH}`,
   });
-  svg.appendChild(border);
+  group.appendChild(border);
 
   //gradient definitions
   const defs = createSVGElement('defs');
@@ -2183,7 +2275,7 @@ function createSVGLegendContinous(legend) {
       style: `fill:url(#id${index});stroke:none`,
     });
 
-    svg.appendChild(rect);
+    group.appendChild(rect);
   });
 
   //add ticks
@@ -2198,7 +2290,7 @@ function createSVGLegendContinous(legend) {
         y2: MARGIN_TOP + pos,
         style: `stroke: ${FONT_COLOR}`,
       });
-      svg.appendChild(l);
+      group.appendChild(l);
     }
   });
 
@@ -2213,7 +2305,7 @@ function createSVGLegendContinous(legend) {
         style: `fill: ${FONT_COLOR}; font-family: ${FONT_FAMILY}; font-size  : ${FONT_SIZE};`,
       });
       text.textContent = item.label;
-      svg.appendChild(text);
+      group.appendChild(text);
     }
   });
   //calculate max label width
@@ -2225,7 +2317,7 @@ function createSVGLegendContinous(legend) {
 
   //set svg width
   setSVGElementAttributes(svg, {
-    width: `${maxLabelWidth + 2 * MARGIN_LEFT + LEGEND_WIDTH}px`,
+    width: `${(maxLabelWidth + 2 * MARGIN_LEFT + LEGEND_WIDTH) * LEGEND_SVG_SCALE}px`,
   });
   return svg;
 }

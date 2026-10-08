@@ -25,8 +25,8 @@ import {
 import { getDataSourceHandler } from '../SearchPanel/dataSourceHandlers/dataSourceHandlers';
 import { constructBBoxFromBounds } from '../../Controls/ImgDownload/ImageDownload.utils';
 import { getLeafletBoundsFromGeoJSON } from '../../utils/geojson.utils';
-import { persistSearchConfig } from '../../utils/searchConfigPersistence';
-import { ADVANCED_SEARCH_CONFIG_SESSION_STORAGE_KEY, DATASOURCES, reqConfigMemoryCache } from '../../const';
+import { mergeSearchConfig } from '../../utils/searchConfigPersistence';
+import { DATASOURCES, reqConfigMemoryCache } from '../../const';
 import ProductPreview from './ProductPreview/ProductPreview';
 import { handleError } from './BrowseProduct/BrowseProduct.utils';
 import { AttributeNames } from '../../api/OData/assets/attributes';
@@ -38,7 +38,7 @@ import {
 import CustomCheckbox from '../../components/CustomCheckbox/CustomCheckbox';
 import {
   doesUserHaveAccessToCCMVisualization,
-  doesUserHaveAnyCCMRole,
+  doesUserHaveAccessToCopDem30Visualization,
 } from '../VisualizationPanel/CollectionSelection/AdvancedSearch/ccmProductTypeAccessRightsConfig';
 import { handleCLMSConsolidationPeriod } from '../../utils/clms';
 import { getPlatformShortName, normalizeResult } from './Results.utils';
@@ -172,7 +172,10 @@ const visualizationButtonDisabled = (tile, user) => {
   // COP DEM 30m is restricted to CCM users (issue #1185); a non-CCM user can still land here via
   // search results even though it's hidden from the visualization dropdown, since search results
   // are populated from OData independently of CollectionSelection.jsx's CCM gating.
-  if (datasetId === DEM_COPERNICUS_30_CDAS && !doesUserHaveAnyCCMRole(user?.access_token)) {
+  if (
+    datasetId === DEM_COPERNICUS_30_CDAS &&
+    !doesUserHaveAccessToCopDem30Visualization(user?.access_token)
+  ) {
     return ErrorMessage.CCMAccessRoleNotEligible();
   }
 
@@ -389,13 +392,7 @@ const ResultItem = ({
           text={t`Visualise`}
           className="small ellipsis"
           onClick={() => {
-            const searchConfigFromSession = JSON.parse(
-              sessionStorage.getItem(ADVANCED_SEARCH_CONFIG_SESSION_STORAGE_KEY),
-            );
-            persistSearchConfig({
-              ...searchConfigFromSession,
-              shouldShowAdvancedSearchTab: false,
-            });
+            mergeSearchConfig({ shouldShowAdvancedSearchTab: false });
             visualize({ onResultSelected, tile: normalizedTile, currentZoom: zoom });
           }}
           title={

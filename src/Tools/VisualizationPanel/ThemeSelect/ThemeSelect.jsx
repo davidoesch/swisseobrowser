@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { connect } from 'react-redux';
 import Select from 'react-select';
 import { t } from 'ttag';
@@ -9,7 +9,9 @@ import store, {
   themesSlice,
   collapsiblePanelSlice,
 } from '../../../store';
+import { isAnotherVisualizePanelOpen } from '../../../store/slices/panelSlice';
 import { getThemeName } from '../../../utils';
+import { isDefaultConfigurationReachable } from '../../../utils/themes.utils';
 import { usePrevious } from '../../../hooks/usePrevious';
 import { customSelectStyle } from '../../../components/CustomSelectInput/CustomSelectStyle';
 
@@ -23,6 +25,8 @@ import {
 } from '../../../const';
 
 import { CustomDropdownIndicator } from '../../../components/CustomSelectInput/CustomDropdownIndicator';
+import CollectionTooltip from '../CollectionSelection/CollectionTooltip/CollectionTooltip';
+import { getConfigurationMarkdown } from './ThemeSelectTooltip';
 
 import './ThemeSelect.scss';
 
@@ -53,6 +57,11 @@ function ThemeSelect({
   setShowHighlightPanel,
   highlightsAvailable,
   compareShare,
+  compareShareInit,
+  showPinPanel,
+  showComparePanel,
+  wmsPanelOpen,
+  panelFromUrlParams,
 }) {
   const previousVisualizationDate = usePrevious(visualizationDate);
   const { doLogin } = useLoginLogout();
@@ -74,9 +83,52 @@ function ThemeSelect({
     // eslint-disable-next-line
   }, [visualizationDate]);
 
+  // Skips its very first run when the URL explicitly named a panel (layers/highlights/pins/wms —
+  // see PANEL in const.ts), so it never fights what URLParamsParser's setStore already restored at
+  // mount by dispatching panelSlice.actions.openPanel from that `panel` URL param (e.g. Layers restored
+  // via `panel=layers`,
+  // but this theme's `pins` metadata resolves moments later once ThemesProvider finishes loading,
+  // flipping highlightsAvailable to true and forcing Highlights open instead). With no explicit
+  // panel in the URL (a bare/first-time visit), the first run proceeds as before so a non-default
+  // theme with highlights still opens straight into Highlights. Once mounted, this effect exists to
+  // catch highlightsAvailable resolving/changing for a genuine theme change — either a fresh value
+  // after handleSelectTheme's own direct call below used a stale one, or a theme switch triggered
+  // elsewhere (ThemesProvider, PinPanel, AdvancedSearch, RRD results).
+  const skipFirstHighlightsAvailableRunRef = useRef(panelFromUrlParams !== undefined);
+  // Once this effect has auto-opened Highlights for a resolved theme, it stops doing so again on
+  // its own: without this lock, a later re-render that recomputes the same highlightsAvailable
+  // transition (e.g. ThemesProvider's fetchUserInstances/getRRDInstances finishing late while the
+  // user has since navigated to another tab and manually switched back to Layers) forces Highlights
+  // open again, silently discarding the user's manual choice the moment they return to Visualize
+  // (see issue #1184 follow-up). Forcing Layers when highlights become unavailable stays unlocked,
+  // since staying on a Highlights panel that no longer applies would be actively broken.
+  const hasAutoOpenedHighlightsRef = useRef(false);
   useEffect(() => {
-    if (!compareShare) {
-      highlightsAvailable ? setShowHighlightPanel(true) : setShowLayerPanel(true);
+    if (skipFirstHighlightsAvailableRunRef.current) {
+      skipFirstHighlightsAvailableRunRef.current = false;
+      return;
+    }
+    if (highlightsAvailable && hasAutoOpenedHighlightsRef.current) {
+      return;
+    }
+    // Skip if the Pins, Compare, or WMS panel is already showing (e.g. a shared-pins link import
+    // just switched to the Pins panel) — otherwise this would immediately switch back to
+    // Layers/Highlights. compareShare (Redux) is not yet true at mount for a compare URL, since
+    // URLParamsParser's restore dispatch is async — compareShareInit is the URL-parsed flag that is
+    // already correct at mount, the same role panelFromUrlParams plays for the other panels. Note
+    // PANEL has no `compare` value, so panelFromUrlParams is always undefined for a compare URL and
+    // the skipFirstHighlightsAvailableRunRef skip above never triggers for it (issue #1270).
+    if (
+      !compareShare &&
+      !compareShareInit &&
+      !isAnotherVisualizePanelOpen({ pins: showPinPanel, compare: showComparePanel, wms: wmsPanelOpen })
+    ) {
+      if (highlightsAvailable) {
+        setShowHighlightPanel(true);
+        hasAutoOpenedHighlightsRef.current = true;
+      } else {
+        setShowLayerPanel(true);
+      }
     }
     // eslint-disable-next-line
   }, [highlightsAvailable]);
@@ -105,7 +157,12 @@ function ThemeSelect({
   const groupedOptions = [
     {
       label: t`Configurations`,
-      options: createSelectOptions(!urlThemesList.length ? modeThemesList : urlThemesList),
+      // A themesUrl replaces the mode themes list here rather than adding to it, which is what
+      // makes the Default configuration unreachable. CollectionSelection reads the same rule to
+      // decide whether it may advise switching back to Default (issue #1221).
+      options: createSelectOptions(
+        isDefaultConfigurationReachable(urlThemesList) ? modeThemesList : urlThemesList,
+      ),
     },
     { label: t`User configurations`, divider: true, options: createSelectOptions(userInstancesThemesList) },
     { label: t`RRD configurations`, divider: true, options: createSelectOptions(rrdInstancesThemesList) },
@@ -175,6 +232,7 @@ function ThemeSelect({
       <div id="theme-select" className={`top ${selectedThemeId ? '' : 'blue-border'}`}>
         <div className="theme-select-highlights-wrapper">
           <div className="theme-label-select-wrapper">{themeSelectionDropdown()}</div>
+          <CollectionTooltip source={getConfigurationMarkdown()} className="theme-config-tooltip" />
         </div>
       </div>
     </div>
@@ -192,6 +250,7 @@ const mapStoreToProps = (store) => ({
   selectedLanguage: store.language.selectedLanguage,
   visualizationDate: store.visualization.toTime,
   themePanelExpanded: store.collapsiblePanel.themePanelExpanded,
+  wmsPanelOpen: store.panel.wms,
 });
 
 export default connect(mapStoreToProps, null)(ThemeSelect);

@@ -3,16 +3,10 @@ import { t } from 'ttag';
 
 import { getBoundsAndLatLng } from '../../utils/coords';
 import { ModalId } from '../../const';
-import store, {
-  mainMapSlice,
-  modalSlice,
-  notificationSlice,
-  productDownloadSlice,
-  searchResultsSlice,
-} from '../../store';
+import store, { mainMapSlice, modalSlice, productDownloadSlice, searchResultsSlice } from '../../store';
 import { usePrevious } from '../../hooks/usePrevious';
 
-import { getProductErrorMessage } from './ProductInfo/ProductInfo.utils';
+import { getProductErrorMessage, showProductActionError } from './ProductInfo/ProductInfo.utils';
 import {
   ODataCollections,
   ODataProductFileExtension,
@@ -27,7 +21,7 @@ export const ResultItemLabels = {
   loginToAddToWorkspace: () => t`You need to be logged in to add products to your workspace.`,
   downloadProductLabel: () => t`Download product`,
   orderProcessing: () => t`Go to Workspace to order processing`,
-  noWorkspaceSelected: () => t`No workflows selected`,
+  noWorkflowSelected: () => t`No workflows selected`,
   noAvailableProcessors: () => t`No available processors for this product.`,
 };
 
@@ -106,8 +100,7 @@ export const ResultItemFooter = ({
   }, [modalId]);
 
   const onDownload = useCallback(() => {
-    if (downloadProductErrorMessage) {
-      store.dispatch(notificationSlice.actions.displayError(downloadProductErrorMessage));
+    if (showProductActionError(ResultItemLabels.downloadProductLabel(), { userToken, product: tile })) {
       return null;
     }
 
@@ -123,7 +116,6 @@ export const ResultItemFooter = ({
       setProgress: setProgress,
       ...(stacDownloadUrl ? { nodeUri: stacDownloadUrl } : {}),
     });
-    // eslint-disable-next-line
   }, [downloadInProgress, cancelToken, downloadProduct, tile, userToken]);
 
   useEffect(() => {
