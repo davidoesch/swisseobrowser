@@ -114,6 +114,7 @@ Parameter names follow the Copernicus Browser where an equivalent exists.
 | `cloudCoverage` | `30` | Maximum cloud coverage in % |
 | `layerId` | `ndvi` | `true`, `nir`, `urban`, `swir`, `agri`, `geo`, `ndvi`, `ndwi`, `ndmi`, `ndsi`, `nbr`, `aot`, `scl`, `cloud`, `terrain`, `vhi`, `vhiveg`, `tciwms` |
 | `valueRange` | `[0,0.9]` | Colour-scale min/max of index and continuous layers |
+| `threshold` | `0.5` | NDSI snow threshold (default 0.42; above it snow is shown in blue, otherwise true colour, as in the Copernicus Browser) |
 | `gain`, `gamma` | `1.2` | Effects for the composites (1 = default) |
 | `redRange`, `greenRange`, `blueRange` | `[0,0.8]` | Advanced RGB effects |
 | `opacity` | `70` | Layer opacity in % |

@@ -861,7 +861,6 @@ const R_NDMI = rampHex([
 ]);
 
 const R_NDWI = rampHex([[-0.8, 0x008000], [0, 0xffffff], [0.8, 0x0000cc]]);
-const R_NDSI = rampHex([[-1, 0x3c2a1a], [0, 0x968c82], [0.42, 0xe4ecf6], [1, 0x00e1ff]]);
 const R_NBR  = rampHex([[-1, 0x960000], [-0.2, 0xf0783c], [0.1, 0xf5eb96], [0.4, 0x82be5a], [1, 0x0a5a14]]);
 const R_AOT  = rampHex([[0, 0x0f1946], [0.1, 0x2d78be], [0.2, 0xf0dc5a], [0.35, 0xe67832], [0.6, 0xa0141e]]);
 const R_INC  = rampHex([[0, 0x14141a], [45, 0x5f5f69], [90, 0xafafb4], [135, 0xe1e1e4], [180, 0xffffff]]);
@@ -1006,11 +1005,14 @@ const LAYERS = [
     desc:"Vegetation moisture content — drought and water stress.",
     formula:"NDMI = (ρ(B8A) − ρ(B11)) / (ρ(B8A) + ρ(B11))", fn:nd },
 
-  { id:"ndsi", group:"Indices", name:"NDSI", type:"index", source:"s2", bands:["b03","b11"], ramp:R_NDSI,
-    min:-1, max:1, lim:[-1, 1], icon:"snow", sw:"linear-gradient(135deg,#e4ecf6,#00e1ff)", fg:"#0b2a33",
+  /* Rendered as the Copernicus Browser NDSI script: snow above the threshold, true colour elsewhere. */
+  { id:"ndsi", group:"Indices", name:"NDSI", type:"index", source:"s2", bands:["b03","b11"],
+    threshold:0.42, bg:["b04","b03","b02"], snow:[0, 204, 255],
+    icon:"snow", sw:"linear-gradient(135deg,#7d7466,#00ccff)", fg:"#0b2a33",
     sub:"Based on a combination of bands (B3 - B11)/(B3 + B11)",
     desc:"Snow index. Values above ≈0.42 are usually snow or ice.",
-    formula:"NDSI = (ρ(B03) − ρ(B11)) / (ρ(B03) + ρ(B11))", fn:nd },
+    formula:"NDSI = (ρ(B03) − ρ(B11)) / (ρ(B03) + ρ(B11))\nNDSI > 0.42 → snow, RGB (0, 0.8, 1)\n" +
+            "otherwise true colour: R, G, B = 2.5 × ρ(B04), 2.5 × ρ(B03), 2.5 × ρ(B02)", fn:nd },
 
   { id:"nbr", group:"Indices", name:"NBR", type:"index", source:"s2", bands:["b08","b12"], ramp:R_NBR,
     min:-1, max:1, lim:[-1, 1], icon:"flame", sw:"linear-gradient(135deg,#f0783c,#0a5a14)", fg:"#2a1004",
@@ -1120,7 +1122,10 @@ function mdLite(text) {
 LAYERS.forEach(r => { if (r.ramp) r.domain = [r.min, r.max]; });
 const MASKABLE = { rgb: 1, index: 1, cont: 1, terrain: 1 };
 const SCL_CLOUD = { 3: 1, 8: 1, 9: 1, 10: 1 };   // SCL cloud shadow, cloud medium / high probability, cirrus
-const classesOf = rec =>
+const classesOf = (rec, s) =>
+  rec.threshold != null ? [
+    ["NDSI > " + +((s && s.thr != null ? s.thr : rec.threshold)).toFixed(3) + " · snow", rec.snow],
+    ["otherwise · true colour (2.5 × ρ)", [128, 118, 104]]] :
   rec.classes ? rec.classes :
   rec.palette ? Object.keys(rec.palette).filter(k => rec.palette[k][1]).map(k => [k + " · " + rec.palette[k][0], rec.palette[k][1]]) :
   null;
@@ -1133,14 +1138,14 @@ const classesOf = rec =>
 const BASE_GAIN = 3.0, BASE_GAMMA = 1.6;
 
 function defaults(rec) {
-  return { gain: 1, gamma: 1, r: [0, 1], g: [0, 1], b: [0, 1], min: rec.min, max: rec.max,
+  return { gain: 1, gamma: 1, r: [0, 1], g: [0, 1], b: [0, 1], min: rec.min, max: rec.max, thr: rec.threshold,
            opacity: 100, cloud: false, shadow: false, terrain: false };
 }
 const settings = {};
 const S = rec => settings[rec.id] || (settings[rec.id] = defaults(rec));
 
 const RNG_KEYS = [["r", "redRange"], ["g", "greenRange"], ["b", "blueRange"]];
-const SETTING_KEYS = ["gain", "gamma", "redRange", "greenRange", "blueRange", "valueRange",
+const SETTING_KEYS = ["gain", "gamma", "redRange", "greenRange", "blueRange", "valueRange", "threshold",
                       "opacity", "cloudMask", "shadowMask", "terrainMask"];
 const r3 = v => +(+v).toFixed(4);
 
@@ -1153,6 +1158,7 @@ function settingsToObj(rec, s) {
     RNG_KEYS.forEach(([k, n]) => { if (s[k][0] !== 0 || s[k][1] !== 1) o[n] = s[k].map(r3); });
   }
   if (rec.ramp && (s.min !== d.min || s.max !== d.max)) o.valueRange = [r3(s.min), r3(s.max)];
+  if (rec.threshold != null && s.thr !== d.thr) o.threshold = r3(s.thr);
   if (s.opacity !== 100) o.opacity = s.opacity;
   if (MASKABLE[rec.type]) {
     if (s.cloud) o.cloudMask = true;
@@ -1176,6 +1182,7 @@ function objToSettings(rec, o) {
   RNG_KEYS.forEach(([k, n]) => { const a = arr(o[n]); if (a) s[k] = [clamp(a[0], 0, 1), clamp(a[1], 0, 1)]; });
   const vr = arr(o.valueRange);
   if (vr && rec.ramp) { s.min = Math.min(vr[0], vr[1]); s.max = Math.max(vr[0], vr[1]); }
+  if (rec.threshold != null && num(o.threshold) != null) s.thr = clamp(num(o.threshold), -1, 1);
   if (num(o.opacity) != null) s.opacity = clamp(Math.round(num(o.opacity)), 0, 100);
   s.cloud = bool(o.cloudMask); s.shadow = bool(o.shadowMask); s.terrain = bool(o.terrainMask);
   return s;
@@ -1344,8 +1351,9 @@ async function renderScene(rec, s, id, bbox, N, signal) {
   if (box && (bbox[2] < box[0] || bbox[0] > box[2] || bbox[3] < box[1] || bbox[1] > box[3])) return null;
 
   const bands = rec.bands || [rec.band];
+  const all = bands.concat((rec.bg || []).filter(b => !bands.includes(b)));
   const maskable = !!MASKABLE[rec.type];
-  const reads = bands.map(b => readTile(assetUrl(id, b), bbox, N, signal, b === "terrain" ? 255 : 0));
+  const reads = all.map(b => readTile(assetUrl(id, b), bbox, N, signal, b === "terrain" ? 255 : 0));
   reads.push(maskable && (s.cloud || s.shadow) ? readTile(assetUrl(id, "cloud"), bbox, N, signal, 0) : null);
   reads.push(maskable && s.terrain ? readTile(assetUrl(id, "terrain"), bbox, N, signal, 255) : null);
   const res = await Promise.all(reads);
@@ -1369,6 +1377,18 @@ async function renderScene(rec, s, id, bbox, N, signal) {
         v = clamp((v - rg[c][0]) / ((rg[c][1] - rg[c][0]) || 1e-6), 0, 1);
         d[k * 4 + c] = 255 * v;
       }
+      d[k * 4 + 3] = 255;
+    }
+    return img;
+  }
+
+  if (rec.threshold != null) {
+    // Copernicus Browser NDSI: snow above the threshold, true colour (2.5 × ρ) elsewhere.
+    const thr = s.thr != null ? s.thr : rec.threshold, bi = rec.bg.map(b => all.indexOf(b));
+    for (let k = 0; k < n; k++) {
+      if (a[0][k] === 0 || a[1][k] === 0 || masked(k)) continue;
+      if (rec.fn(bands.map((b, i) => physIdx(b, a[i][k]))) > thr) { put(k, rec.snow); continue; }
+      for (let c = 0; c < 3; c++) d[k * 4 + c] = 255 * clamp(2.5 * toRho(a[bi[c]][k]), 0, 1);
       d[k * 4 + 3] = 255;
     }
     return img;
@@ -1853,11 +1873,19 @@ function layerBody(rec) {
     const rs = el("button", "lnk", "Reset colour scale");
     rs.onclick = () => { s.min = rec.min; s.max = rec.max; renderLayerList(); onSettings(rec); };
     body.append(rs);
-  } else if (classesOf(rec)) {
+  } else if (classesOf(rec, s)) {
     sec("Legend");
     const box = el("div");
-    classList(box, classesOf(rec));
+    classList(box, classesOf(rec, s));
     body.append(box);
+    if (rec.threshold != null) {
+      body.append(sliderRow("Threshold", -1, 1, 0.01, s.thr, v => {
+        s.thr = v; box.innerHTML = ""; classList(box, classesOf(rec, s)); onSettings(rec);
+      }));
+      const rs = el("button", "lnk", "Reset threshold (" + rec.threshold + ")");
+      rs.onclick = () => { s.thr = rec.threshold; renderLayerList(); onSettings(rec); };
+      body.append(rs);
+    }
   }
 
   /* ---- masks ---- */
@@ -2831,6 +2859,10 @@ async function runCurrentStats() {
       const s = S(rec), d0 = r.domain[0], k2 = (r.domain[1] - d0) / ((s.max - s.min) || 1e-9);
       lo = s.min; hi = s.max;
       col = v => { const c = r.ramp(d0 + (v - s.min) * k2); return c ? rgbCss(c) : "#999"; };
+    } else if (r.threshold != null) {
+      const thr = S(rec).thr;
+      lo = -1; hi = 1;
+      col = v => v > thr ? rgbCss(r.snow) : "#a39a8e";
     } else if (r.source === "vhi") {
       lo = 0; hi = 100;
       col = v => rgbCss(VHI_CLASSES[v >= 60 ? 6 : clamp(Math.floor(v / 10), 0, 5)][1]);
@@ -3285,8 +3317,8 @@ function drawLegendBox(ctx, rec, s, x, y, title) {
       ctx.fillStyle = "#333";
       ctx.fillText("200 · shadow", gx + 16, gy + barH + 20);
     }
-  } else if (classesOf(rec)) {
-    const entries = classesOf(rec);
+  } else if (classesOf(rec, s)) {
+    const entries = classesOf(rec, s);
     const rowH = 15;
     h = pad * 2 + 20 + entries.length * rowH;
     frame(206, h);
