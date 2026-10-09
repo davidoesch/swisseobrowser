@@ -323,8 +323,16 @@ textarea.exdesc{height:46px;margin:4px 0 2px 24px;width:calc(100% - 24px);font-f
 .exl input{accent-color:var(--blue)}
 #expMsg{margin-top:10px;font-size:11.5px;color:var(--red);display:none}
 #expMsg.on{display:block}
-#status{position:absolute;left:10px;bottom:22px;z-index:900;background:#ffffffee;max-width:60%;
+#mapmsg{position:absolute;left:10px;bottom:36px;z-index:900;display:flex;flex-direction:column;align-items:flex-start;gap:6px;
+  max-width:60%;pointer-events:none}
+#status{background:#ffffffee;pointer-events:auto;
   border:1px solid var(--border);border-radius:4px;padding:6px 11px;font-size:12px;color:var(--text);display:none;box-shadow:var(--shadow)}
+#loading{display:flex;align-items:center;gap:8px;background:#ffffffee;border:1px solid var(--border);border-left:3px solid var(--blue);
+  border-radius:4px;padding:5px 10px;font-size:12px;color:var(--text);box-shadow:var(--shadow)}
+#loading[hidden]{display:none}
+#loading.slow{border-left-color:var(--red)}
+.spin{width:12px;height:12px;flex:0 0 12px;border:2px solid #c9d8e3;border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 #status.on{display:block}
 #status b{color:var(--blue)}
 #inspect{position:absolute;right:10px;bottom:22px;z-index:900;width:300px;background:#fffffff5;
@@ -337,6 +345,51 @@ textarea.exdesc{height:46px;margin:4px 0 2px 24px;width:calc(100% - 24px);font-f
 #inspect .close{position:absolute;right:8px;top:5px;cursor:pointer;color:var(--muted);font-size:16px}
 .leaflet-control-attribution{background:#ffffffd0!important}
 #p-info p{margin:0 0 8px}
+/* verification badge behind each layer name */
+.ver{display:inline-flex;vertical-align:-3px;margin-left:6px;line-height:0}
+.ver svg{width:15px;height:15px}
+.ver.ok{color:#2e7d32}
+.ver.todo{color:#b07a00}
+.verrow{display:flex;align-items:center;gap:6px;font-size:11.5px;margin:10px 0 2px;padding:5px 8px;border-radius:3px}
+.verrow.ok{background:#e8f3e9;color:#1e5b22}
+.verrow.todo{background:#fff4dc;color:#6b4a00}
+.verrow .ver{margin:0}
+/* highlights (Copernicus Browser theme highlights) */
+.hl{background:var(--bg);border:1px solid #e1e5ea;margin-bottom:6px;cursor:pointer;color:var(--text)}
+.hl:hover{border-color:#b9cddc}
+.hl.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.hl-top{display:flex;min-height:84px}
+.hl-th{width:104px;flex:0 0 104px;background:#dfe5ea;overflow:hidden}
+.hl-th img{width:100%;height:100%;object-fit:cover;display:block}
+.hl-th img:not([src]){visibility:hidden}
+.hl-m{flex:1;min-width:0;display:flex;flex-direction:column;padding:8px 8px 6px 12px;font-size:12.5px;line-height:1.4}
+.hl-m .t{font-weight:700;font-size:13px}
+.hl-m .d{margin-top:6px;opacity:.85}
+.hl-m .ex{align-self:flex-end;margin-top:auto;background:none;border:0;color:inherit;cursor:pointer;padding:2px;line-height:0}
+.hl-m .ex svg{width:22px;height:22px}
+.hl-txt{padding:4px 12px 12px;font-size:12.5px;line-height:1.5}
+.hl-txt .lnk{margin-top:8px;display:inline-block}
+.hl.on .lnk{color:#fff}
+#cmpHl{background:var(--blue-l);border:1px solid #b9cddc;border-radius:3px;padding:9px 10px;margin-bottom:10px;font-size:12px;line-height:1.5}
+#cmpHl .t{font-weight:700;color:var(--blue);font-size:13px}
+#cmpHl p{margin:5px 0 6px;color:#333}
+/* swipe handle of the split comparison */
+#swipe{position:absolute;inset:0;z-index:450;pointer-events:none}
+.sw-bar{position:absolute;top:0;bottom:0;width:16px;margin-left:-8px;cursor:ew-resize;pointer-events:auto;touch-action:none}
+.sw-bar::before{content:"";position:absolute;left:6.5px;top:0;bottom:0;width:3px;background:#fff;box-shadow:0 0 3px rgba(0,0,0,.55)}
+.sw-knob{position:absolute;left:50%;top:50%;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;background:var(--blue);
+  border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.45)}
+.sw-knob::before,.sw-knob::after{content:"";position:absolute;top:10px;border:6px solid transparent}
+.sw-knob::before{left:1px;border-right:7px solid #fff}
+.sw-knob::after{right:1px;border-left:7px solid #fff}
+.sw-lab{position:absolute;bottom:60px;background:#ffffffee;color:var(--blue);font-weight:700;font-size:12px;padding:4px 8px;
+  border-radius:3px;box-shadow:var(--shadow);white-space:nowrap;margin:0 12px}
+.sw-lab:empty{display:none}
+/* disclaimer in the Info tab */
+.warn{border-left:4px solid var(--red)}
+.warnbox{background:#fdecea;border-left:3px solid var(--red);padding:7px 9px;margin:8px 0 2px;font-size:11.5px;line-height:1.45;color:#5a1010}
+.warn h4{color:var(--red)!important}
+ul.links{margin:0;padding-left:16px;font-size:12px;line-height:1.6}
 table.kv{width:100%;border-collapse:collapse;font-size:11.5px}
 table.kv td,table.kv th{padding:3px 6px 3px 0;border-bottom:1px solid #0000000d;text-align:left;vertical-align:top}
 table.kv th{color:var(--blue);font-weight:700}
@@ -395,14 +448,11 @@ table.kv td:first-child{color:var(--muted)}
 
         <div class="card">
           <div class="dc-head">
-            <h4>Data collections:</h4>
+            <h4>Configuration:</h4>
             <button class="dc-ico on" data-v="layers" id="dcLayers" title="Layers"></button>
             <button class="dc-ico" data-v="compare" id="dcCompare" title="Compare"><span class="badge" id="cmpBadge" hidden></span></button>
           </div>
-          <select class="dc-sel" id="dcSel" title="Data collection">
-            <option value="s2">swissEO S2-SR v200</option>
-            <option value="vhi">swissEO VHI v100</option>
-          </select>
+          <select class="dc-sel" id="cfgSel" title="Configuration — the set of layers for a task"></select>
         </div>
 
         <div class="card" id="v-layers">
@@ -420,19 +470,36 @@ table.kv td:first-child{color:var(--muted)}
             <button id="cmpClear">Remove all</button>
             <button id="cmpShare">Share</button>
           </div>
+          <div id="cmpHl" hidden></div>
           <div id="cmpList"></div>
           <div class="hint" id="cmpHint"></div>
         </div>
       </div>
 
       <div class="panel" id="p-info">
+        <div class="card warn"><h4>Not for operational use</h4>
+          <div style="font-size:12px">
+            <p>This is an experimental <b>beta</b> prototype. It is <b>not intended for operational use</b>: values, renderings and
+              statistics are computed in the browser, are not validated and may be wrong or incomplete. For authoritative data use the
+              swisstopo products and services directly.</p>
+            <p><b>Layer verification:</b> we will check every layer in depth — data access, scaling and no-data, formula,
+              masks and rendering, compared with reference implementations (e.g. GDAL / rasterio reads and the original
+              scripts). A layer that passed this check carries the symbol
+              <span class="ver ok" title="Verified">VER_OK</span> <b>Verified</b>; all others show
+              <span class="ver todo" title="To be verified">VER_TODO</span> <b>To be verified</b>. The status is kept as a
+              checklist in the <a href="https://github.com/davidoesch/swisseobrowser#layer-verification" target="_blank" rel="noopener">README</a>
+              and applied to the website on every deployment.</p>
+            <p style="margin:0">The website was developed with the help of <b>Claude Code</b> (Anthropic), an AI coding assistant.</p>
+          </div></div>
         <div class="card"><h4>Selected date</h4>
           <div id="sceneInfo" style="font-size:12px;color:var(--muted)">No acquisition selected.</div></div>
         <div class="card"><h4>Scaling and no-data</h4>
           <div style="font-size:12px">
             <p style="margin:0 0 8px">Taken from the swisstopo <i>Additional Content Information</i> sheets
               (<a href="https://www.swisstopo.admin.ch/dam/en/sd-web/-i2Y10KmboPf/swissEO_S2-SR_AdditionalContentInfo_v200.pdf" target="_blank">S2-SR v200</a>,
-              <a href="https://www.swisstopo.admin.ch/dam/en/sd-web/vtF6jZqH7L4V/swissEO_VHI_AdditionalContentInfo.pdf" target="_blank">VHI</a>).
+              <a href="https://www.swisstopo.admin.ch/dam/en/sd-web/vtF6jZqH7L4V/swissEO_VHI_AdditionalContentInfo.pdf" target="_blank">VHI</a>,
+              <a href="https://www.swisstopo.admin.ch/dam/en/sd-web/bODfHY8ioFyS/swissEO_NDVIdiff_AdditionalContentInfo.pdf" target="_blank">NDVIdiff</a>,
+              <a href="https://www.swisstopo.admin.ch/dam/en/sd-web/mZTj7kABmTrD/swissEO_NDVIz_AdditionalContentInfo.pdf" target="_blank">NDVIz</a>).
               Physical value = DN × scale + offset.</p>
             <table class="kv">
               <tr><th>Asset</th><th>Scale</th><th>Offset</th><th>No-data</th></tr>
@@ -443,6 +510,9 @@ table.kv td:first-child{color:var(--muted)}
               <tr><td>Terrain mask</td><td>1</td><td>0</td><td>255 · 0–180° lit · 200 shadow</td></tr>
               <tr><td>TCI</td><td>1</td><td>0</td><td>0 (uint8)</td></tr>
               <tr><td>VHI (WMS)</td><td>—</td><td>—</td><td>110 = no data</td></tr>
+              <tr><td>VHI (COG)</td><td>1</td><td>0</td><td>255 · 0–100 VHI</td></tr>
+              <tr><td>NDVIdiff</td><td>0.001</td><td>0</td><td>32701 · 32700 missing</td></tr>
+              <tr><td>NDVIz</td><td>0.01</td><td>0</td><td>32701 · 32700 missing</td></tr>
             </table>
           </div></div>
         <div class="card"><h4>How this works</h4>
@@ -451,7 +521,9 @@ table.kv td:first-child{color:var(--muted)}
             <p><b>Basemaps:</b> <code>wmts.geo.admin.ch</code> (pixelkarte-farbe, swissimage, pixelkarte-grau) on the native LV95 tile grid.</p>
             <p><b>Label overlay:</b> <code>wmts.asit-asso.ch</code> <code>asitvd.fond_pourortho</code>, published on the identical LV95 grid.
               It sits in its own pane above the data layers.</p>
-            <p><b>Dates:</b> the calendar and the ‹ › buttons query the STAC API
+            <p><b>Dates:</b> without a date in the link the latest date with data opens. The calendar and ‹ › only offer days whose
+              acquisitions reach the map view: the data footprint of each relative orbit is read once from the coarsest B04 overview
+              (the STAC geometry is only the rectangular extent). The calendar and the ‹ › buttons query the STAC API
               <code>data.geo.admin.ch/api/stac/v0.9</code>. Cloud cover is <code>CLOUDPERCENTAGE</code> from each mosaic's
               <code>metadata.json</code> (OmniCloudMask). When several orbits were acquired on the same day, all of them are
               mosaicked, most recent on top.</p>
@@ -469,19 +541,62 @@ table.kv td:first-child{color:var(--muted)}
               selected date (statistics, histogram) and over a date range (time series, CSV); swissEO VHI statistics come from the
               <code>forest-10m</code> / <code>vegetation-10m</code> COGs. The <i>spectral explorer</i> plots mean reflectance of
               all 12 bands. The image download can be clipped to the area.</p>
+            <p><b>Configurations:</b> as the themes of the Copernicus Browser, a configuration lists the layers for a task —
+              <i>Default</i>, <i>Agriculture</i>, <i>Drought</i> and <i>Drought 2026</i> with highlights. Each layer keeps its own
+              data source and dates.</p>
+            <p><b>Highlights:</b> click a story to open it on the map (the card turns blue; a split comparison of two dates, drag
+              the handle); the chevron shows the text, whose last line opens the compare settings. Texts after watson.ch
+              (10 August 2026) and SRF Meteo (9 July 2026), credited in each story.</p>
+            <p><b>NDDI:</b> by default with the NIR/SWIR NDWI of Gu et al. (2007). The green/NIR NDWI of the openEO notebook is
+              selectable, but saturates (99.8 % of the pixels at ±1 in a test, with or without the reflectance offset).</p>
+            <p><b>Loading:</b> the box at the bottom left counts the tiles still rendering and the requests in flight, and flags a
+              slow connection after 6 s.</p>
+            <p><b>NDVIdiff / NDVIz:</b> monthly products for the end of July, August and September (forest perimeter); the product
+              nearest to the selected date is shown, also in compare, timelapse and export.</p>
+            <p><b>Two-date layers:</b> <i>NDDI change</i> and the <i>NDVI Analyst</i> compare the selected date with a reference:
+              the acquisitions within ±20 days of the same day one year earlier (or of a chosen date), clearest first, per pixel the
+              first clear one.</p>
             <p><b>Permalink:</b> the address bar is rewritten on every change (view, date, cloud filter, layer, legend range, masks,
               effects, compare list, area of interest), so copying the URL reproduces the view.</p>
             <p><b>Projection:</b> EPSG:2056 (CH1903+ / LV95), the native CRS of the tile grid and the COGs, so nothing is reprojected.</p>
           </div></div>
+        <div class="card"><h4>Based on and uses</h4>
+          <ul class="links">
+            <li><a href="https://github.com/eu-cdse/copernicus-browser" target="_blank" rel="noopener">eu-cdse/copernicus-browser</a> —
+              the Copernicus Browser, model for the user interface, themes, layer descriptions and previews</li>
+            <li><a href="https://github.com/davidoesch/swisseobrowser" target="_blank" rel="noopener">davidoesch/swisseobrowser</a> — this website</li>
+            <li><a href="https://github.com/swisstopo/topo-satromo-v2" target="_blank" rel="noopener">swisstopo/topo-satromo-v2</a> —
+              processing of the swissEO products (S2-SR, VHI, NDVIdiff, NDVIz, vegetation masks)</li>
+            <li><a href="https://github.com/swisstopo/topo-drought-briefing" target="_blank" rel="noopener">swisstopo/topo-drought-briefing</a> — colour scheme</li>
+            <li><a href="https://github.com/RaffiBienz/ndvi_analyst" target="_blank" rel="noopener">RaffiBienz/ndvi_analyst</a> —
+              NDVI Analyst of the Canton of Aargau (method of the NDVI Analyst layer)</li>
+            <li><a href="https://github.com/Open-EO/openeo-community-examples/blob/main/python/50_thematic-notebooks/drought-nddi/drought-nddi.ipynb" target="_blank" rel="noopener">Open-EO/openeo-community-examples</a> —
+              NDDI drought notebook</li>
+            <li><a href="https://github.com/sentinel-hub/custom-scripts" target="_blank" rel="noopener">sentinel-hub/custom-scripts</a> — index definitions and visualisations</li>
+            <li><a href="https://github.com/Leaflet/Leaflet" target="_blank" rel="noopener">Leaflet</a>,
+              <a href="https://github.com/kartena/Proj4Leaflet" target="_blank" rel="noopener">Proj4Leaflet</a>,
+              <a href="https://github.com/proj4js/proj4js" target="_blank" rel="noopener">proj4js</a>,
+              <a href="https://github.com/geoman-io/leaflet-geoman" target="_blank" rel="noopener">Leaflet-Geoman</a> — map</li>
+            <li><a href="https://github.com/geotiffjs/geotiff.js" target="_blank" rel="noopener">geotiff.js</a> — reading the COGs</li>
+            <li><a href="https://github.com/placemark/togeojson" target="_blank" rel="noopener">togeojson</a>,
+              <a href="https://github.com/calvinmetcalf/shapefile-js" target="_blank" rel="noopener">shpjs</a>,
+              <a href="https://github.com/proj4js/mgrs" target="_blank" rel="noopener">mgrs</a>,
+              <a href="https://github.com/Stuk/jszip" target="_blank" rel="noopener">JSZip</a>,
+              <a href="https://github.com/mattdesl/gifenc" target="_blank" rel="noopener">gifenc</a> — import, export, timelapse</li>
+          </ul></div>
         <div class="card"><h4>Terms</h4>
           <div style="color:var(--muted);font-size:11.5px">© swisstopo —
             <a href="https://www.swisstopo.admin.ch/ogd-conditions" target="_blank">open government data</a>.
-            swissEO S2-SR and swissEO VHI contain modified Copernicus Sentinel data.</div></div>
+            The swissEO products contain modified Copernicus Sentinel data. Not for operational use.</div></div>
       </div>
     </aside>
 
     <div id="mapwrap">
       <div id="map"></div>
+      <div id="swipe" hidden>
+        <div class="sw-lab l" id="swL"></div><div class="sw-lab r" id="swR"></div>
+        <div class="sw-bar" id="swBar" title="Drag to swipe between the two images"><span class="sw-knob"></span></div>
+      </div>
       <div id="basemapbar">
         <button data-b="pixelkarte" class="on">Pixelkarte</button>
         <button data-b="swissimage">SWISSIMAGE</button>
@@ -719,7 +834,10 @@ table.kv td:first-child{color:var(--muted)}
         </div>
       </div></div>
 
-      <div id="status"></div>
+      <div id="mapmsg">
+        <div id="loading" hidden><span class="spin"></span><span id="loadTxt">Loading data…</span></div>
+        <div id="status"></div>
+      </div>
       <div id="inspect"><span class="close" id="inspClose">×</span>
         <h5 id="inspTitle">Pixel</h5><div id="inspBody"></div></div>
     </div>
@@ -791,6 +909,15 @@ const map = L.map("map", {
 L.control.scale({ imperial: false }).addTo(map);
 
 const lv95 = (x, y) => CRS2056.unproject(L.point(x, y));
+/* Metres per pixel at any (also fractional) zoom; highlights open at the exact resolution of their
+   map.geo.admin.ch link, between two levels of the tile grid. */
+const resAt = z => 1 / CRS2056.scale(z);
+function setViewFrac(latlng, z) {
+  const snap = map.options.zoomSnap;
+  map.options.zoomSnap = 0;
+  map.setView(latlng, clamp(z, 8, 27), { animate: false });
+  map.options.zoomSnap = snap;
+}
 const CH_BOUNDS = L.latLngBounds(lv95(2484000, 1074000), lv95(2838000, 1300000));
 map.fitBounds(CH_BOUNDS);
 
@@ -856,7 +983,10 @@ const COLL_VHI = "ch.swisstopo.swisseo_vhi_v100";
 const DATA = "https://data.geo.admin.ch/" + COLL + "/";
 const SOURCES = {
   s2:  { coll: COLL,     name: "swissEO S2-SR v200", firstYear: 2015 },
-  vhi: { coll: COLL_VHI, name: "swissEO VHI v100",   firstYear: 1991 }
+  vhi: { coll: COLL_VHI, name: "swissEO VHI v100",   firstYear: 1991 },
+  // monthly products for the end of July, August and September: the item nearest to the date is shown
+  ndvidiff: { coll: "ch.swisstopo.swisseo_ndvi_diff_v100", name: "swissEO NDVIdiff", firstYear: 2018, sparse: true },
+  ndviz:    { coll: "ch.swisstopo.swisseo_ndvi_z_v100",    name: "swissEO NDVIz",    firstYear: 2017, sparse: true }
 };
 
 const SUFFIX = {
@@ -1031,6 +1161,26 @@ const R_NDWI = rampHex([[-0.8, 0x008000], [0, 0xffffff], [0.8, 0x0000cc]]);
 const R_NBR  = rampHex([[-1, 0x960000], [-0.2, 0xf0783c], [0.1, 0xf5eb96], [0.4, 0x82be5a], [1, 0x0a5a14]]);
 const R_AOT  = rampHex([[0, 0x0f1946], [0.1, 0x2d78be], [0.2, 0xf0dc5a], [0.35, 0xe67832], [0.6, 0xa0141e]]);
 const R_INC  = rampHex([[0, 0x14141a], [45, 0x5f5f69], [90, 0xafafb4], [135, 0xe1e1e4], [180, 0xffffff]]);
+/* swissEO NDVIdiff and NDVIz colour ranges, verbatim from their Additional Content Information sheets */
+const R_NDVIDIFF = rampHex([[-0.3, 0xb71c1c], [-0.225, 0xcd5a48], [-0.15, 0xe49974], [-0.075, 0xfad7a0], [0, 0xf5f5f5],
+                            [0.075, 0x80cbc4], [0.15, 0x55a198], [0.225, 0x2b776c], [0.3, 0x004d40]]);
+const R_NDVIZ = rampHex([[-5, 0x7d6608], [-3, 0xd4ac0d], [-1, 0xf7dc6f], [0, 0xf5f5f5], [1, 0x7dcea0], [3, 0x229954], [5, 0x145a32]]);
+const MISSING_RGB = hx(0xb3b6b7);
+/* NDDI palettes of the openEO drought notebook (index: #f2f5ef / #63a3e7 / #b2182b at -1 / 0 / 1;
+   difference: blue / white / red) */
+const R_NDDI = rampHex([[-1, 0xf2f5ef], [0, 0x63a3e7], [1, 0xb2182b]]);
+const R_NDDICHG = rampHex([[-1, 0x2166ac], [0, 0xf7f7f7], [1, 0xb2182b]]);
+const CHANGE_RGB = hx(0xb71c1c), NOCHANGE_RGB = hx(0xdadada);
+/* Copernicus Browser Agriculture theme: EVI and SAVI colour steps (value < threshold), verbatim */
+const STEPS_EVI = { steps: [[-1.1, [0, 0, 0]], [-0.2, [191, 191, 255]], [-0.1, [219, 219, 219]], [0.0, [255, 255, 224]], [0.025, [255, 250, 204]], [0.05, [237, 232, 181]], [0.075, [222, 217, 156]], [0.1, [204, 199, 130]], [0.125, [189, 184, 107]], [0.15, [176, 194, 97]], [0.175, [163, 204, 89]], [0.2, [145, 191, 82]], [0.25, [128, 178, 71]], [0.3, [112, 163, 64]], [0.35, [97, 150, 54]], [0.4, [79, 138, 46]], [0.45, [64, 125, 36]], [0.5, [48, 110, 28]], [0.55, [33, 97, 18]], [0.6, [15, 84, 10]]], other: [0, 69, 0] };
+const STEPS_SAVI = { steps: [[-1.1, [0, 0, 0]], [-0.2, [191, 191, 255]], [-0.1, [219, 219, 219]], [0.0, [255, 255, 224]], [0.025, [255, 250, 204]], [0.05, [237, 232, 181]], [0.075, [222, 217, 156]], [0.1, [204, 199, 130]], [0.125, [189, 184, 107]], [0.15, [176, 194, 97]], [0.175, [163, 204, 89]], [0.2, [145, 191, 82]], [0.25, [128, 178, 71]], [0.3, [112, 163, 64]], [0.35, [97, 150, 54]], [0.4, [79, 138, 46]], [0.45, [64, 125, 36]], [0.5, [48, 110, 28]], [0.55, [33, 97, 18]], [0.6, [15, 84, 10]]], other: [0, 69, 0] };
+/* Colour of a value in a step table, and a ramp through the step colours (each colour starts at the
+   previous threshold) for legends and histograms of the stepped layers. */
+function stepColor(st, v) { for (const x of st.steps) if (v < x[0]) return x[1]; return st.other; }
+function stepsRamp(st, lo, hi) {
+  const starts = st.steps.slice(1).map((x, i) => [st.steps[i][0], x[1]]).concat([[st.steps[st.steps.length - 1][0], st.other]]);
+  return ramp([[lo, stepColor(st, lo)]].concat(starts.filter(x => x[0] > lo && x[0] < hi)).concat([[hi, stepColor(st, hi)]]));
+}
 const SHADOW_RGB = [70, 45, 130];
 
 /* Scene classification codes, as listed in the S2-SR content sheet (Sen2Cor) */
@@ -1108,6 +1258,26 @@ const ICONS = {
 };
 
 const nd = v => (v[0] - v[1]) / (v[0] + v[1]);
+/* NDDI = (NDVI − NDWI) / (NDVI + NDWI) from [B08, B04, B03, B11], clipped to −1…1.
+   Default: NDWI = (B08 − B11) / (B08 + B11) as in Gu et al. 2007 (the paper Awesome Spectral Indices cites).
+   Variant "green": NDWI = (B03 − B08) / (B03 + B08) as in Awesome Spectral Indices and the openEO notebook; then
+   NDVI + NDWI is close to 0 over vegetation and 99.8 % of the pixels end up at −1 or +1 (test: Aarau, 2026-07-04). */
+function nddi(v, s) {
+  const ndvi = (v[0] - v[1]) / (v[0] + v[1]);
+  const ndwi = s && s.ndwi === "green" ? (v[2] - v[0]) / (v[2] + v[0]) : (v[0] - v[3]) / (v[0] + v[3]);
+  return clamp((ndvi - ndwi) / (ndvi + ndwi), -1, 1);
+}
+/* The overviews of the NDVIdiff / NDVIz COGs mix the missing-data code 32700 into averaged values (e.g. 31630,
+   −9395). When an overview is read, values outside a plausible range (|ΔNDVI| ≤ 1, |z| ≤ 20) are treated as
+   no data; at the full resolution (target below 14.8 m, see readGridBands) every value is kept. */
+const ovrFree = res => res == null || res * 1.35 < 20;
+/* COG of a swissEO NDVIdiff / NDVIz item: the forest-10m asset href from STAC (documented name as fallback).
+   Item ids repeat across collections (e.g. VHI and NDVIdiff on the same day), so the href must be in this collection. */
+function prodUrl(id, prod) {
+  const f = featById.get(id), a = (f && f.assets) || {}, dir = "/ch.swisstopo.swisseo_" + prod + "_v100/";
+  for (const k in a) if (k.endsWith("_forest-10m.tif") && a[k].href && a[k].href.includes(dir)) return a[k].href;
+  return "https://data.geo.admin.ch/ch.swisstopo.swisseo_" + prod + "_v100/" + id + "/swisseo_" + prod + "_v100_mosaic_" + id + "_forest-10m.tif";
+}
 const VHI_SW = "linear-gradient(135deg,#b56a29,#f5cd85,#cbffca,#52bd9f,#0470b0)";
 
 const LAYERS = [
@@ -1227,7 +1397,79 @@ const LAYERS = [
     sub:"Vegetation Health Index over all vegetation, vs. 1991–2020",
     desc:WMS_META["ch.swisstopo.swisseo_vhi_v100_vegetation"].abstract,
     formula:"WMS GetMap\nLAYERS=ch.swisstopo.swisseo_vhi_v100_vegetation\nCRS=EPSG:2056&item=<day>",
-    note:"Rendered by wms.geo.admin.ch. No-data = 110." }
+    note:"Rendered by wms.geo.admin.ch. No-data = 110." },
+
+  /* ---- Copernicus Browser Agriculture / Drought and Floods themes ---- */
+  { id:"evi", group:"Indices", name:"EVI", type:"index", source:"s2", bands:["b08","b04","b02"], steps:STEPS_EVI,
+    min:-0.2, max:1, lim:[-0.2, 1], fixedScale:true, icon:"leaf", sw:"linear-gradient(135deg,#ccc682,#004500)", fg:"#f2f7ea",
+    sub:"Enhanced Vegetation Index", desc:"Enhanced vegetation index.",
+    formula:"EVI = 2.5 × (ρ(B08) − ρ(B04)) / (ρ(B08) + 6 × ρ(B04) − 7.5 × ρ(B02) + 1)",
+    fn:v => 2.5 * (v[0] - v[1]) / (v[0] + 6 * v[1] - 7.5 * v[2] + 1) },
+
+  { id:"savi", group:"Indices", name:"SAVI", type:"index", source:"s2", bands:["b08","b04"], steps:STEPS_SAVI,
+    min:-0.2, max:1, lim:[-0.2, 1], fixedScale:true, icon:"crop", sw:"linear-gradient(135deg,#ddd89b,#306d1c)", fg:"#1d2410",
+    sub:"Soil Adjusted Vegetation Index", desc:"Soil adjusted vegetation index.",
+    formula:"SAVI = (ρ(B08) − ρ(B04)) / (ρ(B08) + ρ(B04) + L) × (1 + L),  L = 0.428",
+    fn:v => (v[0] - v[1]) / (v[0] + v[1] + 0.428) * 1.428 },
+
+  { id:"barren", group:"Composites", name:"Barren Soil", type:"fnrgb", source:"s2", bands:["b11","b04","b08","b02"],
+    icon:"strata", sw:"linear-gradient(135deg,#c86a78,#3f6fb0)", fg:"#1a0a0a",
+    sub:"Based on the combination: BSI, B08, B11", desc:"Barren soil visualisation.",
+    formula:"BSI = 2.5 × ((B11 + B04) − (B08 + B02)) / ((B11 + B04) + (B08 + B02))\nB08 > 0.6 → white, otherwise R, G, B = 2.5 × BSI, B08, B11",
+    statName:"BSI", statFn:v => ((v[0] + v[1]) - (v[2] + v[3])) / ((v[0] + v[1]) + (v[2] + v[3])),
+    rgb:v => { const bsi = 2.5 * ((v[0] + v[1]) - (v[2] + v[3])) / ((v[0] + v[1]) + (v[2] + v[3]));
+               return v[2] > 0.6 ? [1, 1, 1] : [2.5 * bsi, v[2], v[0]]; } },
+
+  { id:"mstress", group:"Indices", name:"Moisture Stress", type:"index", source:"s2", bands:["b08","b11"], fn:nd,
+    classify:[[0, [255, 255, 255], "≤ 0"], [0.2, [0, 204, 230], "0 – 0.2"], [0.4, [0, 128, 230], "0.2 – 0.4"], [Infinity, [0, 0, 179], "> 0.4"]],
+    icon:"drop", sw:"linear-gradient(135deg,#00cce6,#0000b3)", fg:"#eaf2ff",
+    sub:"Classified NDMI for irrigation", desc:"Classified NDMI for moisture stress.",
+    formula:"NDMI = (ρ(B08) − ρ(B11)) / (ρ(B08) + ρ(B11)), classified ≤ 0 · ≤ 0.2 · ≤ 0.4 · > 0.4" },
+
+  { id:"hon", group:"Composites", name:"Highlight Optimized Natural Color", type:"rgb", source:"s2", bands:["b04","b03","b02"], look:"hon",
+    icon:"sun", sw:"linear-gradient(135deg,#6f8f5c,#e6ddc0)", fg:"#1d2410",
+    sub:"Enhanced natural color visualisation", desc:"Highlight optimized natural color.",
+    formula:"per band: ρ > 0.15 → (0.6 × ρ)^(1/3), otherwise 2.9876 × ρ" },
+
+  /* ---- swissEO drought products (COGs, forest perimeter, 3 products per year) ---- */
+  { id:"ndvidiff", group:"Indices", name:"swissEO NDVIdiff", type:"cont", source:"ndvidiff", band:"prod",
+    ramp:R_NDVIDIFF, min:-0.3, max:0.3, lim:[-1, 1], cogScale:0.001, cogFill:32701, cogMissing:32700, unit:"NDVI change",
+    cogValid:(v, res) => v < 32700 && (ovrFree(res) || (v >= -1000 && v <= 1000)), cogUrl:id => prodUrl(id, "ndvi_diff"), icon:"tree",
+    sw:"linear-gradient(135deg,#b71c1c,#f5f5f5,#004d40)", fg:"#1a1206",
+    sub:"NDVI change: current vs. previous year (forest)",
+    desc:"Difference of the vegetation state (NDVI) of the current year compared to the previous year, masked to the forest perimeter, 10 m.",
+    formula:"forest-10m.tif — NDVI change = value / 1000\n32700 = missing data · 32701 = no data" },
+
+  { id:"ndviz", group:"Indices", name:"swissEO NDVIz", type:"cont", source:"ndviz", band:"prod",
+    ramp:R_NDVIZ, min:-5, max:5, lim:[-10, 10], cogScale:0.01, cogFill:32701, cogMissing:32700, unit:"NDVI z-score",
+    cogValid:(v, res) => v < 32700 && (ovrFree(res) || (v >= -2000 && v <= 2000)), cogUrl:id => prodUrl(id, "ndvi_z"), icon:"tree",
+    sw:"linear-gradient(135deg,#7d6608,#f5f5f5,#145a32)", fg:"#1a1206",
+    sub:"NDVI anomaly as z-score (forest)",
+    desc:"Current vegetation vitality as NDVI anomaly (z-score), masked to the forest perimeter, 10 m.",
+    formula:"forest-10m.tif — z-score = value / 100\n32700 = missing data · 32701 = no data" },
+
+  { id:"nddi", group:"Indices", name:"NDDI", type:"index", source:"s2", bands:["b08","b04","b03","b11"], ramp:R_NDDI, ndwiOpt:true,
+    min:-1, max:1, lim:[-1, 1], icon:"drop", sw:"linear-gradient(135deg,#f2f5ef,#63a3e7,#b2182b)", fg:"#1a0a0a",
+    sub:"Normalized Difference Drought Index (Gu et al. 2007)",
+    desc:"Normalized difference drought index of the selected date.",
+    formula:"NDVI = (ρ(B08) − ρ(B04)) / (ρ(B08) + ρ(B04))\nNDWI = (ρ(B08) − ρ(B11)) / (ρ(B08) + ρ(B11))   (Gu et al. 2007; default)\n   or (ρ(B03) − ρ(B08)) / (ρ(B03) + ρ(B08))   (openEO notebook / Awesome Spectral Indices)\nNDDI = (NDVI − NDWI) / (NDVI + NDWI), clipped to −1…1",
+    fn:nddi },
+
+  { id:"nddichg", group:"Indices", name:"NDDI change vs. previous year", type:"diff2", source:"s2", bands:["b08","b04","b03","b11"], ndwiOpt:true,
+    ramp:R_NDDICHG, min:-1, max:1, lim:[-2, 2], def:{ cloud:true, shadow:true }, icon:"flame", unit:"ΔNDDI",
+    sw:"linear-gradient(135deg,#2166ac,#f7f7f7,#b2182b)", fg:"#1a0a0a",
+    sub:"NDDI of the date minus NDDI one year earlier",
+    desc:"Change of the drought index between the selected date and the same time one year earlier.",
+    formula:"NDDI(date) − NDDI(reference), each NDDI clipped to −1…1\nreference = per pixel the first clear one of the acquisitions within ±20 days of the same day one year earlier (or of the chosen reference date), clearest first",
+    fn:nddi },
+
+  { id:"analyst", group:"Indices", name:"NDVI Analyst (Kt. Aargau)", type:"diff2", source:"s2", bands:["b08","b04"], fn:nd,
+    ramp:R_NDVIDIFF, min:-0.3, max:0.3, lim:[-1, 1], modal:true, unit:"ΔNDVI",
+    def:{ cloud:true, shadow:true, veg:"forest", thr:-0.08, mode:"diff" }, icon:"tree",
+    sw:"linear-gradient(135deg,#b71c1c,#f5f5f5,#004d40)", fg:"#1a1206",
+    sub:"NDVI change between two dates in forest, with change detection",
+    desc:"NDVI difference between the selected date and a reference date, masked to forest.",
+    formula:"NDVI = (ρ(B08) − ρ(B04)) / (ρ(B08) + ρ(B04)), ρ < 0 → 0\nΔNDVI = NDVI(date) − NDVI(reference)\nchange = ΔNDVI < threshold (−0.08), then 3 × 3 majority filter (edge-effect removal)" }
 ];
 const LAYER = Object.fromEntries(LAYERS.map(r => [r.id, r]));
 /* Titles, descriptions and preview thumbnails as in the Copernicus Browser (src/assets/layers_metadata.js,
@@ -1259,9 +1501,94 @@ const COP_META = {
   scl: { name: "Scene classification map", sub: "Classification of Sentinel-2 data as result of ESA's Scene classification algorithm.", thumb: "DEFAULT-THEME-a91f72-SCENE-CLASSIFICATION.png",
     cop: "# Scene classification\n\n\n\nScene classification was developed to distinguish between cloudy pixels, clear pixels and water pixels of Sentinel-2 data and is a result of ESA's Scene classification algorithm. Twelve different classifications are provided including classes of clouds, vegetation, soils/desert, water and snow. It does not constitute a land cover classification map in a strict sense.\n\n\n\nMore info [here](https://custom-scripts.sentinel-hub.com/sentinel-2/scene-classification/)." },
   aot: { more: "https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-s2-sr" }, cloud: { more: "https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-s2-sr" }, terrain: { more: "https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-s2-sr" },
-  vhi: { more: "https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-vhi" }, vhiveg: { more: "https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-vhi" }
+  vhi: { more: "https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-vhi" }, vhiveg: { more: "https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-vhi" },
+  evi: { thumb: "AGRICULTURE-3f9be2-4_EVI.png", cop: "# Enhanced Vegetation Index (EVI)\n\nThe enhanced vegetation index (EVI) is an 'optimized' vegetation index as it corrects for soil background signals and atmospheric influences. It is very useful in areas of dense canopy cover. The range of values for EVI is -1 to 1, with healthy vegetation generally around 0.20 to 0.80.\n\n\n\n\n\nMore infos [here](https://custom-scripts.sentinel-hub.com/sentinel-2/evi/) and [here.](https://en.wikipedia.org/wiki/Enhanced_vegetation_index)" },
+  savi: { thumb: "AGRICULTURE-3f9be2-SAVI.png", cop: "# Soil Adjusted Vegetation Index (SAVI)\n\n The Soil Adjusted Vegetation Index is similar to Normalized Difference Vegetation Index (NDVI) but is used in areas where vegetative cover is low (< 40%). The index is a transformation technique that minimizes soil brightness influences from spectral vegetation indices involving red and near-infrared (NIR) wavelengths. The index is helpful when analysing young crops, arid regions with sparse vegetation and exposed soil surfaces.\n\n\n\n\n\nMore info [here](https://custom-scripts.sentinel-hub.com/sentinel-2/savi/) and [here.](https://eos.com/blog/6-spectral-indexes-on-top-of-ndvi-to-make-your-vegetation-analysis-complete/)" },
+  barren: { thumb: "AGRICULTURE-3f9be2-8_BARREN-SOIL.png", cop: "# Barren Soil Visualization\n\nThe Barren Soil Visualization can be useful for soil mapping, to investigate the location of landslides or the extent of erosion in non-vegetated areas. This visualization shows all vegetation in green and the barren ground in red. Water appears black.\n\n\n\nMore info [here](https://custom-scripts.sentinel-hub.com/sentinel-2/barren_soil/) and [here.](https://medium.com/sentinel-hub/create-useful-and-beautiful-satellite-images-with-custom-scripts-8ef0e6a474c6)" },
+  mstress: { thumb: "AGRICULTURE-3f9be2-9_MOISTURE-STRESS.png", cop: "# NDMI for Moisture Stress\n\nThe Normalized Difference Moisture Index (NDMI) for moisture stress can be used to detect irrigation. For all the index values above 0, knowing the land use and land cover, it is possible to determine whether irrigation has taken place. Knowing the type of crop grown (e.g. citrus crops), it is possible to identify whether irrigation is being effective or not during the crucial growing summer season, as well as find out if some parts of the farm are being under or over-irrigated.\n\n\n\n\n\nMore info [here.](https://custom-scripts.sentinel-hub.com/sentinel-2/ndmi_special/#)" },
+  hon: { thumb: "FLOODING-8184c6-HIGHLIGHT-OPTIMIZED-NATURAL-COLOR.png", cop: "# Highlight Optimized Natural Color\n\nThis script aims to display the Earth in beautiful natural color images. It uses highlight optimization to avoid burnt out pixels and to even out the exposure.\n\n\n\nMore info [here.](https://sentinel-hub.github.io/custom-scripts/sentinel-2/highlight_optimized_natural_color/#)" },
+  ndvidiff: { more: "https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-ndvidiff",
+    cop: "# swissEO NDVIdiff\n\nThe NDVI changes show the difference between the vegetation's state of the current year compared to the previous year as observed by satellites, for the forest areas of Switzerland at 10 m. Negative values (red) mean less vital vegetation than a year ago, positive values (green) more. The product is published for the end of July, August and September; the product nearest to the selected date is shown. Grey: missing data.\n\nMore info [here](https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-ndvidiff) and in the [content information](https://www.swisstopo.admin.ch/dam/en/sd-web/bODfHY8ioFyS/swissEO_NDVIdiff_AdditionalContentInfo.pdf)." },
+  ndviz: { more: "https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-ndviz",
+    cop: "# swissEO NDVIz\n\nThe NDVI anomalies show the current vegetation vitality as observed by satellites, as a z-score relative to the long-term behaviour, for the forest areas of Switzerland at 10 m. Negative values (brown) mean lower vitality than usual, positive values (green) higher. The product is published for the end of July, August and September; the product nearest to the selected date is shown. Grey: missing data.\n\nMore info [here](https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-ndviz) and in the [content information](https://www.swisstopo.admin.ch/dam/en/sd-web/mZTj7kABmTrD/swissEO_NDVIz_AdditionalContentInfo.pdf)." },
+  nddi: { cop: "# Normalized Difference Drought Index (NDDI)\n\nThe NDDI (Gu et al. 2007) combines vegetation greenness (NDVI) and vegetation water content (NDWI): NDDI = (NDVI − NDWI) / (NDVI + NDWI). Vegetation under drought stress has less water and less green, which raises the NDDI (red). By default the NDWI is computed from NIR and SWIR (B08, B11), as in the original paper; values are clipped to −1…1.\n\nThe openEO drought notebook uses the Awesome Spectral Indices formula with an NDWI from green and NIR (B03, B08), selectable as *Green*. With it NDVI + NDWI is close to zero over vegetation, and almost every pixel ends up at −1 or +1 (99.8 % in a test over Aarau, independent of the reflectance offset), so the map is saturated.\n\nMore info [here](https://doi.org/10.1029/2006GL029127) and in the [openEO notebook](https://github.com/Open-EO/openeo-community-examples/blob/main/python/50_thematic-notebooks/drought-nddi/drought-nddi.ipynb)." },
+  nddichg: { cop: "# NDDI change vs. previous year\n\nDifference between the NDDI of the selected date and the NDDI one year earlier, as in the openEO drought notebook, which compares a drought year with a baseline year. Positive values (red) mean drier conditions than a year ago, negative values (blue) wetter. The NDWI is computed from NIR and SWIR (Gu et al. 2007) by default; the notebook's green NDWI is selectable but saturates. The reference uses the acquisitions within ±20 days of the same day one year earlier (or of a reference date you choose), clearest first; each pixel takes the first one with clear data. Unlike the notebook, which averages May–July, single dates are compared, so clouds and cloud shadows are masked on both sides by default.\n\nMore info [here](https://github.com/Open-EO/openeo-community-examples/blob/main/python/50_thematic-notebooks/drought-nddi/drought-nddi.ipynb)." },
+  analyst: { cop: "# NDVI Analyst (Canton of Aargau)\n\nPort of the NDVI Analyst by Raffael Bienz (Canton of Aargau): the NDVI difference between two dates (later minus earlier), using swissEO S2-SR reflectance with negative values set to 0, masked to forest. Changes are pixels with an NDVI drop below the threshold (default −0.08); a 3 × 3 majority filter removes edge effects. *Detected change* shows the binary result. The statistics of an area of interest report the forest area and the affected area in ha and %, with and without edge-effect removal, like the original script.\n\nMore info [here](https://github.com/RaffiBienz/ndvi_analyst)." }
 };
 Object.keys(COP_META).forEach(id => Object.assign(LAYER[id], COP_META[id]));
+["vhi", "vhiveg"].forEach(id => Object.assign(LAYER[id], {      // VHI: WMS for display, COG for statistics
+  cogUrl: sid => vhiUrl(sid, LAYER[id]), cogValid: v => v <= 100, cogScale: 1, cogFill: 255 }));
+LAYERS.forEach(r => { if (r.steps) r.ramp = stepsRamp(r.steps, r.min, r.max); });
+
+/* Configurations, as the themes of the Copernicus Browser: each lists its layers in groups; a
+   configuration can carry highlights (presets that open a comparison at a place). */
+const CONFIGS = {
+  DEFAULT: { name: "Default", groups: [
+    ["Composites", ["true", "nir", "urban", "swir", "agri", "geo"]],
+    ["Indices", ["ndvi", "ndwi", "ndmi", "ndsi", "nbr", "aot", "vhi", "vhiveg", "ndvidiff"]],
+    ["Masks & quality", ["scl", "cloud", "terrain"]]] },
+  AGRICULTURE: { name: "Agriculture", groups: [
+    ["Layers", ["true", "nir", "ndvi", "evi", "barren", "mstress", "ndmi", "agri", "savi"]]] },
+  DROUGHT: { name: "Drought", groups: [
+    ["Layers", ["ndvi", "vhi", "vhiveg", "ndvidiff", "ndviz", "nddi", "nddichg", "analyst"]]] },
+  DROUGHT2026: { name: "Drought 2026", groups: [
+    ["Layers", ["true", "ndmi", "ndwi", "mstress", "ndvi", "swir", "urban", "hon"]]],
+    highlights: [
+      { title: "Baselland", left: "2026-05-23", right: "2026-07-04", layer: "true",
+        center: [2627792.59, 1257232.72], res: 13.06,          // map.geo.admin.ch z = 5.615
+        text: "Satellite images from the end of May and the beginning of July 2026. Sissach lies in the centre, Liestal in the far north-west. Within six weeks much of the green farmland in the Ergolz valley and its side valleys turned brown." },
+      { title: "Gürbetal and Aare valley", left: "2026-05-28", right: "2026-07-04", layer: "true",
+        center: [2607100, 1190200], res: 12,
+        text: "Brown instead of green on fields and meadows: before and after the June heat. In many places June brought only 20–50 % of the normal rainfall, with temperatures about 3 °C above the long-term average. The view south of Bern shows the Gürbetal, the Belpberg and the Aare valley at Münsingen, the area of the SRF image. (Source: SRF Meteo, 9 July 2026)" },
+      { title: "Great Aletsch Glacier", left: "2019-08-18", right: "2026-08-13", layer: "true",
+        center: [2645270.03, 1149206.31], res: 27.29,          // map.geo.admin.ch z = 4.661
+        text: "From the slopes of Bettmeralp and Fiescheralp to the glacier itself, the comparison shows one of the most striking changes. After another winter with little snow, early summer heat removed the protective snow cover from the glacier by the end of June, much earlier than usual. Dark, bare ice now covers a far larger area instead of bright old snow. (Source: watson.ch)" },
+      { title: "Konstanz and Untersee", left: "2025-08-08", right: "2026-08-08", layer: "true",
+        center: [2721000, 1281000], res: 25,
+        text: "The water level of the Untersee is the lowest of the 1991–2020 reference period. Wide, pale strips of exposed shore appear where water normally stands; boat jetties were already lying on dry ground in April. 8 August 2025 compared with the same day in 2026. (Source: watson.ch, 10 August 2026)" },
+      { title: "Lake Constance – Untersee", left: "2025-08-08", right: "2026-08-08", layer: "true",
+        center: [2723342.09, 1282467.43], res: 11.82,          // map.geo.admin.ch z = 5.759
+        text: "Persistent drought has pushed the Untersee to a historic low. Around the island of Werd, wide gravel banks lie dry. At 25 centimetres below the previous record, the water level in August is lower than at any time since at least 1930. 8 August 2025 compared with the same day in 2026. (Source: Blick, 12 August 2026)" },
+      { title: "Zurich Airport", left: "2025-08-08", right: "2026-08-08", layer: "true",
+        center: [2685500, 1257000], res: 12,
+        text: "Where lush green fields surrounded the airport a year ago, brown and beige now dominate this intensively farmed area. The change is most visible on the unirrigated meadows next to the runways. (Source: watson.ch, 10 August 2026)" },
+      { title: "Forests near Brugg AG", left: "2025-08-08", right: "2026-08-08", layer: "true",
+        center: [2658500, 1259300], res: 12,
+        text: "The forests around Brugg look brown and thinned. Beech, the second most common tree in Switzerland, is hit hardest: the leaves of exposed trees have turned yellow, orange and brown, and some trees have already dropped them. (Source: watson.ch, 10 August 2026)" },
+      { title: "Upper Lake Zurich", left: "2025-08-08", right: "2026-08-08", layer: "true",
+        center: [2711000, 1230500], res: 20,
+        text: "Very little rain fell here in the preceding weeks; thunderstorms visible on the radar often brought little or nothing. The result is dried-out meadows and brown fields around the upper lake. (Source: watson.ch, 10 August 2026)" },
+      { title: "Wil SG and surroundings", left: "2025-08-08", right: "2026-08-08", layer: "true",
+        center: [2721500, 1258500], res: 13,
+        text: "The hilly landscape of streams and pastures around Wil is clearly browner than a year ago. Small streams react quickly to a lack of rain because, unlike large lakes, they have no buffer. (Source: watson.ch, 10 August 2026)" },
+      { title: "Lake Lucerne", left: "2025-08-08", right: "2026-08-08", layer: "true",
+        center: [2671000, 1207500], res: 25,
+        text: "Less brown than other regions: local thunderstorms brought some relief, and the wooded slopes of the Rigi and Pilatus stay green in places. Many meadows and fields have nevertheless dried out. (Source: watson.ch, 10 August 2026)" },
+      { title: "Lakes Neuchâtel and Murten", left: "2025-08-08", right: "2026-08-11", layer: "true",
+        center: [2568000, 1199000], res: 30,
+        text: "One of Switzerland’s main vegetable-growing areas: lighter and brown patches show between the plots of the Three Lakes Region, and the foot of the Jura is among the areas with the largest soil-moisture deficit. Watson compares 8 August; the nearest clear swissEO image of 2026 here is from 11 August. (Source: watson.ch, 10 August 2026)" },
+      { title: "Interlaken BE", left: "2025-08-08", right: "2026-08-08", layer: "true",
+        center: [2632000, 1170500], res: 20,
+        text: "In the Bernese Oberland the drought is much less visible than in the Mittelland, partly because strong glacier melt keeps streams and rivers high and local storms brought moisture. South-facing slopes still show drier meadows and thinner forests. (Source: watson.ch, 10 August 2026)" },
+      { title: "All of Switzerland", left: "2025-08-08", right: "2026-07-24", layer: "true",
+        center: [2660000, 1190000], res: 340,
+        text: "By late July a brown-yellow belt stretched across much of Switzerland, above all the Mittelland and the Jura, where last year’s meadows and fields have visibly dried out. The 2026 image is from 24 July, when two cloud-free orbits covered the country; a narrow strip in the west lies between them. (Source: watson.ch, 10 August 2026)" }] }
+};
+const cfgLayers = id => CONFIGS[id].groups.flatMap(g => g[1]);
+
+/* Verification status of the layers: the checklist "Layer verification" in README.md (checked = verified).
+   The Pages workflow writes the checked layer ids into VERIFIED_IDS on every deploy; a copy that was not
+   deployed (VERIFIED_IDS still null) reads README.md next to the page itself. */
+const VERIFIED_IDS = null; // replaced on deploy
+const VERIFIED = new Set(VERIFIED_IDS || []);
+function parseVerified(md) {
+  const a = md.indexOf("<!-- verification:start -->"), b = md.indexOf("<!-- verification:end -->");
+  if (a < 0 || b < a) return null;
+  const ids = [];
+  md.slice(a, b).split("\n").forEach(l => { const m = l.match(/^\s*[-*] \[([ xX])\] `([a-z0-9_]+)`/); if (m && m[1] !== " ") ids.push(m[2]); });
+  return ids;
+}
+const VER_TXT = { ok: "Verified — checked in depth", todo: "To be verified — not yet checked in depth" };
 const PREVIEWS = "public/previews/", PREVIEWS_CDSE = "https://browser.dataspace.copernicus.eu/previews/";
 
 /* Minimal Markdown for the descriptions: '# ' title, paragraphs, [links](url) and `code`. */
@@ -1275,7 +1602,7 @@ function mdLite(text) {
     : "<p>" + inline(t).replace(/\n/g, "<br>") + "</p>").join("");
 }
 LAYERS.forEach(r => { if (r.ramp) r.domain = [r.min, r.max]; });
-const MASKABLE = { rgb: 1, index: 1, cont: 1, terrain: 1 };
+const MASKABLE = { rgb: 1, index: 1, cont: 1, terrain: 1, fnrgb: 1, diff2: 1 };
 const SCL_CLOUD = { 3: 1, 8: 1, 9: 1, 10: 1 };
 
 /* Vegetation masks: the forest-10m / vegetation-10m COGs of swissEO VHI v100 (STAC collection
@@ -1311,6 +1638,10 @@ async function readVegMask(kind, date, bbox, W, H, signal) {
   }
 }   // SCL cloud shadow, cloud medium / high probability, cirrus
 const classesOf = (rec, s) =>
+  rec.classify ? rec.classify.map(c => [c[2], c[1]]) :
+  rec.modal && s && s.mode === "change" ? [
+    ["Change: ΔNDVI < " + +((s.thr != null ? s.thr : rec.def.thr)).toFixed(3) + " (after 3 × 3 majority filter)", CHANGE_RGB],
+    ["No change (forest)", NOCHANGE_RGB]] :
   rec.threshold != null ? [
     ["NDSI > " + +((s && s.thr != null ? s.thr : rec.threshold)).toFixed(3) + " · snow", rec.snow],
     ["otherwise · true colour (2.5 × ρ)", [128, 118, 104]]] :
@@ -1340,15 +1671,16 @@ function optLin(a) {
 const sRGB = c => c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055;
 
 function defaults(rec) {
-  return { gain: 1, gamma: 1, r: [0, 1], g: [0, 1], b: [0, 1], min: rec.min, max: rec.max, thr: rec.threshold,
-           opacity: 100, cloud: false, shadow: false, terrain: false, veg: "off", autoGain: false, look: "standard" };
+  return Object.assign({ gain: 1, gamma: 1, r: [0, 1], g: [0, 1], b: [0, 1], min: rec.min, max: rec.max, thr: rec.threshold,
+           opacity: 100, cloud: false, shadow: false, terrain: false, veg: "off", autoGain: false, look: "standard",
+           refDate: "", mode: "diff", ndwi: "swir" }, rec.def || {});
 }
 const settings = {};
 const S = rec => settings[rec.id] || (settings[rec.id] = defaults(rec));
 
 const RNG_KEYS = [["r", "redRange"], ["g", "greenRange"], ["b", "blueRange"]];
 const SETTING_KEYS = ["gain", "gamma", "redRange", "greenRange", "blueRange", "valueRange", "threshold",
-                      "opacity", "cloudMask", "shadowMask", "terrainMask", "vegetationMask", "autoGain", "look"];
+                      "opacity", "cloudMask", "shadowMask", "terrainMask", "vegetationMask", "autoGain", "look", "refDate", "displayMode", "ndwi"];
 const r3 = v => +(+v).toFixed(4);
 
 /* Non-default settings as a flat object, named like the Copernicus Browser URL params. */
@@ -1360,16 +1692,19 @@ function settingsToObj(rec, s) {
     RNG_KEYS.forEach(([k, n]) => { if (s[k][0] !== 0 || s[k][1] !== 1) o[n] = s[k].map(r3); });
   }
   if (rec.ramp && (s.min !== d.min || s.max !== d.max)) o.valueRange = [r3(s.min), r3(s.max)];
-  if (rec.threshold != null && s.thr !== d.thr) o.threshold = r3(s.thr);
+  if ((rec.threshold != null || rec.modal) && s.thr !== d.thr) o.threshold = r3(s.thr);
+  if (rec.type === "diff2" && s.refDate) o.refDate = s.refDate;
+  if (rec.modal && s.mode !== d.mode) o.displayMode = s.mode;
+  if (rec.ndwiOpt && s.ndwi !== d.ndwi) o.ndwi = s.ndwi;
   if (s.opacity !== 100) o.opacity = s.opacity;
   if (MASKABLE[rec.type]) {
-    if (s.cloud) o.cloudMask = true;
-    if (s.shadow) o.shadowMask = true;
-    if (s.terrain) o.terrainMask = true;
+    if (s.cloud !== d.cloud) o.cloudMask = s.cloud;
+    if (s.shadow !== d.shadow) o.shadowMask = s.shadow;
+    if (s.terrain !== d.terrain) o.terrainMask = s.terrain;
   }
-  if (rec.source === "s2" && VEG_LABEL[s.veg]) o.vegetationMask = s.veg;
-  if (rec.type === "rgb" && !rec.tci && s.autoGain) o.autoGain = true;
-  if (rec.type === "rgb" && !rec.tci && s.look === "optimized") o.look = "optimized";
+  if (rec.source === "s2" && s.veg !== d.veg) o.vegetationMask = s.veg;
+  if (rec.type === "rgb" && !rec.tci && !rec.look && s.autoGain) o.autoGain = true;
+  if (rec.type === "rgb" && !rec.tci && !rec.look && s.look === "optimized") o.look = "optimized";
   return o;
 }
 function objToSettings(rec, o) {
@@ -1387,10 +1722,15 @@ function objToSettings(rec, o) {
   RNG_KEYS.forEach(([k, n]) => { const a = arr(o[n]); if (a) s[k] = [clamp(a[0], 0, 1), clamp(a[1], 0, 1)]; });
   const vr = arr(o.valueRange);
   if (vr && rec.ramp) { s.min = Math.min(vr[0], vr[1]); s.max = Math.max(vr[0], vr[1]); }
-  if (rec.threshold != null && num(o.threshold) != null) s.thr = clamp(num(o.threshold), -1, 1);
+  if ((rec.threshold != null || rec.modal) && num(o.threshold) != null) s.thr = clamp(num(o.threshold), -1, 1);
+  if (rec.type === "diff2" && DATE_RE.test(o.refDate || "")) s.refDate = o.refDate;
+  if (rec.modal && (o.displayMode === "diff" || o.displayMode === "change")) s.mode = o.displayMode;
+  if (rec.ndwiOpt && (o.ndwi === "swir" || o.ndwi === "green")) s.ndwi = o.ndwi;
   if (num(o.opacity) != null) s.opacity = clamp(Math.round(num(o.opacity)), 0, 100);
-  s.cloud = bool(o.cloudMask); s.shadow = bool(o.shadowMask); s.terrain = bool(o.terrainMask);
-  if (rec.source === "s2" && VEG_LABEL[o.vegetationMask]) s.veg = o.vegetationMask;
+  if (o.cloudMask != null) s.cloud = bool(o.cloudMask);
+  if (o.shadowMask != null) s.shadow = bool(o.shadowMask);
+  if (o.terrainMask != null) s.terrain = bool(o.terrainMask);
+  if (rec.source === "s2" && (VEG_LABEL[o.vegetationMask] || o.vegetationMask === "off")) s.veg = o.vegetationMask;
   s.autoGain = rec.type === "rgb" && !rec.tci && bool(o.autoGain);
   if (rec.type === "rgb" && !rec.tci && o.look === "optimized") s.look = "optimized";
   return s;
@@ -1449,12 +1789,62 @@ function cloudOf(id) {
       const p = m && m.PROPERTIES && m.PROPERTIES.CLOUDPERCENTAGE;
       const v = p != null && isFinite(parseFloat(p)) ? parseFloat(p) : null;
       cloudPct.set(id, v);
+      if (m && m.PROPERTIES && m.PROPERTIES.ORBIT_NR != null) orbitOf.set(id, m.PROPERTIES.ORBIT_NR);
       return v;
     }).catch(() => { cloudPct.set(id, null); return null; }));
   }
   return cloudReq.get(id);
 }
 const knownPass = (f, cc) => { const c = cloudPct.get(f.id); return c == null || c <= cc; };
+
+/* Data footprint of a mosaic, so the calendar and ‹ › only offer dates whose acquisitions reach the map
+   view: the valid cells of the coarsest B04 overview (≈ 640 m). The STAC geometry is only the rectangular
+   extent, while the swath edge runs diagonally through it. Acquisitions of the same relative orbit
+   (ORBIT_NR in metadata.json) share their swath, so one footprint per orbit is read and cached. */
+const orbitOf = new Map(), fpReq = new Map(), fpDone = new Map();
+const fpKey = id => orbitOf.has(id) ? "orbit " + orbitOf.get(id) : id;
+function footprint(id) {
+  const key = fpKey(id);
+  if (!fpReq.has(key)) {
+    fpReq.set(key, (async () => {
+      const p = await pyramid(assetUrl(id, "b04")), lv = p.levels[p.levels.length - 1];
+      const r = (await lv.im.readRasters({ window: [0, 0, lv.w, lv.h], samples: [0] }))[0];
+      const m = new Uint8Array(lv.w * lv.h);
+      for (let k = 0; k < m.length; k++) m[k] = r[k] ? 1 : 0;
+      const fp = { ox: p.ox, oy: p.oy, rx: lv.rx, ry: lv.ry, w: lv.w, h: lv.h, m };
+      fpDone.set(key, fp);
+      return fp;
+    })());
+    fpReq.get(key).catch(() => fpReq.delete(key));
+  }
+  return fpReq.get(key);
+}
+function fpHit(fp, b) {
+  const c0 = Math.max(0, Math.floor((b[0] - fp.ox) / fp.rx)), c1 = Math.min(fp.w - 1, Math.floor((b[2] - fp.ox) / fp.rx));
+  const r0 = Math.max(0, Math.floor((fp.oy - b[3]) / fp.ry)), r1 = Math.min(fp.h - 1, Math.floor((fp.oy - b[1]) / fp.ry));
+  for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) if (fp.m[r * fp.w + c]) return true;
+  return false;
+}
+/* true / false, or null while the footprint is not known yet (treated as available) */
+const coversNow = (id, b) => { const fp = fpDone.get(fpKey(id)); return fp ? fpHit(fp, b) : null; };
+async function itemCovers(id, b) {
+  await cloudOf(id);                                    // the orbit number keys the footprint
+  const fp = await footprint(id).catch(() => null);
+  return !fp || fpHit(fp, b);
+}
+let fpTimer = null;
+function prefetchFootprints(fs) {
+  const todo = fs.filter(f => !fpDone.has(fpKey(f.id)));
+  if (!todo.length) return;
+  pool(todo, 3, f => itemCovers(f.id, viewBox()).then(() => {
+    clearTimeout(fpTimer);
+    fpTimer = setTimeout(() => { renderCal(); updateDateGrey(); }, 150);
+  }));
+}
+map.on("moveend", () => {
+  clearTimeout(fpTimer);
+  fpTimer = setTimeout(() => { renderCal(); updateDateGrey(); }, 300);
+});
 
 async function pool(items, n, worker) {
   const it = items[Symbol.iterator]();
@@ -1479,8 +1869,9 @@ async function datePasses(src, date, cc) {
   const fs = (await loadMonth(src, date.slice(0, 7))).filter(f => f.id.startsWith(date));
   if (!fs.length) return false;
   if (src !== "s2") return true;
-  const cs = await Promise.all(fs.map(f => cloudOf(f.id)));
-  return cs.some(c => c == null || c <= cc);
+  const cs = await Promise.all(fs.map(f => cloudOf(f.id))), vb = viewBox();
+  for (let i = 0; i < fs.length; i++) if ((cs[i] == null || cs[i] <= cc) && await itemCovers(fs[i].id, vb)) return true;
+  return false;
 }
 
 /* Next/previous date with data that passes the cloud filter (Copernicus ‹ › buttons). */
@@ -1511,9 +1902,24 @@ async function nearestVhiDay(dateStr) {
   return best;
 }
 
-/* The item ids to draw for a layer on a date: every S2 mosaic of that day that
-   passes the cloud filter (most recent first), or the VHI day (nearest if missing). */
+const prodReq = {};
+/* All dated items of a sparse product collection (cached). */
+function productItems(src) {
+  if (!prodReq[src]) {
+    prodReq[src] = stacAll(SOURCES[src].coll, SOURCES[src].firstYear + "-01-01", todayStr).then(fs => fs.map(f => f.id).sort());
+    prodReq[src].catch(() => { delete prodReq[src]; });
+  }
+  return prodReq[src];
+}
+/* The item ids to draw for a layer on a date: every S2 mosaic of that day that passes the cloud
+   filter (most recent first), the VHI day (nearest if missing) or the nearest NDVIdiff / NDVIz product. */
 async function resolveScenes(rec, date, cc) {
+  if (SOURCES[rec.source].sparse) {
+    const ids = await productItems(rec.source), d = Date.parse(date + "T12:00:00Z");
+    let best = null, bd = Infinity;
+    ids.forEach(id => { const t = Math.abs(Date.parse(id.slice(0, 10) + "T12:00:00Z") - d); if (t < bd) { bd = t; best = id; } });
+    return best ? [best] : [];
+  }
   if (rec.source === "vhi") {
     const fs = (await loadMonth("vhi", date.slice(0, 7))).filter(f => f.id.startsWith(date));
     if (fs.length) return [fs[0].id];
@@ -1525,6 +1931,37 @@ async function resolveScenes(rec, date, cc) {
   return fs.filter((f, i) => cs[i] == null || cs[i] <= cc)
            .map(f => f.id).sort((a, b) => b.localeCompare(a));
 }
+
+/* Reference of the two-date layers (NDDI change, NDVI Analyst): the S2-SR acquisitions within ±20 days of
+   the reference date (by default the same day one year earlier), clearest first — a chosen reference date
+   itself goes first. Up to six days are used as a per-pixel composite: each pixel takes the first
+   acquisition that covers it and is not masked, so orbit gaps and clouds of the best day are filled. */
+const yearBack = d => isoD(new Date(Date.UTC(+d.slice(0, 4) - 1, +d.slice(5, 7) - 1, +d.slice(8, 10), 12)));
+const refCache = new Map();
+function resolveRef(s, date) {
+  const exact = DATE_RE.test(s.refDate || ""), target = exact ? s.refDate : yearBack(date), key = target + (exact ? "!" : "");
+  if (!refCache.has(key)) {
+    refCache.set(key, (async () => {
+      const from = addDays(target, -20), to = addDays(target, 20), months = [];
+      for (let ym = from.slice(0, 7); ym <= to.slice(0, 7); ym = shiftMonth(ym, 1)) months.push(ym);
+      const fs = (await Promise.all(months.map(m => loadMonth("s2", m)))).flat()
+        .filter(f => { const d = f.id.slice(0, 10); return d >= from && d <= to; });
+      await Promise.all(fs.map(f => cloudOf(f.id)));
+      const by = new Map();
+      fs.forEach(f => { const d = f.id.slice(0, 10), c = cloudPct.get(f.id);
+        if (!by.has(d)) by.set(d, { ids: [], cloud: 101 });
+        const e = by.get(d); e.ids.push(f.id); if (c != null) e.cloud = Math.min(e.cloud, c); });
+      const days = [...by.entries()].map(([d, e]) => ({ date: d, cloud: e.cloud, dt: Math.abs(Date.parse(d) - Date.parse(target)) / DAY,
+                                                         ids: e.ids.sort((a, b) => b.localeCompare(a)) }))
+        .sort((a, b) => (exact ? (b.dt === 0) - (a.dt === 0) : 0) || a.cloud - b.cloud || a.dt - b.dt).slice(0, 6);
+      return days.length ? { target, date: days[0].date, cloud: days[0].cloud, dates: days.map(x => x.date), scenes: days.flatMap(x => x.ids) }
+                         : { target, date: null, cloud: 101, dates: [], scenes: [] };
+    })());
+    refCache.get(key).catch(() => refCache.delete(key));
+  }
+  return refCache.get(key);
+}
+const refLabel = r => r.dates.length ? r.dates.slice(0, 3).join(", ") + (r.dates.length > 3 ? ", …" : "") : "none";
 
 /* LV95 bbox of a scene, so tiles outside its swath are skipped without touching the COG. */
 const boxCache = new Map();
@@ -1560,11 +1997,12 @@ async function renderScene(rec, s, id, bbox, W, H, signal) {
 
   const bands = rec.bands || [rec.band];
   const all = rec.tci ? [] : bands.concat((rec.bg || []).filter(b => !bands.includes(b)));
-  const maskable = !!MASKABLE[rec.type];
-  const reads = all.map(b => readGrid(assetUrl(id, b), bbox, W, H, signal, b === "terrain" ? 255 : 0));
+  const s2 = rec.source === "s2", maskable = !!MASKABLE[rec.type] && s2;
+  const urlOf = b => rec.cogUrl ? rec.cogUrl(id) : assetUrl(id, b);
+  const reads = all.map(b => readGrid(urlOf(b), bbox, W, H, signal, rec.cogUrl ? rec.cogFill : b === "terrain" ? 255 : 0));
   reads.push(maskable && (s.cloud || s.shadow) ? readGrid(assetUrl(id, "cloud"), bbox, W, H, signal, 0) : null);
   reads.push(maskable && s.terrain ? readGrid(assetUrl(id, "terrain"), bbox, W, H, signal, 255) : null);
-  reads.push(VEG_LABEL[s.veg] ? readVegMask(s.veg, id.slice(0, 10), bbox, W, H, signal) : null);
+  reads.push(s2 && VEG_LABEL[s.veg] ? readVegMask(s.veg, id.slice(0, 10), bbox, W, H, signal) : null);
   const [res, tci] = await Promise.all([Promise.all(reads),
     rec.tci ? readGridBands(assetUrl(id, "tci"), bbox, W, H, signal, 0, 3) : null]);
   const vm = res.pop(), tm = res.pop(), cm = res.pop(), a = rec.tci ? (tci || [null]) : res;
@@ -1588,6 +2026,47 @@ async function renderScene(rec, s, id, bbox, W, H, signal) {
         d[k * 4 + c] = 255 * v;
       }
       d[k * 4 + 3] = 255;
+    }
+    return img;
+  }
+
+  if (rec.type === "rgb" && rec.look === "hon") {
+    // Copernicus Browser "Highlight Optimized Natural Color": ρ > 0.15 → cbrt(0.6 ρ), else 2.9876 ρ
+    const ig = 1 / s.gamma, rg = [s.r, s.g, s.b];
+    for (let k = 0; k < n; k++) {
+      if ((a[0][k] === 0 && a[1][k] === 0 && a[2][k] === 0) || masked(k)) continue;
+      for (let c = 0; c < 3; c++) {
+        const x = toRho(a[c][k]) * s.gain;
+        let v = clamp(x > 0.15 ? Math.cbrt(0.6 * x) : 2.9876031644 * x, 0, 1);
+        if (ig !== 1) v = Math.pow(v, ig);
+        v = clamp((v - rg[c][0]) / ((rg[c][1] - rg[c][0]) || 1e-6), 0, 1);
+        d[k * 4 + c] = 255 * v;
+      }
+      d[k * 4 + 3] = 255;
+    }
+    return img;
+  }
+
+  if (rec.type === "fnrgb") {
+    for (let k = 0; k < n; k++) {
+      if (a.some(x => x[k] === 0) || masked(k)) continue;
+      const c = rec.rgb(bands.map((b, i) => physIdx(b, a[i][k])));
+      for (let j = 0; j < 3; j++) d[k * 4 + j] = 255 * clamp(c[j], 0, 1);
+      d[k * 4 + 3] = 255;
+    }
+    return img;
+  }
+
+  if (rec.steps || rec.classify) {
+    // Copernicus colour steps (value < threshold) or classes (value ≤ threshold)
+    for (let k = 0; k < n; k++) {
+      if (a.some(x => x[k] === 0) || masked(k)) continue;
+      const v = rec.fn(bands.map((b, i) => physIdx(b, a[i][k])), s);
+      if (!isFinite(v)) continue;
+      let c;
+      if (rec.steps) c = stepColor(rec.steps, v);
+      else { c = rec.classify[rec.classify.length - 1][1]; for (const cl of rec.classify) if (v <= cl[0]) { c = cl[1]; break; } }
+      put(k, c);
     }
     return img;
   }
@@ -1647,8 +2126,14 @@ async function renderScene(rec, s, id, bbox, W, H, signal) {
       if (masked(k)) continue;
       let c;
       if (rec.type === "index") {
-        if (a[0][k] === 0 || a[1][k] === 0) continue;
-        c = col(rec.fn(bands.map((b, i) => physIdx(b, a[i][k]))));
+        if (a.some(x => x[k] === 0)) continue;
+        c = col(rec.fn(bands.map((b, i) => physIdx(b, a[i][k])), s));
+      } else if (rec.type === "cont" && rec.cogUrl) {
+        const v = a[0][k];
+        if (v === rec.cogFill) continue;
+        if (v === rec.cogMissing) { put(k, MISSING_RGB); continue; }
+        if (!rec.cogValid(v, (bbox[2] - bbox[0]) / W)) continue;
+        c = col(v * rec.cogScale);
       } else if (rec.type === "cont") {
         if (a[0][k] === 0) continue;
         c = col(phys(rec.band, a[0][k]));
@@ -1675,8 +2160,72 @@ async function renderScene(rec, s, id, bbox, W, H, signal) {
   return null;
 }
 
+/* Index values of one date (all its scenes, first valid pixel wins) with the layer's cloud, shadow
+   and terrain masks; NaN where there is no valid value. */
+async function dateIndex(rec, s, scenes, bbox, W, H, signal) {
+  const n = W * H, out = new Float32Array(n).fill(NaN), done = new Uint8Array(n);
+  let left = n;
+  for (const id of scenes) {
+    if (!left) break;
+    const box = sceneBox(id);
+    if (box && (bbox[2] < box[0] || bbox[0] > box[2] || bbox[3] < box[1] || bbox[1] > box[3])) continue;
+    const [a, cm, tm] = await Promise.all([
+      Promise.all(rec.bands.map(b => readGrid(assetUrl(id, b), bbox, W, H, signal, 0))),
+      s.cloud || s.shadow ? readGrid(assetUrl(id, "cloud"), bbox, W, H, signal, 0) : null,
+      s.terrain ? readGrid(assetUrl(id, "terrain"), bbox, W, H, signal, 255) : null]);
+    if (a.some(x => !x)) continue;
+    for (let k = 0; k < n; k++) {
+      if (done[k] || a.some(x => x[k] === 0)) continue;
+      if ((cm && ((s.cloud && (cm[k] === 1 || cm[k] === 2)) || (s.shadow && cm[k] === 3))) || (tm && tm[k] === 200)) continue;
+      const v = rec.fn(rec.bands.map((b, i) => physIdx(b, a[i][k])), s);
+      if (isFinite(v)) { out[k] = v; done[k] = 1; left--; }
+    }
+  }
+  return out;
+}
+
+/* Two-date layers: value(date) − value(reference); the NDVI Analyst can show the detected change
+   (ΔNDVI < threshold, 3 × 3 majority filter, so the tile is read with a one-pixel margin). */
+async function renderDiff2(cfg, bbox, W, H, signal) {
+  const rec = cfg.rec, s = cfg.s;
+  if (!cfg.refP) cfg.refP = resolveRef(s, cfg.date || state.date);
+  const ref = await cfg.refP;
+  cfg.refInfo = ref;
+  if (!ref || !ref.scenes.length || !cfg.scenes.length) return null;
+  const change = rec.modal && s.mode === "change", m = change ? 1 : 0;
+  const rx = (bbox[2] - bbox[0]) / W, ry = (bbox[3] - bbox[1]) / H, W2 = W + 2 * m, H2 = H + 2 * m;
+  const bb = [bbox[0] - m * rx, bbox[1] - m * ry, bbox[2] + m * rx, bbox[3] + m * ry];
+  const [A, B, vm] = await Promise.all([dateIndex(rec, s, cfg.scenes, bb, W2, H2, signal), dateIndex(rec, s, ref.scenes, bb, W2, H2, signal),
+    VEG_LABEL[s.veg] ? readVegMask(s.veg, cfg.date || state.date, bb, W2, H2, signal) : null]);
+  const n2 = W2 * H2, dif = new Float32Array(n2);
+  let any = false;
+  for (let k = 0; k < n2; k++) { dif[k] = vm && vm[k] === 0 ? NaN : A[k] - B[k]; if (dif[k] === dif[k]) any = true; }
+  if (!any) return null;
+  const img = new ImageData(W, H), d = img.data;
+  const put = (k, c) => { d[k*4] = c[0]; d[k*4+1] = c[1]; d[k*4+2] = c[2]; d[k*4+3] = 255; };
+  if (change) {
+    const thr = s.thr != null ? s.thr : rec.def.thr, bin = new Int8Array(n2).fill(-1);
+    for (let k = 0; k < n2; k++) if (dif[k] === dif[k]) bin[k] = dif[k] < thr ? 1 : 0;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const k2 = (y + 1) * W2 + (x + 1);
+      if (bin[k2] < 0) continue;
+      let ones = 0, zeros = 0;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        const v = bin[k2 + dy * W2 + dx];
+        if (v === 1) ones++; else if (v === 0) zeros++;
+      }
+      put(y * W + x, ones > zeros ? CHANGE_RGB : NOCHANGE_RGB);
+    }
+  } else {
+    const d0 = rec.domain[0], d1 = rec.domain[1], k2 = (d1 - d0) / ((s.max - s.min) || 1e-9);
+    for (let k = 0; k < n2; k++) if (dif[k] === dif[k]) { const c = rec.ramp(d0 + (dif[k] - s.min) * k2); if (c) put(k, c); }
+  }
+  return img;
+}
+
 /* Mosaic of every scene of the day: the first scene with data wins per pixel. */
 async function renderTile(cfg, bbox, W, H, signal) {
+  if (cfg.rec.type === "diff2") return renderDiff2(cfg, bbox, W, H, signal);
   const s = cfg.gf && cfg.gf !== 1 ? Object.assign({}, cfg.s, { gain: cfg.s.gain * cfg.gf }) : cfg.s;
   const imgs = await Promise.all(cfg.scenes.map(id => renderScene(cfg.rec, s, id, bbox, W, H, signal)));
   let out = null;
@@ -1744,6 +2293,7 @@ function makeLayer(cfg, pane) {
    ============================================================ */
 const state = { date: todayStr, cc: 100 };
 let currentRec = LAYER.true;
+let configId = "DEFAULT";          // the configuration (theme) whose layers are listed
 let current = null, currentCfg = null;
 let applyToken = 0;
 const expanded = new Set(["true"]);
@@ -1763,20 +2313,51 @@ function setStatus(t, kind) {
 }
 let pendTimer = null;
 function pendingSoon() { clearTimeout(pendTimer); pendTimer = setTimeout(refreshPending, 30); }
+/* Loading indicator (bottom left): data tiles still rendering, basemap tiles and network requests in flight.
+   After 6 s of continuous loading it says that the connection is slow. */
+let netInflight = 0, loadSince = 0, loadTimer = null;
+const nativeFetch = window.fetch.bind(window);
+window.fetch = function (...args) {             // counts requests until their body has been read
+  netInflight++; pendingSoon();
+  let open = true;
+  const fin = () => { if (open) { open = false; netInflight--; pendingSoon(); } };
+  return nativeFetch(...args).then(r => {
+    if (!r.ok) { fin(); return r; }           // error bodies are rarely read
+    ["arrayBuffer", "json", "text", "blob"].forEach(m => { const f = r[m].bind(r); r[m] = () => f().finally(fin); });
+    setTimeout(fin, 15000);                    // a body that is never read
+    return r;
+  }, e => { fin(); throw e; });
+};
+map.on("layeradd", e => { if (e.layer && e.layer._tiles !== undefined) e.layer.on("tileloadstart tileload tileerror load", pendingSoon); });
 function refreshPending() {
-  let n = 0;
+  let n = 0, nb = 0;
   (compareMode ? cmpLayers : [current]).forEach(l => subLayers(l).forEach(x => {
     for (const k in x._tiles) if (!x._tiles[k].loaded) n++;
   }));
-  if (n) setStatus("<b>" + n + "</b> tile" + (n > 1 ? "s" : "") + " loading…", "tiles");
-  else if (statusKind === "tiles") setStatus("");
+  if (baseLayer && baseLayer._tiles) for (const k in baseLayer._tiles) if (!baseLayer._tiles[k].loaded) nb++;
+  const box = $("#loading");
+  clearTimeout(loadTimer);
+  if (!n && !nb && !netInflight) {
+    loadSince = 0;
+    loadTimer = setTimeout(() => { if (!loadSince) box.hidden = true; }, 300);
+    return;
+  }
+  if (!loadSince) loadSince = Date.now();
+  const slow = Date.now() - loadSince > 6000;
+  box.hidden = false;
+  box.classList.toggle("slow", slow);
+  $("#loadTxt").textContent = "Loading data" +
+    (n ? " · " + n + " tile" + (n > 1 ? "s" : "") : nb ? " · basemap" : "") +
+    (netInflight ? " · " + netInflight + " request" + (netInflight > 1 ? "s" : "") : "") +
+    (slow ? " — slow connection, still loading…" : "…");
+  loadTimer = setTimeout(refreshPending, 1000);            // keeps the slow-connection hint current
 }
 
 /* Adaptive gain: the 98th percentile of max(R, G, B) reflectance in the area is kept just below
    saturation (0.95 after gain). It only ever lowers the gain, by at most a factor of 4, and only
    for the colour composites. Masks of the layer (clouds, shadows, vegetation) are respected. */
 async function autoGainFactor(rec, s, scenes, bbox, signal, grid) {
-  if (rec.type !== "rgb" || rec.tci || !scenes.length || s.look === "optimized") return 1;
+  if (rec.type !== "rgb" || rec.tci || rec.look || !scenes.length || s.look === "optimized") return 1;
   let g = grid;
   if (!g) {
     const res = Math.max(10, Math.max(bbox[2] - bbox[0], bbox[3] - bbox[1]) / 64);
@@ -1861,6 +2442,7 @@ function onSettings(rec, kind) {
   writeUrlSoon();
   if (compareMode || rec !== currentRec || !current) return;
   if (kind === "opacity") { setLayerOpacity(current, S(rec).opacity / 100); return; }
+  if (currentCfg) currentCfg.refP = null;          // the reference date may have changed
   clearTimeout(redrawTimer);
   redrawTimer = setTimeout(async () => {
     if (!current || !current.redraw || !current._tiles) return;
@@ -1871,16 +2453,26 @@ function onSettings(rec, kind) {
 
 function selectLayer(rec) {
   const srcChanged = rec.source !== currentRec.source;
+  if (compareMode && activeHl) {                 // choosing a layer leaves the highlight
+    activeHl = null;
+    compare = [];
+    currentRec = rec;
+    lastLayer[configId] = rec.id;
+    expanded.add(rec.id);
+    renderLayerList();
+    if (srcChanged) { $("#dateTxt").classList.remove("nodata"); updateCcBadge(); renderCal(); }
+    setCompareMode(false, true);
+    return;
+  }
   if (rec === currentRec) {
     if (expanded.has(rec.id)) expanded.delete(rec.id); else expanded.add(rec.id);
     renderLayerList();
     return;
   }
   currentRec = rec;
-  lastLayer[rec.source] = rec.id;
+  lastLayer[configId] = rec.id;
   expanded.add(rec.id);
   renderLayerList();
-  $("#dcSel").value = rec.source;
   if (srcChanged) { $("#dateTxt").classList.remove("nodata"); updateCcBadge(); renderCal(); }
   applyLayer();
   writeUrlSoon();
@@ -1918,9 +2510,10 @@ function updateDateGrey() {
   if (!p) return;
   p.then(fs => {
     if (d !== state.date || src !== currentRec.source) return;
-    const on = fs.filter(f => f.id.startsWith(d));
-    const ok = src === "s2" ? on.some(f => knownPass(f, state.cc)) : on.length > 0;
+    const on = fs.filter(f => f.id.startsWith(d)), vb = viewBox();
+    const ok = src === "s2" ? on.some(f => knownPass(f, state.cc) && coversNow(f.id, vb) !== false) : on.length > 0;
     $("#dateTxt").classList.toggle("nodata", !ok);
+    if (src === "s2") prefetchFootprints(on);
   }).catch(() => {});
 }
 
@@ -1930,6 +2523,10 @@ function updateDateInfo(rec, scenes) {
   else if (rec.source === "vhi") {
     const day = scenes[0].slice(0, 10);
     t = "VHI day " + day + (day === state.date ? "" : " (nearest available to " + state.date + ")");
+  } else if (SOURCES[rec.source].sparse) {
+    const day = scenes[0].slice(0, 10);
+    t = SOURCES[rec.source].name + " " + day + (day === state.date ? "" : " — the product nearest to " + state.date +
+        " (published for the end of July, August and September)");
   } else {
     t = scenes.length + " acquisition" + (scenes.length > 1 ? "s" : "") + ": " + scenes.slice().reverse().map(id => {
       const c = cloudPct.get(id);
@@ -1937,6 +2534,12 @@ function updateDateInfo(rec, scenes) {
     }).join(", ");
   }
   $("#dateInfo").textContent = t;
+  if (rec.type === "diff2" && scenes.length) {
+    resolveRef(S(rec), state.date).then(r => {
+      if (currentRec === rec) $("#dateInfo").textContent = t + " — compared with " +
+        (r.date ? "the clearest acquisitions around " + r.target + " (" + refLabel(r) + ")" : "no reference (none within ±20 days of " + r.target + ")");
+    }).catch(() => {});
+  }
   $("#badgeTxt").textContent = state.date + (scenes.length && rec.source === "s2"
     ? " · " + scenes.length + " acquisition" + (scenes.length > 1 ? "s" : "") : "");
 }
@@ -1954,13 +2557,15 @@ async function stepDate(dir) {
 }
 $("#dPrev").onclick = () => stepDate(-1);
 $("#dNext").onclick = () => stepDate(1);
-$("#btnLatest").onclick = async () => {
+/* The latest date with data in the view (also used on start when the link has no date). */
+async function gotoLatest() {
   setStatus("Searching the latest date with data…");
   try {
     const d = await adjacentDate(currentRec.source, addDays(todayStr, 1), -1, state.cc);
-    if (d) await setDate(d); else setStatus("No date with data found.");
+    if (d) await setDate(d); else { setStatus("No date with data found."); applyLayer(); }
   } catch (e) { setStatus("Catalogue request failed: " + e.message); }
-};
+}
+$("#btnLatest").onclick = gotoLatest;
 
 let calOpen = false, calYM = todayStr.slice(0, 7);
 const DOW = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
@@ -2035,9 +2640,10 @@ async function renderCal() {
   try {
     const fs = await loadMonth(src, ym);
     if (!calOpen || calYM !== ym || currentRec.source !== src) return;
-    const av = new Set(fs.filter(f => src !== "s2" || knownPass(f, state.cc)).map(f => f.id.slice(0, 10)));
+    const vb = viewBox();
+    const av = new Set(fs.filter(f => src !== "s2" || (knownPass(f, state.cc) && coversNow(f.id, vb) !== false)).map(f => f.id.slice(0, 10)));
     draw(av);
-    if (src === "s2") prefetchClouds(fs);
+    if (src === "s2") { prefetchClouds(fs); prefetchFootprints(fs); }
   } catch (e) { /* calendar stays without availability marks */ }
 }
 
@@ -2159,6 +2765,10 @@ function layerBody(rec) {
     : '<div class="dt">' + rec.name + "</div><p>" + rec.desc + "</p>" +
       (rec.more ? '<p>More info <a href="' + rec.more + '" target="_blank" rel="noopener">here</a>.</p>' : ""));
   body.append(d);
+  const vk = VERIFIED.has(rec.id) ? "ok" : "todo", vr = el("div", "verrow " + vk);
+  vr.innerHTML = verBadge(rec) + "<span>" + (vk === "ok" ? "<b>Verified</b> — this layer has been checked in depth."
+    : "<b>To be verified</b> — this layer has not yet been checked in depth (see Info).") + "</span>";
+  body.append(vr);
   if (showCode.has(rec.id)) {
     const note = rec.note || (rec.type === "rgb" || rec.type === "index" ? SCALE_NOTE : "");
     body.append(el("code", "fx", rec.formula + (note ? "\n\n" + note : "")));
@@ -2166,7 +2776,8 @@ function layerBody(rec) {
 
   /* ---- legend ---- */
   const sec = t => body.append(el("div", "sec", t));
-  if (rec.ramp) {
+  let legBox = null;
+  if (rec.ramp && !(rec.modal && s.mode === "change")) {
     sec("Legend");
     const bar = el("div", "grad");
     bar.style.background = "linear-gradient(90deg," + rampStopsCss(rec) + ")";
@@ -2178,23 +2789,32 @@ function layerBody(rec) {
     };
     paintTicks();
     body.append(bar, ticks);
-    if (rec.type === "terrain") {
+    if (rec.type === "terrain" || rec.cogMissing != null) {
       const extra = el("div");
       extra.style.marginTop = "6px";
-      classList(extra, [["200 · shadow (cast or self-shadow)", SHADOW_RGB]]);
+      classList(extra, rec.type === "terrain" ? [["200 · shadow (cast or self-shadow)", SHADOW_RGB]]
+                                              : [["Missing data (32700)", MISSING_RGB]]);
       body.append(extra);
     }
+  }
+  if (rec.ramp && !rec.fixedScale && !(rec.modal && s.mode === "change")) {
     const step = (rec.lim[1] - rec.lim[0]) / 200;
+    const ticks = body.querySelector(".gticks");
     const mm = dualRow("Min / max", rec.lim[0], rec.lim[1], step, [s.min, s.max], v => {
-      s.min = v[0]; s.max = v[1]; paintTicks(); onSettings(rec);
+      s.min = v[0]; s.max = v[1];
+      let h = "";
+      for (let i = 0; i < 5; i++) h += "<span>" + +(s.min + (s.max - s.min) * i / 4).toFixed(3) + "</span>";
+      ticks.innerHTML = h;
+      onSettings(rec);
     });
     body.append(mm);
     const rs = el("button", "lnk", "Reset colour scale");
     rs.onclick = () => { s.min = rec.min; s.max = rec.max; renderLayerList(); onSettings(rec); };
     body.append(rs);
-  } else if (classesOf(rec, s)) {
+  } else if ((!rec.ramp || (rec.modal && s.mode === "change")) && classesOf(rec, s)) {
     sec("Legend");
     const box = el("div");
+    legBox = box;
     classList(box, classesOf(rec, s));
     body.append(box);
     if (rec.threshold != null) {
@@ -2204,6 +2824,69 @@ function layerBody(rec) {
       const rs = el("button", "lnk", "Reset threshold (" + rec.threshold + ")");
       rs.onclick = () => { s.thr = rec.threshold; renderLayerList(); onSettings(rec); };
       body.append(rs);
+    }
+  }
+
+  /* ---- NDDI: which NDWI ---- */
+  if (rec.ndwiOpt) {
+    sec("NDWI");
+    const nw = el("div", "tog");
+    nw.innerHTML = "<span>NDWI in the NDDI<small>SWIR: Gu et al. 2007 (default) · Green: openEO notebook / Awesome Spectral Indices</small></span>";
+    const seg = el("div", "seg");
+    [["swir", "SWIR"], ["green", "Green"]].forEach(([v, t]) => {
+      const b = el("button", s.ndwi === v ? "on" : "", t);
+      b.type = "button";
+      b.onclick = e => { e.preventDefault(); s.ndwi = v; renderLayerList(); onSettings(rec); };
+      seg.append(b);
+    });
+    nw.append(seg);
+    body.append(nw);
+    if (s.ndwi === "green") body.append(el("div", "warnbox", "Warning: with the green / NIR NDWI of the openEO notebook, NDVI + NDWI " +
+      "is close to zero over vegetation, so the NDDI explodes. In a test over Aarau (2026-07-04) 99.8 % of the pixels were outside −1…1 " +
+      "— with or without the −0.1 reflectance offset — and the map shows almost only +1 (red) and −1 (white). Use SWIR for a usable index."));
+  }
+
+  /* ---- two-date layers: reference and change detection ---- */
+  if (rec.type === "diff2") {
+    sec("Reference");
+    const row = el("div", "srow");
+    row.append(el("label", null, "Reference date"));
+    const inp = el("input", "num");
+    inp.type = "date"; inp.max = todayStr; inp.value = s.refDate || "";
+    inp.style.cssText = "width:auto;flex:1";
+    inp.onchange = () => { s.refDate = DATE_RE.test(inp.value) ? inp.value : ""; showRef(); onSettings(rec); };
+    row.append(inp);
+    body.append(row);
+    const info = el("div", "hint");
+    const showRef = () => {
+      info.textContent = "Looking up the reference…";
+      resolveRef(s, state.date).then(r => {
+        info.textContent = r.date
+          ? "Reference: acquisitions within ±20 days of " + r.target + ", " + (DATE_RE.test(s.refDate || "") ? "this date first, then " : "") +
+            "clearest first (" + refLabel(r) + "); per pixel the first one with clear data is used. Empty date = the same day one year earlier."
+          : "No S2-SR acquisition within ±20 days of " + r.target + ".";
+      }).catch(e => { info.textContent = "Reference lookup failed: " + e.message; });
+    };
+    showRef();
+    body.append(info);
+    if (rec.modal) {
+      sec("Change detection");
+      body.append(sliderRow("Threshold", -0.5, 0, 0.01, s.thr, v => {
+        s.thr = v;
+        if (legBox) { legBox.innerHTML = ""; classList(legBox, classesOf(rec, s)); }
+        onSettings(rec);
+      }));
+      const dm = el("div", "tog");
+      dm.innerHTML = "<span>Display<small>NDVI difference, or the change detected with the threshold after edge-effect removal</small></span>";
+      const seg = el("div", "seg");
+      [["diff", "Difference"], ["change", "Detected change"]].forEach(([v, t]) => {
+        const b = el("button", s.mode === v ? "on" : "", t);
+        b.type = "button";
+        b.onclick = e => { e.preventDefault(); s.mode = v; renderLayerList(); onSettings(rec); };
+        seg.append(b);
+      });
+      dm.append(seg);
+      body.append(dm);
     }
   }
 
@@ -2238,7 +2921,7 @@ function layerBody(rec) {
   body.append(adv);
   if (open) {
     sec("Effects and advanced options");
-    if (rec.type === "rgb" && !rec.tci) {
+    if (rec.type === "rgb" && !rec.tci && !rec.look) {
       const lk = el("div", "tog");
       lk.innerHTML = "<span>Look<small>Standard stretch, or the Copernicus Browser True color optimized curve (highlight compression)</small></span>";
       const seg = el("div", "seg");
@@ -2255,7 +2938,7 @@ function layerBody(rec) {
       body.append(sliderRow("Gain", 0, 3, 0.01, s.gain, v => { s.gain = v; onSettings(rec); }));
       body.append(sliderRow("Gamma", 0.1, 3, 0.01, s.gamma, v => { s.gamma = v; onSettings(rec); }));
     }
-    if (rec.type === "rgb" && !rec.tci) {
+    if (rec.type === "rgb" && !rec.tci && !rec.look) {
       const ag = el("label", "tog");
       ag.innerHTML = '<span>Adaptive gain<small id="agInfo"></small></span>';
       const ai = el("input");
@@ -2289,14 +2972,38 @@ function renderLayerList() {
   const box = $("#layerlist");
   const scroll = $("#p-vis").scrollTop;
   box.innerHTML = "";
-  let group = null;
-  LAYERS.filter(r => r.source === currentRec.source).forEach(rec => {
-    if (rec.group !== group) { group = rec.group; box.append(el("div", "ghead", group)); }
+  const conf = CONFIGS[configId];
+  if (conf.highlights) {
+    box.append(el("div", "ghead", "Highlights"));
+    conf.highlights.forEach(h => box.append(highlightCard(h)));
+  }
+  conf.groups.forEach(([gname, ids]) => {
+    if (gname || conf.highlights) box.append(el("div", "ghead", gname || "Layers"));
+    ids.map(id => LAYER[id]).forEach(rec => layerItem(box, rec));
+  });
+  $("#p-vis").scrollTop = scroll;
+}
+
+/* ✓ verified / ⏳ to be verified, see parseVerified */
+Object.assign(UI, {
+  verified: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+    '<path d="M12 2.8l2.5 1.9 3.1.2.9 3 2.5 1.9-1 3 1 3-2.5 1.9-.9 3-3.1.2L12 21.2l-2.5-1.9-3.1-.2-.9-3-2.5-1.9 1-3-1-3 2.5-1.9.9-3 3.1-.2z"/>' +
+    '<path d="M8.4 12.3l2.4 2.4 4.8-5"/></svg>',
+  todo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+    '<path d="M7 3h10M7 21h10M8 3v3.5c0 2 4 3.5 4 5.5s-4 3.5-4 5.5V21M16 3v3.5c0 2-4 3.5-4 5.5s4 3.5 4 5.5V21"/></svg>'
+});
+function verBadge(rec) {
+  const k = VERIFIED.has(rec.id) ? "ok" : "todo";
+  return '<span class="ver ' + k + '" title="' + VER_TXT[k] + '">' + (k === "ok" ? UI.verified : UI.todo) + "</span>";
+}
+
+function layerItem(box, rec) {
+  {
     const on = rec.id === currentRec.id;
     const w = el("div", "lyr" + (on ? " on" : ""));
     const head = el("div", "lyr-head");
     head.innerHTML = swatchHtml(rec) +
-      '<div class="lt"><div class="t">' + rec.name + '</div><div class="sub2">' + rec.sub + "</div></div>" +
+      '<div class="lt"><div class="t">' + rec.name + verBadge(rec) + '</div><div class="sub2">' + rec.sub + "</div></div>" +
       (on ? '<span class="chk">' + UI.check + "</span>" : "");
     head.onclick = () => selectLayer(rec);
     w.append(head);
@@ -2323,8 +3030,82 @@ function renderLayerList() {
       if (ex) w.append(layerBody(rec));
     }
     box.append(w);
-  });
-  $("#p-vis").scrollTop = scroll;
+  }
+}
+
+/* ---- highlights: presets that open a split comparison of two dates at a place ---- */
+let activeHl = null;
+const hlOpen = new Set(), hlThumbs = new Map();
+function hlBox(h, w, hh) {
+  return [h.center[0] - w / 2 * h.res, h.center[1] - hh / 2 * h.res, h.center[0] + w / 2 * h.res, h.center[1] + hh / 2 * h.res];
+}
+/* Thumbnail: the later image, rendered live from the COG over the central part of the view. */
+function hlThumb(h) {
+  if (!hlThumbs.has(h)) {
+    hlThumbs.set(h, (async () => {
+      const rec = LAYER[h.layer], scenes = await resolveScenes(rec, h.right, 100);
+      if (!scenes.length) return null;
+      const cv = await renderCfgCanvas({ rec, s: defaults(rec), scenes, date: h.right }, hlBox(h, 960, 640), 192, 128);
+      return cv.toDataURL("image/png");
+    })().catch(() => null));
+  }
+  return hlThumbs.get(h);
+}
+/* A highlight card: click it to open the place and comparison (the card turns blue); the chevron shows the
+   text, which ends with a link to the compare settings. */
+function highlightCard(h) {
+  const on = activeHl === h, open = hlOpen.has(h.title);
+  const c = el("div", "hl" + (on ? " on" : "")), top = el("div", "hl-top");
+  c.title = "Show this highlight on the map";
+  c.onclick = () => applyHighlight(h);
+  const th = el("div", "hl-th"), im = el("img");
+  im.alt = "";
+  th.append(im);
+  hlThumb(h).then(u => { if (u) im.src = u; });
+  const m = el("div", "hl-m"), ex = el("button", "ex");
+  ex.title = open ? "Hide the text" : "Show the text";
+  ex.innerHTML = open ? UI.up : UI.down;
+  ex.onclick = e => { e.stopPropagation(); if (open) hlOpen.delete(h.title); else hlOpen.add(h.title); renderLayerList(); };
+  m.append(el("div", "t", h.title), el("div", "d", "Dates: " + h.left + " ↔ " + h.right), ex);
+  top.append(th, m);
+  c.append(top);
+  if (open) {
+    const tx = el("div", "hl-txt");
+    tx.append(document.createTextNode(h.text));
+    const adv = el("button", "lnk", "Show effects and advanced options");
+    adv.onclick = e => { e.stopPropagation(); if (activeHl !== h) applyHighlight(h); showView("compare"); };
+    tx.append(el("br"), adv);
+    c.append(tx);
+  }
+  return c;
+}
+/* Opens the highlight: its view, and the two dates as a split comparison at 50 % (earlier date left). */
+function applyHighlight(h) {
+  const rec = LAYER[h.layer], z = CRS2056.zoom(1 / h.res), ll = lv95(h.center[0], h.center[1]);
+  activeHl = h;
+  setViewFrac(ll, z);
+  const view = [ll.lat, ll.lng, +z.toFixed(3)];
+  compare = [{ layerId: rec.id, date: h.left, cc: 100, s: defaults(rec), view, opacity: 1, clip: [0, 0.5] },
+             { layerId: rec.id, date: h.right, cc: 100, s: defaults(rec), view, opacity: 1, clip: [0, 1] }];
+  compareEffect = "split";
+  state.date = h.right;
+  $("#dateTxt").value = h.right;
+  $("#dNext").disabled = h.right >= todayStr;
+  if (currentRec !== rec) { currentRec = rec; lastLayer[configId] = rec.id; expanded.add(rec.id); }
+  renderLayerList();
+  if (compareMode) { rebuildCompare(); renderCompare(); writeUrlSoon(); }
+  else setCompareMode(true, true);              // the story list stays open
+  resolveScenes(rec, h.right, 100).then(sc => { if (activeHl === h) { updateDateInfo(rec, sc); updateDateGrey(); } }).catch(() => {});
+}
+/* A shared link of a highlight shows its description again. */
+function matchHighlight() {
+  const hs = CONFIGS[configId].highlights || [];
+  activeHl = hs.find(h => {                       // several stories share their dates, so the place must match too
+    if (compare.length !== 2 || compare[0].layerId !== h.layer || compare[1].layerId !== h.layer ||
+        compare[0].date !== h.left || compare[1].date !== h.right) return false;
+    const ll = lv95(h.center[0], h.center[1]);
+    return Math.abs(compare[0].view[0] - ll.lat) < 0.002 && Math.abs(compare[0].view[1] - ll.lng) < 0.002;
+  }) || null;
 }
 
 /* Data-collection view switch: Layers / Compare */
@@ -2338,16 +3119,24 @@ function showView(v) {
   $("#v-layers").hidden = v !== "layers";
   $("#v-compare").hidden = v !== "compare";
   if (v === "compare" && !compareMode && compare.length >= 2) setCompareMode(true);
-  if (v === "layers" && compareMode) setCompareMode(false);
+  if (v === "layers" && compareMode && !activeHl) setCompareMode(false);     // a highlight keeps its comparison
 }
 $("#dcLayers").onclick = () => showView("layers");
-/* Data collection pull-down: each collection shows its own layers and its own dates. */
-const lastLayer = {};
-$("#dcSel").onchange = e => {
-  const src = e.target.value;
+/* Configuration pull-down, as the themes of the Copernicus Browser: each lists the layers for a task. */
+const lastLayer = {};              // configuration -> last selected layer
+$("#cfgSel").innerHTML = Object.keys(CONFIGS).map(k => '<option value="' + k + '">' + CONFIGS[k].name + "</option>").join("");
+const configOf = id => cfgLayers(configId).includes(id) ? configId : Object.keys(CONFIGS).find(k => cfgLayers(k).includes(id)) || "DEFAULT";
+function setConfig(id) {
+  if (!CONFIGS[id]) return;
+  configId = id;
+  $("#cfgSel").value = id;
   showView("layers");
-  selectLayer(LAYER[lastLayer[src]] || LAYERS.find(r => r.source === src));
-};
+  const ids = cfgLayers(id);
+  const rec = ids.includes(currentRec.id) ? currentRec : LAYER[lastLayer[id]] || LAYER[ids[0]];
+  if (rec === currentRec) { renderLayerList(); writeUrlSoon(); }
+  else selectLayer(rec);
+}
+$("#cfgSel").onchange = e => setConfig(e.target.value);
 $("#dcCompare").onclick = () => showView("compare");
 
 /* ============================================================
@@ -2357,6 +3146,7 @@ $("#btnCompare").innerHTML = UI.compare;
 $("#btnExport").innerHTML = UI.export;
 
 function addToCompare(rec) {
+  activeHl = null;
   const c = map.getCenter();
   compare.push({ layerId: rec.id, date: state.date, cc: state.cc, s: cloneSettings(S(rec)),
                  view: [c.lat, c.lng, map.getZoom()], opacity: 1, clip: [0, 1] });
@@ -2404,6 +3194,7 @@ async function rebuildCompare() {
 /* Split clips each layer's pane to its [from, to] fraction of the map width;
    Opacity fades each layer. The pane lives in layer-point space, hence the offset. */
 function updateClips() {
+  updateSwipe();
   if (!compareMode) return;
   const sz = map.getSize(), nw = map.containerPointToLayerPoint([0, 0]);
   compare.forEach((it, i) => {
@@ -2428,7 +3219,7 @@ function setCompareMode(on, keepView) {
   if (on) {
     // Copernicus starts every layer at the full width; reveal the second one so the split is visible.
     if (compare.every(it => it.clip[0] === 0 && it.clip[1] === 1)) compare[0].clip = [0, 0.5];
-    showView("compare");
+    if (!keepView) showView("compare");
     rebuildCompare();
   } else {
     clearCompareLayers();
@@ -2440,7 +3231,35 @@ function setCompareMode(on, keepView) {
 }
 $("#btnCompare").onclick = () => setCompareMode(!compareMode);
 $("#cmpEffect").onchange = e => { compareEffect = e.target.value; renderCompare(); updateClips(); writeUrlSoon(); };
-$("#cmpClear").onclick = () => { compare = []; setCompareMode(false, true); renderCompare(); writeUrlSoon(); };
+$("#cmpClear").onclick = () => { compare = []; activeHl = null; setCompareMode(false, true); renderCompare(); writeUrlSoon(); };
+
+/* Swipe handle for the split effect: moves the right edge of the top layer (first in the compare list). */
+const cmpLabel = it => LAYER[it.layerId].name + " · " + it.date;
+function updateSwipe() {
+  const sw = $("#swipe"), on = compareMode && compareEffect === "split" && compare.length >= 2 && compare[0].clip[0] === 0;
+  sw.hidden = !on;
+  if (!on) return;
+  const f = compare[0].clip[1], p = f * 100, x = Math.min(1, f + 0.001);
+  $("#swBar").style.left = p + "%";
+  $("#swL").style.right = (100 - p) + "%";
+  $("#swR").style.left = p + "%";
+  $("#swL").textContent = f > 0.02 ? cmpLabel(compare[0]) : "";
+  const right = compare.slice(1).find(it => it.clip[0] <= x && it.clip[1] >= x);
+  $("#swR").textContent = right && f < 0.98 ? cmpLabel(right) : "";
+}
+$("#swBar").onpointerdown = e => {
+  e.preventDefault();
+  const bar = $("#swBar"), r = $("#mapwrap").getBoundingClientRect();
+  try { bar.setPointerCapture(e.pointerId); } catch (err) { /* synthetic event */ }
+  bar.onpointermove = ev => {
+    compare[0].clip = [0, clamp((ev.clientX - r.left) / r.width, 0, 1)];
+    updateClips();
+  };
+  bar.onpointerup = bar.onpointercancel = () => {
+    bar.onpointermove = bar.onpointerup = bar.onpointercancel = null;
+    renderCompare(); writeUrlSoon();
+  };
+};
 $("#cmpShare").onclick = () => copyLink($("#cmpShare"), "Share");
 
 let dragFrom = -1;
@@ -2462,6 +3281,17 @@ function renderCompare() {
         ", or drag the entries to change which layer is on top."
       : "Compare mode is off. Press the compare button (two arrows) on the map, or reopen this panel, to compare.";
 
+  const hb = $("#cmpHl");
+  hb.hidden = !activeHl;
+  hb.innerHTML = "";
+  if (activeHl) {
+    const back = el("button", "lnk", "‹ Back to the highlights");
+    back.onclick = () => showView("layers");
+    hb.append(el("div", "t", "Highlight: " + activeHl.title), el("div", "hint", activeHl.left + " (left) ↔ " + activeHl.right +
+      " (right) · drag the handle on the map to swipe"), back);
+  }
+  updateSwipe();
+
   const box = $("#cmpList");
   box.innerHTML = "";
   compare.forEach((it, i) => {
@@ -2473,6 +3303,7 @@ function renderCompare() {
     del.title = "Remove";
     del.innerHTML = UI.trash;
     del.onclick = () => {
+      activeHl = null;
       compare.splice(i, 1);
       if (compare.length < 2) setCompareMode(false, true); else if (compareMode) rebuildCompare();
       renderCompare(); writeUrlSoon();
@@ -2481,7 +3312,9 @@ function renderCompare() {
     th.querySelector(".grip").onmousedown = () => { ci.draggable = true; };
     const m = el("div", "ci-m");
     const t = el("div", "t");
-    t.append(el("span", null, SOURCES[rec.source].name.replace(/ v\d+$/, "") + ": " + rec.name));
+    const nm = el("span", null, SOURCES[rec.source].name.replace(/ v\d+$/, "") + ": " + rec.name);
+    nm.insertAdjacentHTML("beforeend", verBadge(rec));
+    t.append(nm);
     const loc = el("button", "ib");
     loc.title = "Zoom to this layer's location";
     loc.innerHTML = UI.locate;
@@ -2936,10 +3769,18 @@ const VHI_DATA = "https://data.geo.admin.ch/" + COLL_VHI + "/";
 const vhiUrl = (id, rec) => {
   const kind = rec.wms.endsWith("_vegetation") ? "vegetation" : "forest";
   const f = featById.get(id), assets = (f && f.assets) || {};
-  for (const k in assets) if (k.endsWith("_" + kind + "-10m.tif") && assets[k].href) return assets[k].href;
+  for (const k in assets) if (k.endsWith("_" + kind + "-10m.tif") && assets[k].href && assets[k].href.includes("/" + COLL_VHI + "/")) return assets[k].href;
   return VHI_DATA + id + "/" + COLL_VHI + "_mosaic_" + id + "_" + kind + "-10m.tif";
 };
-const statRec = rec => rec;
+/* What the statistics read for a layer: Barren Soil is summarised by its BSI, the two-date layers by
+   their index on each date. */
+function statRec(rec) {
+  let r = rec;
+  if (rec.type === "fnrgb") r = Object.assign({}, rec, { type: "index", fn: rec.statFn, ramp: null, name: rec.statName });
+  else if (rec.type === "diff2") r = Object.assign({}, rec, { type: "index" });
+  if (rec.ndwiOpt) r = Object.assign({}, r, { fn: v => rec.fn(v, S(rec)) });        // the chosen NDWI
+  return r;
+}
 const SPEC_BANDS = [["b01", 443], ["b02", 490], ["b03", 560], ["b04", 665], ["b05", 705], ["b06", 740],
                     ["b07", 783], ["b08", 842], ["b8a", 865], ["b09", 945], ["b11", 1610], ["b12", 2190]];
 
@@ -2981,7 +3822,7 @@ async function sampleAoi(r, scenes, grid, o, signal) {
   let masked = 0, shadow = 0, outside = 0;
   const soft = q => q && q.catch(e => { if (e && e.name === "AbortError") throw e; return null; });
   const rd = (id, b) => soft(readGrid(assetUrl(id, b), bbox, W, H, signal, b === "terrain" ? 255 : 0));
-  if (VEG_LABEL[o.veg] && r.source !== "vhi" && scenes.length) {
+  if (VEG_LABEL[o.veg] && r.source === "s2" && scenes.length) {
     const vm = await readVegMask(o.veg, scenes[0].slice(0, 10), bbox, W, H, signal);
     if (vm) for (let k = 0; k < n; k++) if (mask[k] && vm[k] === 0) { done[k] = 1; outside++; }
   }
@@ -2989,13 +3830,13 @@ async function sampleAoi(r, scenes, grid, o, signal) {
     let open = 0;
     for (let k = 0; k < n; k++) if (mask[k] && !done[k]) open++;
     if (!open) break;                                         // every AOI cell resolved
-    if (r.source === "vhi") {
-      const a = await soft(readGrid(vhiUrl(id, r), bbox, W, H, signal, 255));
+    if (r.cogUrl) {                                           // VHI, NDVIdiff, NDVIz: one COG per item
+      const a = await soft(readGrid(r.cogUrl(id), bbox, W, H, signal, r.cogFill));
       if (!a) continue;
       for (let k = 0; k < n; k++) {
-        if (!mask[k] || done[k] || a[k] === 255) continue;
+        if (!mask[k] || done[k] || a[k] === r.cogFill) continue;
         cov[k] = 1;
-        if (a[k] <= 100) { vals[0][k] = a[k]; done[k] = 1; }
+        if (r.cogValid(a[k], (bbox[2] - bbox[0]) / W)) { vals[0][k] = a[k] * r.cogScale; done[k] = 1; }
       }
       continue;
     }
@@ -3048,7 +3889,7 @@ async function sampleAoi(r, scenes, grid, o, signal) {
         if (v > 180 && v !== 200) continue;
         if (v === 200) { shadow++; done[k] = 1; continue; }
         vals[0][k] = v;
-      } else if (r.type === "index") { if (a[0][k] && a[1][k]) vals[0][k] = r.fn(bands.map((b, i) => physIdx(b, a[i][k]))); }
+      } else if (r.type === "index") { if (a.every(x => x[k])) vals[0][k] = r.fn(bands.map((b, i) => physIdx(b, a[i][k]))); }
       else if (r.type === "cont") vals[0][k] = phys(r.band, a[0][k]);
       else for (let i = 0; i < nb; i++) if (a[i][k]) vals[i][k] = phys(bands[i], a[i][k]);
       done[k] = 1;
@@ -3147,7 +3988,7 @@ function histChart(sorted, lo, hi, colorOf, xLabel) {
 
 /* ---- statistical info: current date + time series ---- */
 let stAbort = null, stSeries = [], stRec = null, stVeg = "off", spVeg = "off";
-const unitOf = r => r.source === "vhi" ? "VHI" : r.type === "terrain" ? "incidence °" : r.type === "rgb" ? "reflectance ρ" :
+const unitOf = r => r.unit ? r.unit : r.source === "vhi" ? "VHI" : r.type === "terrain" ? "incidence °" : r.type === "rgb" ? "reflectance ρ" :
   r.id === "aot" ? "AOT" : r.name;
 const RGB_COL = ["#d62728", "#2ca02c", "#1f5fbf"];
 
@@ -3170,15 +4011,17 @@ function openStats() {
   $("#stVeg").replaceChildren(vegSeg(stVeg, v => { stVeg = v; runCurrentStats(); }));
   $("#stTerr").checked = S(rec).terrain;
   $("#stDate").textContent = state.date;
-  $("#stTsCtl").hidden = r.type === "class";
-  $("#stProg").textContent = r.type === "class" ? "Time series are not available for categorical layers." : "";
+  const noTs = r.type === "class" || rec.type === "diff2";
+  $("#stTsCtl").hidden = noTs;
+  $("#stProg").textContent = r.type === "class" ? "Time series are not available for categorical layers." :
+    rec.type === "diff2" ? "Time series are not available for the two-date layers — use the index itself (NDVI, NDDI) for a time series." : "";
   $("#stChart").innerHTML = "";
   $("#stTo").value = state.date;
-  $("#stFrom").value = addDays(state.date, r.source === "vhi" ? -60 : -120);
+  $("#stFrom").value = SOURCES[r.source].sparse ? SOURCES[r.source].firstYear + "-01-01" : addDays(state.date, r.source === "vhi" ? -60 : -120);
   stSeries = [];
   openModal("statModal");
   runCurrentStats();
-  if (r.type !== "class") runSeries();
+  if (!noTs) runSeries();
 }
 $("#statModal").onclose = () => { if (stAbort) stAbort.abort(); };
 $("#aoiStats").onclick = openStats;
@@ -3193,8 +4036,9 @@ async function runCurrentStats() {
   try {
     const scenes = await scenesFor(rec, state.date, state.cc);
     if (!scenes.length) { box.innerHTML = '<div class="hint">No acquisition on ' + state.date + ".</div>"; return; }
-    const res = await sampleAoi(r, scenes, grid, { maskClouds: $("#stCloud").checked, maskScl: $("#stScl").checked,
-                                                   maskTerrain: $("#stTerr").checked, veg: stVeg });
+    const opt = { maskClouds: $("#stCloud").checked, maskScl: $("#stScl").checked, maskTerrain: $("#stTerr").checked, veg: stVeg };
+    if (rec.type === "diff2") { await diffStats(rec, r, scenes, grid, opt, box); return; }
+    const res = await sampleAoi(r, scenes, grid, opt);
     if (stRec !== rec) return;
     const pct = v => (100 * v / res.total).toFixed(1) + " %";
     if (r.type === "class") {
@@ -3236,6 +4080,9 @@ async function runCurrentStats() {
       const thr = S(rec).thr;
       lo = -1; hi = 1;
       col = v => v > thr ? rgbCss(r.snow) : "#a39a8e";
+    } else if (r.classify) {
+      lo = -1; hi = 1;
+      col = v => rgbCss((r.classify.find(c => v <= c[0]) || r.classify[r.classify.length - 1])[1]);
     } else if (r.source === "vhi") {
       lo = 0; hi = 100;
       col = v => rgbCss(VHI_CLASSES[v >= 60 ? 6 : clamp(Math.floor(v / 10), 0, 5)][1]);
@@ -3246,6 +4093,58 @@ async function runCurrentStats() {
     if (e && e.name === "AbortError") return;
     box.innerHTML = '<div class="hint">Reading failed: ' + (e.message || e) + "</div>";
   }
+}
+
+/* Two-date layers over the AOI: the index on the date and on the reference, their difference, and for the
+   NDVI Analyst the report of the original script (forest area, affected area with and without edge removal). */
+async function diffStats(rec, r, scenes, grid, opt, box) {
+  const s = S(rec), ref = await resolveRef(s, state.date);
+  if (!ref.scenes.length) { box.innerHTML = '<div class="hint">No reference acquisition within ±20 days of ' + ref.target + ".</div>"; return; }
+  const [A, B] = await Promise.all([sampleAoi(r, scenes, grid, opt), sampleAoi(r, ref.scenes, grid, opt)]);
+  if (stRec !== rec) return;
+  const n = grid.W * grid.H, dif = new Float32Array(n).fill(NaN);
+  for (let k = 0; k < n; k++) if (grid.mask[k]) dif[k] = A.vals[0][k] - B.vals[0][k];
+  const st = summarize(dif), ha = c => c * grid.res * grid.res / 1e4;
+  const fmtHa = c => ha(c).toFixed(ha(c) < 10 ? 2 : 1) + " ha";
+  let html = '<div class="hint" style="margin:0 0 8px">' + state.date + " vs. the reference around " + ref.target + " (" + refLabel(ref) +
+    ", per cell the first clear one) · cells valid on both sides are compared (clouds and shadows masked as chosen above).</div>";
+  if (!st) { box.innerHTML = html + '<div class="hint">No pixels valid on both dates.</div>'; return; }
+  const inArea = Math.max(1, grid.n - A.outside);
+  html += '<div class="stgrid">' +
+    "<div>Mean " + unitOf(r) + "<b>" + fmtNum(st.mean) + "</b></div><div>Std. dev.<b>" + fmtNum(st.sd) + "</b></div>" +
+    "<div>Median<b>" + fmtNum(st.median) + "</b></div><div>Valid on both dates<b>" + (100 * st.n / inArea).toFixed(1) + " %</b></div>" +
+    "<div>P10 / P90<b>" + fmtNum(st.p10) + " / " + fmtNum(st.p90) + "</b></div><div>Min / max<b>" + fmtNum(st.min) + " / " + fmtNum(st.max) + "</b></div></div>";
+  if (rec.modal) {
+    // change = ΔNDVI below the threshold; edge effects removed with a 3 x 3 majority filter, as in the NDVI Analyst
+    const thr = s.thr, W = grid.W, H = grid.H, bin = new Int8Array(n).fill(-1);
+    for (let k = 0; k < n; k++) if (dif[k] === dif[k]) bin[k] = dif[k] < thr ? 1 : 0;
+    let raw = 0, filt = 0;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const k = y * W + x;
+      if (bin[k] < 0) continue;
+      if (bin[k] === 1) raw++;
+      let ones = 0, zeros = 0;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        const yy = y + dy, xx = x + dx;
+        if (yy < 0 || xx < 0 || yy >= H || xx >= W) continue;
+        const v = bin[yy * W + xx];
+        if (v === 1) ones++; else if (v === 0) zeros++;
+      }
+      if (ones > zeros) filt++;
+    }
+    const forest = VEG_LABEL[opt.veg] ? inArea : null;
+    html += '<div class="sec" style="font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--blue);font-weight:700;margin:12px 0 6px">NDVI Analyst report</div>' +
+      '<table class="kv"><tr><th></th><th>Area</th><th>Share</th></tr>' +
+      "<tr><td>" + (forest != null ? VEG_LABEL[opt.veg] + " area in the AOI" : "AOI area (no vegetation mask)") + "</td><td>" + fmtHa(inArea) + "</td><td></td></tr>" +
+      "<tr><td>Compared (valid on both dates)</td><td>" + fmtHa(st.n) + "</td><td>" + (100 * st.n / inArea).toFixed(1) + " %</td></tr>" +
+      "<tr><td>Affected (ΔNDVI &lt; " + +thr.toFixed(3) + ")</td><td>" + fmtHa(raw) + "</td><td>" + (100 * raw / st.n).toFixed(1) + " %</td></tr>" +
+      "<tr><td>Affected after edge-effect removal</td><td>" + fmtHa(filt) + "</td><td>" + (100 * filt / st.n).toFixed(1) + " %</td></tr></table>" +
+      '<div class="hint">Shares refer to the compared area. Grid ' + grid.res + " m" + (grid.res > 10 ? " (coarser than 10 m because of the AOI size — draw a smaller AOI for the full resolution)" : "") + ".</div>";
+  }
+  const d0 = r.domain[0], k2 = (r.domain[1] - d0) / ((s.max - s.min) || 1e-9);
+  html += histChart(st.sorted, s.min, s.max, v => { const c = r.ramp(d0 + (v - s.min) * k2); return c ? rgbCss(c) : "#999"; },
+                    unitOf(r) + " (legend range)");
+  box.innerHTML = html;
 }
 
 async function seriesDates(rec, from, to) {
@@ -3288,7 +4187,7 @@ function drawSeries() {
       lo: p.st[0].mean - p.st[0].sd, hi: p.st[0].mean + p.st[0].sd,
       label: lab(p) + " · mean " + fmtNum(p.st[0].mean) + " ± " + fmtNum(p.st[0].sd) })) }];
   }
-  $("#stChart").innerHTML = lineChart(series, { time: true, yLabel: unitOf(r) + (r.type === "rgb" ? "" : " (mean ± σ)"),
+  $("#stChart").innerHTML = lineChart(series, { time: true, yLabel: (r.type === "index" && r.unit ? r.name : unitOf(r)) + (r.type === "rgb" ? "" : " (mean ± σ)"),
     yMin: r.source === "vhi" ? 0 : undefined, yMax: r.source === "vhi" ? 100 : undefined });
 }
 
@@ -3412,12 +4311,13 @@ const b64d = s => JSON.parse(decodeURIComponent(escape(atob(s.replace(/-/g, "+")
 function writeUrlSoon() { if (!booted) return; clearTimeout(urlTimer); urlTimer = setTimeout(writeUrl, 200); }
 function writeUrl() {
   const c = map.getCenter(), p = new URLSearchParams();
-  p.set("zoom", map.getZoom());
+  p.set("zoom", +map.getZoom().toFixed(3));
   p.set("lat", c.lat.toFixed(5));
   p.set("lng", c.lng.toFixed(5));
   p.set("fromTime", state.date + "T00:00:00.000Z");
   p.set("toTime", state.date + "T23:59:59.999Z");
   if (currentRec.source === "s2" || state.cc !== 100) p.set("cloudCoverage", state.cc);
+  p.set("themeId", configId);
   p.set("layerId", currentRec.id);
   Object.entries(settingsToObj(currentRec, S(currentRec)))
     .forEach(([k, v]) => p.set(k, Array.isArray(v) ? JSON.stringify(v) : String(v)));
@@ -3447,7 +4347,11 @@ function readUrl() {
   if (DATE_RE.test(ft) && ft <= todayStr) state.date = ft;
   const cc = parseFloat(q.get("cloudCoverage"));
   if (isFinite(cc)) state.cc = clamp(Math.round(cc), 0, 100);
+  const th = (q.get("themeId") || "").toUpperCase().replace(/-/g, "");
   if (LAYER[q.get("layerId")]) currentRec = LAYER[q.get("layerId")];
+  else if (CONFIGS[th]) currentRec = LAYER[cfgLayers(th)[0]];
+  configId = CONFIGS[th] && cfgLayers(th).includes(currentRec.id) ? th : configOf(currentRec.id);
+  lastLayer[configId] = currentRec.id;
   const o = {};
   SETTING_KEYS.forEach(k => { if (q.has(k)) o[k] = q.get(k); });
   settings[currentRec.id] = objToSettings(currentRec, o);
@@ -3475,10 +4379,10 @@ function readUrl() {
   if (cm === "split" || cm === "opacity") compareEffect = cm;
   if (q.has("aoi")) { try { setAoi(b64d(q.get("aoi")), false); } catch (e) { /* ignore a broken aoi */ } }
 
-  const lat = parseFloat(q.get("lat")), lng = parseFloat(q.get("lng")), z = parseInt(q.get("zoom"), 10);
+  const lat = parseFloat(q.get("lat")), lng = parseFloat(q.get("lng")), z = parseFloat(q.get("zoom"));
   const hasView = isFinite(lat) && isFinite(lng) && isFinite(z);
-  if (hasView) map.setView([lat, lng], clamp(z, 8, 27), { animate: false });
-  return { hasView, compareMode: cm !== "off" && compare.length >= 2 };
+  if (hasView) setViewFrac([lat, lng], z);
+  return { hasView, hasDate: DATE_RE.test(ft), compareMode: cm !== "off" && compare.length >= 2 };
 }
 
 async function copyLink(btn, label) {
@@ -3545,6 +4449,14 @@ map.on("click", async e => {
   const p = CRS2056.project(e.latlng);
   $("#inspTitle").textContent = "Pixel  " + Math.round(p.x) + " E / " + Math.round(p.y) + " N";
   const cfg = compareMode ? null : currentCfg;
+  if (cfg && cfg.rec.cogUrl && cfg.scenes.length) {        // VHI, NDVIdiff, NDVIz: the product value
+    const r = cfg.rec, v = await readPoint(r.cogUrl(cfg.scenes[0]), p.x, p.y).catch(() => null);
+    const txt = v == null || v === r.cogFill ? "no data" : v === r.cogMissing ? "missing data" : !r.cogValid(v) ? v + " (no data)"
+      : v + (r.cogScale !== 1 ? "  →  " + (v * r.cogScale).toFixed(3) : "");
+    $("#inspBody").innerHTML = "<table><tr><td>WGS84</td><td>" + e.latlng.lat.toFixed(5) + ", " + e.latlng.lng.toFixed(5) +
+      "</td></tr><tr><td>Item</td><td>" + cfg.scenes[0] + "</td></tr><tr><td><b>" + r.name + "</b></td><td><b>" + txt + "</b></td></tr></table>";
+    return;
+  }
   if (!cfg || cfg.rec.source !== "s2" || !cfg.scenes.length) {
     $("#inspBody").innerHTML = '<div class="hint">The inspector reads the swissEO S2-SR bands. Pick a date with data ' +
       "and an S2-SR layer (outside compare mode).</div>";
@@ -3578,10 +4490,21 @@ map.on("click", async e => {
       tr(BAND_LABEL[b], dn == null ? "—" : dn === 0 ? "no data"
         : dn + "  →  " + (b === "aot" ? "AOT " : "ρ ") + phys(b, dn).toFixed(4));
     });
-    if (rec.type === "index") {
+    if (rec.type === "index" || rec.type === "diff2") {
       const v = rec.bands.map(b => vals[b]);
-      const ok = v.every(x => x != null && x !== 0);
-      tr("<b>" + rec.name + "</b>", ok ? "<b>" + rec.fn(rec.bands.map(b => physIdx(b, vals[b]))).toFixed(4) + "</b>" : "—");
+      const ok = v.every(x => x != null && x !== 0), x0 = ok ? rec.fn(rec.bands.map(b => physIdx(b, vals[b])), cfg.s) : null;
+      tr("<b>" + (rec.type === "diff2" ? (rec.modal ? "NDVI" : "NDDI") + " " + cfg.date : rec.name) + "</b>", ok ? "<b>" + x0.toFixed(4) + "</b>" : "—");
+      if (rec.type === "diff2") {
+        const ref = await resolveRef(S(rec), cfg.date);
+        let x1 = null, rd = "reference";
+        for (const sid of ref.scenes) {
+          const w = await Promise.all(rec.bands.map(b => readPoint(assetUrl(sid, b), p.x, p.y).catch(() => null)));
+          if (w.every(q => q)) { x1 = rec.fn(rec.bands.map((b, i) => physIdx(b, w[i])), cfg.s); rd = sid.slice(0, 10); break; }
+        }
+        tr((rec.modal ? "NDVI" : "NDDI") + " " + rd + " (reference)", x1 == null ? "—" : x1.toFixed(4));
+        tr("<b>" + unitOf(rec) + "</b>", ok && x1 != null ? "<b>" + (x0 - x1).toFixed(4) + "</b>" +
+          (rec.modal ? (x0 - x1 < S(rec).thr ? " · below threshold" : "") : "") : "—");
+      }
     }
     if (rec.tci) {
       const t = await readPoint(assetUrl(id, "tci"), p.x, p.y, 3).catch(() => null);
@@ -3613,13 +4536,16 @@ function drawTileLayer(ctx, layer, pxBounds, z, alpha) {
     if (!lyr._tiles) return;
     const ts = lyr.getTileSize();
     ctx.globalAlpha = alpha != null ? alpha : (lyr.options.opacity != null ? lyr.options.opacity : 1);
+    // tiles of the layer's tile zoom, scaled to the map zoom (they differ at fractional zooms)
+    const tz = lyr._tileZoom != null ? lyr._tileZoom : z, f = map.getZoomScale(z, tz);
     for (const key in lyr._tiles) {
       const t = lyr._tiles[key];
       if (!t.current || !t.loaded || !t.el) continue;
-      if (t.coords.z !== z) continue;
-      const x = t.coords.x * ts.x - pxBounds.min.x;
-      const y = t.coords.y * ts.y - pxBounds.min.y;
-      try { ctx.drawImage(t.el, x, y, ts.x, ts.y); } catch (e) { /* skip broken tile */ }
+      if (t.coords.z !== tz) continue;
+      // whole-pixel edges, so scaled neighbours meet without seams
+      const x0 = Math.round(t.coords.x * ts.x * f - pxBounds.min.x), x1 = Math.round((t.coords.x + 1) * ts.x * f - pxBounds.min.x);
+      const y0 = Math.round(t.coords.y * ts.y * f - pxBounds.min.y), y1 = Math.round((t.coords.y + 1) * ts.y * f - pxBounds.min.y);
+      try { ctx.drawImage(t.el, x0, y0, x1 - x0, y1 - y0); } catch (e) { /* skip broken tile */ }
     }
     ctx.globalAlpha = 1;
   });
@@ -3745,7 +4671,8 @@ function drawCaption(ctx, W, H, desc, overlay) {
   } else {
     title = currentRec.name + (currentRec.sub ? " — " + currentRec.sub : "");
     const ids = currentCfg ? currentCfg.scenes : [];
-    sub = SOURCES[currentRec.source].name + " · " + state.date +
+    sub = SOURCES[currentRec.source].name + " · " + (ids.length && currentRec.source !== "s2" ? ids[0].slice(0, 10) : state.date) +
+          (currentRec.type === "diff2" && currentCfg && currentCfg.refInfo ? " vs. reference around " + currentCfg.refInfo.target : "") +
           (ids.length && currentRec.source === "s2" ? " · " + ids.map(timeOf).join(", ") : "") +
           (currentRec.source === "s2" && VEG_LABEL[S(currentRec).veg] ? " · " + VEG_LABEL[S(currentRec).veg].toLowerCase() + " mask" : "");
   }
@@ -3829,7 +4756,7 @@ async function buildExportCanvas(o) {
     out = makeCanvas(crop.w, crop.h);
     out.getContext("2d").drawImage(cv, -crop.x, -crop.y);
   }
-  decorate(out, o, RES[z], 1);
+  decorate(out, o, resAt(z), 1);
   return out;
 }
 
@@ -3860,7 +4787,7 @@ function strokeAoi(ctx, rings, k) {
 }
 /* LV95 box of the map view, from Leaflet's pixel bounds on the swisstopo grid. */
 function viewBox() {
-  const pb = map.getPixelBounds(), r = RES[map.getZoom()];
+  const pb = map.getPixelBounds(), r = resAt(map.getZoom());
   return [ORIGIN[0] + pb.min.x * r, ORIGIN[1] - pb.max.y * r, ORIGIN[0] + pb.max.x * r, ORIGIN[1] - pb.min.y * r];
 }
 function aoiBox(padFrac) {
@@ -4060,15 +4987,22 @@ async function runAnalytical(signal, prog) {
     const scenes = await resolveScenes(rec, state.date, state.cc);
     if (!scenes.length) { skipped.push(rec.name); continue; }
     const name = "swissEO_" + rec.id + "_" + tag;
-    if (fmt === "tiff32" && (rec.type === "index" || rec.type === "cont" || rec.type === "terrain")) {
-      // the index / physical value itself, with the layer's masks
+    if (fmt === "tiff32" && (rec.type === "index" || rec.type === "cont" || rec.type === "terrain" || rec.type === "diff2")) {
+      // the index / physical value itself (two-date layers: the difference), with the layer's masks
       const grid = { bbox, W, H, mask: inAoi || new Uint8Array(n).fill(1), n };
-      const res = await sampleAoi(rec, scenes, grid, { maskClouds: s.cloud || s.shadow, maskTerrain: s.terrain,
-        cloudCodes: { 1: s.cloud, 2: s.cloud, 3: s.shadow }, veg: s.veg }, signal);
-      files.push({ name: name + ".tif", blob: encodeGeoTiff(Object.assign({ bands: [res.vals[0]], type: "f32", nodata: NaN }, geo)) });
+      const o = { maskClouds: s.cloud || s.shadow, maskTerrain: s.terrain, cloudCodes: { 1: s.cloud, 2: s.cloud, 3: s.shadow }, veg: s.veg };
+      const r = statRec(rec), res = await sampleAoi(r, scenes, grid, o, signal);
+      let band = res.vals[0];
+      if (rec.type === "diff2") {
+        const ref = await resolveRef(s, state.date);
+        if (!ref.scenes.length) { skipped.push(rec.name + " (no reference)"); continue; }
+        const rr = await sampleAoi(r, ref.scenes, grid, o, signal);
+        band = band.map((v, k) => v - rr.vals[0][k]);
+      }
+      files.push({ name: name + ".tif", blob: encodeGeoTiff(Object.assign({ bands: [band], type: "f32", nodata: NaN }, geo)) });
       continue;
     }
-    const cv = await renderCfgCanvas({ rec, s, scenes, gf: rec === currentRec && currentCfg ? currentCfg.gf : 1 }, bbox, W, H, signal,
+    const cv = await renderCfgCanvas({ rec, s, scenes, date: state.date, gf: rec === currentRec && currentCfg ? currentCfg.gf : 1 }, bbox, W, H, signal,
       (d, t) => prog("Rendering " + rec.name + " (" + step + "/" + total + ") · " + Math.round(100 * d / t) + " %"));
     if (inAoi) {
       const c = cv.getContext("2d");
@@ -4173,7 +5107,7 @@ async function runPrint(signal, prog) {
     if (!scenes.length) continue;
     const gf = st ? (sset.autoGain ? await autoGainFactor(rec, sset, scenes, viewBox()).catch(() => 1) : 1)
                   : (currentCfg && currentCfg.rec === rec ? currentCfg.gf : 1);
-    const lc = await renderCfgCanvas({ rec, s: sset, scenes, gf }, bbox, W, H, signal,
+    const lc = await renderCfgCanvas({ rec, s: sset, scenes, gf, date: st ? st.it.date : state.date }, bbox, W, H, signal,
       (d, t) => prog("Rendering " + rec.name + " · " + Math.round(100 * d / t) + " %"));
     ctx.save();
     if (st && compareEffect === "split") {
@@ -4204,7 +5138,7 @@ function exInfo() {
       const c = aoiCrop(polysOf(aoi).flatMap(p => p.map(r => r.map(q => map.latLngToContainerPoint([q[1], q[0]])))), s.x, s.y);
       if (c) { w = c.w; h = c.h; }
     }
-    $("#exInfoB").textContent = "Current view: " + w + " × " + h + " px at " + RES[map.getZoom()] + " m/px · " +
+    $("#exInfoB").textContent = "Current view: " + w + " × " + h + " px at " + +resAt(map.getZoom()).toFixed(2) + " m/px · " +
       (compareMode ? "compare, " + compare.length + " layers" : currentRec.name);
   } else if (exTab === "analytical") {
     const g = analyticalGrid();
@@ -4218,11 +5152,11 @@ function exInfo() {
   }
 }
 function exLists() {
-  const src = currentRec.source;
-  $("#exVis").innerHTML = LAYERS.filter(r => r.source === src).map(r =>
+  const ids = cfgLayers(configId);
+  $("#exVis").innerHTML = ids.map(id => LAYER[id]).map(r =>
     '<label><input type="checkbox" value="' + r.id + '"' + (r === currentRec ? " checked" : "") + "> " + r.name + "</label>").join("");
-  $("#exRaw").innerHTML = (src === "s2" ? RAW_S2 : RAW_VHI).map(r =>
-    '<label><input type="checkbox" value="' + r[0] + '"> ' + r[1] + "</label>").join("");
+  const raw = (ids.some(id => LAYER[id].source === "s2") ? RAW_S2 : []).concat(ids.some(id => LAYER[id].source === "vhi") ? RAW_VHI : []);
+  $("#exRaw").innerHTML = raw.map(r => '<label><input type="checkbox" value="' + r[0] + '"> ' + r[1] + "</label>").join("");
 }
 function exShow(tab) {
   exTab = tab;
@@ -4290,6 +5224,8 @@ Object.assign(UI, {
   pause: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4.5" width="4" height="15"/><rect x="14" y="4.5" width="4" height="15"/></svg>'
 });
 $("#btnTimelapse").innerHTML = UI.film;
+$$("#p-info .ver.ok").forEach(e => { e.innerHTML = UI.verified; });
+$$("#p-info .ver.todo").forEach(e => { e.innerHTML = UI.todo; });
 $("#tlPrev").innerHTML = UI.left;
 $("#tlNext").innerHTML = UI.right;
 $("#tlPlay").innerHTML = UI.play;
@@ -4336,9 +5272,10 @@ function tlGrid(bbox, maxCells) {
 async function tlStats(rec, unit, g, signal) {
   const { bbox, W, H, mask } = g, n = W * H, cov = new Uint8Array(n), cld = new Uint8Array(n);
   const soft = q => q.catch(e => { if (e && e.name === "AbortError") throw e; return null; });
-  if (rec.source === "vhi") {
-    const a = await soft(readGrid(vhiUrl(unit.scenes[0], rec), bbox, W, H, signal, 255));
-    if (a) for (let k = 0; k < n; k++) if (mask[k] && a[k] !== 255) cov[k] = 1;
+  if (rec.cogUrl) {
+    // VHI and the drought products cover all of Switzerland (masked to forest / vegetation): any data = covered
+    const a = await soft(readGrid(rec.cogUrl(unit.scenes[0]), bbox, W, H, signal, rec.cogFill));
+    if (a && mask.some((m, k) => m && a[k] !== rec.cogFill)) cov.set(mask);
   } else {
     for (const id of unit.scenes) {
       const box = sceneBox(id);
@@ -4354,7 +5291,7 @@ async function tlStats(rec, unit, g, signal) {
     }
   }
   const nc = cov.reduce((t, v) => t + v, 0);
-  return { coverage: 100 * nc / g.n, cloud: rec.source === "vhi" ? 0 : (nc ? 100 * cld.reduce((t, v) => t + v, 0) / nc : 100) };
+  return { coverage: 100 * nc / g.n, cloud: rec.source !== "s2" ? 0 : (nc ? 100 * cld.reduce((t, v) => t + v, 0) / nc : 100) };
 }
 
 const tlKeyOf = (date, per) => per === "year" ? date.slice(0, 4) : per === "month" ? date.slice(0, 7) :
@@ -4447,7 +5384,7 @@ async function tlThumbs(rec, signal) {
     try {
       const gf = $("#tlAuto").checked && rec.type === "rgb"
         ? await autoGainFactor(rec, S(rec), it.scenes, b, signal, tlGrid(b, 32)) : 1;
-      const cv = await renderCfgCanvas({ rec, s: S(rec), scenes: it.scenes, gf }, b, tw, th, signal);
+      const cv = await renderCfgCanvas({ rec, s: S(rec), scenes: it.scenes, gf, date: it.date }, b, tw, th, signal);
       it.thumb = cv.toDataURL("image/png");
       if (it.img) it.img.src = it.thumb;
     } catch (e) { /* keep the empty thumbnail */ }
@@ -4481,7 +5418,7 @@ async function tlFrame(it, area, W, H, o, signal) {
   if (tl.base) ctx.drawImage(tl.base, 0, 0);
   const rings = aoi ? aoiRingsPx(area.bbox, W, H) : [];
   const gf = o.autoGain && rec.type === "rgb" ? await autoGainFactor(rec, s, it.scenes, area.bbox, signal, tlGrid(area.bbox, 64)) : 1;
-  const lc = await renderCfgCanvas({ rec, s, scenes: it.scenes, gf }, area.bbox, W, H, signal);
+  const lc = await renderCfgCanvas({ rec, s, scenes: it.scenes, gf, date: it.date }, area.bbox, W, H, signal);
   ctx.save();
   if (area.aoi && rings.length) { pathRings(ctx, rings); ctx.clip("evenodd"); }
   ctx.globalAlpha = s.opacity / 100;
@@ -4705,9 +5642,18 @@ const boot = readUrl();
 $("#ccMax").value = state.cc;
 $("#dateTxt").value = state.date;
 $("#dNext").disabled = state.date >= todayStr;
-$("#dcSel").value = currentRec.source;
+$("#cfgSel").value = configId;
+matchHighlight();
 updateCcBadge();
 renderLayerList();
+if (activeHl) { const e = $(".hl.on"); if (e) e.scrollIntoView({ block: "nearest" }); }
+if (!VERIFIED_IDS) {                     // not deployed: read the checklist from README.md next to the page
+  fetch("README.md").then(r => r.ok ? r.text() : "").then(md => {
+    const ids = parseVerified(md) || [];
+    ids.forEach(id => VERIFIED.add(id));
+    if (ids.length) { renderLayerList(); renderCompare(); }
+  }).catch(() => {});
+}
 renderCompare();
 renderAoiTool();
 booted = true;
@@ -4715,7 +5661,9 @@ window.addEventListener("load", () => {
   map.invalidateSize();
   if (!boot.hasView) map.fitBounds(CH_BOUNDS);
 });
-if (boot.compareMode) setCompareMode(true); else applyLayer();
+if (boot.compareMode) setCompareMode(true, !!activeHl);       // a highlight link opens on the story list
+else if (!boot.hasDate) gotoLatest();
+else applyLayer();
 writeUrl();
 </script>
 </body>

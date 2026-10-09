@@ -9,6 +9,7 @@ on:
     branches: [main]
     paths:
       - swisseo-browser.html
+      - README.md
       - public/previews/**
       - .github/workflows/pages.yml
   workflow_dispatch:
@@ -41,6 +42,37 @@ jobs:
             while read -r f; do cp "public/previews/$f" _site/public/previews/; done
           ls _site/public/previews
           touch _site/.nojekyll
+
+      - name: Apply the layer verification checklist of README.md
+        run: |
+          python3 - <<'EOF'
+          import json, re, sys
+          md = open("README.md", encoding="utf8").read()
+          a, b = md.find("<!-- verification:start -->"), md.find("<!-- verification:end -->")
+          if a < 0 or b < a:
+              sys.exit("README.md: verification markers not found")
+          listed, checked = [], []
+          for line in md[a:b].splitlines():
+              m = re.match(r"\s*[-*] \[([ xX])\] `([a-z0-9_]+)`", line)
+              if m:
+                  listed.append(m.group(2))
+                  if m.group(1) != " ":
+                      checked.append(m.group(2))
+          page = open("swisseo-browser.html", encoding="utf8").read()
+          layers = re.findall(r'^\s*\{ id:"([a-z0-9_]+)"', page, re.M)
+          for i in sorted(set(layers) - set(listed)):
+              print(f"::warning file=README.md::layer '{i}' is missing in the verification checklist")
+          for i in sorted(set(listed) - set(layers)):
+              print(f"::warning file=README.md::'{i}' in the verification checklist is not a layer of the page")
+          marker = "const VERIFIED_IDS = null; // replaced on deploy"
+          for f in ("_site/index.html", "_site/swisseo-browser.html"):
+              s = open(f, encoding="utf8").read()
+              if marker not in s:
+                  sys.exit(f"{f}: VERIFIED_IDS marker not found")
+              s = s.replace(marker, "const VERIFIED_IDS = " + json.dumps(checked) + "; // from README.md")
+              open(f, "w", encoding="utf8").write(s)
+          print(f"verified: {len(checked)} of {len(listed)} layers: {', '.join(checked) or '-'}")
+          EOF
 
       - uses: actions/configure-pages@v5
 
