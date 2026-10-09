@@ -20,7 +20,7 @@ the swisstopo WMS/WMTS services directly in the browser.
 
 | Product | Source | Used for |
 | --- | --- | --- |
-| [swissEO S2-SR v200](https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-s2-sr) | COGs on `data.geo.admin.ch`, catalogue via the STAC API `data.geo.admin.ch/api/stac/v0.9` (collection `ch.swisstopo.swisseo_s2-sr_v200`) | Sentinel-2 L2A surface reflectance mosaics (B01–B12, B8A, AOT, SCL, cloud mask, terrain mask), 10/20/60 m, LV95 |
+| [swissEO S2-SR v200](https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-s2-sr) | COGs on `data.geo.admin.ch`, catalogue via the STAC API `data.geo.admin.ch/api/stac/v0.9` (collection `ch.swisstopo.swisseo_s2-sr_v200`) | Sentinel-2 L2A surface reflectance mosaics (B01–B12, B8A, AOT, SCL, cloud mask, terrain mask, true color image TCI), 10/20/60 m, LV95 |
 | [swissEO VHI v100](https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-vhi) | Own collection: `wms.geo.admin.ch` (`ch.swisstopo.swisseo_vhi_v100`, `…_vegetation`) for display; for AOI statistics and analytical downloads the `forest-10m` / `vegetation-10m` COGs, addressed through the STAC items of `ch.swisstopo.swisseo_vhi_v100` | Vegetation Health Index for forest and all vegetation, relative to 1991–2020 |
 | Vegetation masks | The `forest-10m` / `vegetation-10m` COGs of swissEO VHI v100 (STAC collection `ch.swisstopo.swisseo_vhi_v100`, most recent item): inside the mask = value ≠ 255 | Forest / all-vegetation mask for every S2-SR layer, statistics and exports |
 | Basemaps | `wmts.geo.admin.ch` (pixelkarte-farbe, swissimage, pixelkarte-grau) | Background maps on the native LV95 grid |
@@ -81,8 +81,9 @@ The swissEO Browser therefore always uses the physical reflectance.
   (most recent on top).
 - **Data collections** — a pull-down switches between *swissEO S2-SR v200* and *swissEO VHI v100*; each
   collection has its own layers and its own dates in the calendar.
-- **Layers** — S2-SR: true color and five false-color composites (false color, urban, SWIR, agriculture,
-  geology 12-8-2); NDVI, NDWI, moisture index, NDSI, NBR and AOT; scene classification, cloud mask,
+- **Layers** — S2-SR: true color — the **TCI** (`tci_10m`, 8-bit RGB, JPEG / YCbCr) delivered with each mosaic,
+  shown as delivered — and five false-color composites computed from the bands (false color, urban, SWIR,
+  agriculture, geology 12-8-2); NDVI, NDWI, moisture index, NDSI, NBR and AOT; scene classification, cloud mask,
   terrain / solar incidence. VHI: forest and vegetation (WMS). Layers are listed with the Copernicus
   Browser preview thumbnails as icons.
 - **Layer pull-down**
@@ -93,12 +94,15 @@ The swissEO Browser therefore always uses the physical reflectance.
     above an adjustable threshold in blue, true color elsewhere);
   - masks: clouds and cloud shadows (OmniCloudMask), terrain shadow (terrain mask 200) and a vegetation
     mask (Off / Forest / All vegetation, from swissEO VHI v100);
-  - *effects and advanced options* for the colour composites: **Look** — *Standard* stretch or *True
+  - *effects and advanced options*: gain, gamma, red / green / blue ranges and opacity for all colour
+    layers (for the TCI applied on top of the delivered image); for the composites computed from the bands
+    also **Look** — *Standard* stretch or *True
     color optimized* (the tone curve of the Copernicus Browser True color layer: contrast enhancement with
     highlight compression, saturation 1.2, sRGB); gain, gamma, **adaptive gain** (lowers the gain when the
     view is bright — snow, glaciers, clouds — so that the 98th percentile of the reflectance stays just
     below saturation; never brightens, at most a factor of 4, recomputed when the view changes; not needed
-    with the optimized look), red / green / blue ranges, opacity.
+    with the optimized look). Statistics, spectral explorer and pixel inspector use the reflectance bands
+    also for true color; the inspector additionally shows the TCI value.
 - **Compare** — add layers to the compare list; opening the Compare panel (or the ⇄ map button) shows
   them with a split or opacity effect, going back to Layers shows the single layer again. Reorder,
   remove and zoom to each entry.
@@ -132,7 +136,7 @@ The swissEO Browser therefore always uses the physical reflectance.
     from the cloud mask and the data footprint — not the cloud cover of the whole scene); per interval the image with the best coverage × clear sky is chosen; Max. cloud
     coverage and Min. tile coverage filter the list, images can be (de)selected;
   - preview player with speed (fps), transition None / Fade with fade duration, delay last frame,
-    adaptive gain per frame (for snowy winter frames), legend, map overlays and captions (date label,
+    adaptive gain per frame for the band composites (snowy winter frames), legend, map overlays and captions (date label,
     scale bar, source);
   - download as GIF or as video (MP4 or WebM, depending on the browser), default 1024 px (up to 2048).
     VHI layers work too (via the WMS).

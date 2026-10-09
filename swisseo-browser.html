@@ -863,7 +863,7 @@ const SUFFIX = {
   b01:"b01_60m", b02:"b02_10m", b03:"b03_10m", b04:"b04_10m", b05:"b05_20m",
   b06:"b06_20m", b07:"b07_20m", b08:"b08_10m", b8a:"b8a_20m", b09:"b09_60m",
   b11:"b11_20m", b12:"b12_20m", aot:"aot_60m",
-  scl:"scl_20m", cloud:"cloudmask_10m", terrain:"terrainmask_10m"
+  scl:"scl_20m", cloud:"cloudmask_10m", terrain:"terrainmask_10m", tci:"tci_10m"
 };
 const BAND_LABEL = {
   b01:"B01 coastal 60 m", b02:"B02 blue 10 m", b03:"B03 green 10 m", b04:"B04 red 10 m",
@@ -901,13 +901,17 @@ function pyramid(url) {
       const o = full.getOrigin(), r = full.getResolution();
       const extW = full.getWidth() * Math.abs(r[0]);
       const extH = full.getHeight() * Math.abs(r[1]);
-      const levels = [];
+      const levels = [], masks = [];
       for (let i = 0; i < n; i++) {
         const im = i === 0 ? full : await tiff.getImage(i);
-        const w = im.getWidth(), h = im.getHeight();
+        const w = im.getWidth(), h = im.getHeight(), fd = im.fileDirectory;
+        // GDAL internal masks (e.g. in the JPEG-compressed TCI) are separate IFDs: keep them per level
+        // as validity masks instead of treating them as overviews.
+        if (((fd.NewSubfileType || 0) & 4) || fd.PhotometricInterpretation === 4) { masks.push({ im, w, h }); continue; }
         // Overview IFDs carry no geo tags; they cover the same extent as the full image.
-        levels.push({ im, w, h, rx: extW / w, ry: extH / h });
+        levels.push({ im, w, h, rx: extW / w, ry: extH / h, ycbcr: fd.PhotometricInterpretation === 6 });
       }
+      levels.forEach(l => { const m = masks.find(k => k.w === l.w && k.h === l.h); if (m) l.mask = m.im; });
       levels.sort((a, b) => a.rx - b.rx);
       return { ox: o[0], oy: o[1], levels };
     })());
@@ -920,6 +924,11 @@ function pyramid(url) {
  * Picks the coarsest overview that still resolves the requested pixel size.
  */
 async function readGrid(url, bbox, W, H, signal, fill) {
+  const r = await readGridBands(url, bbox, W, H, signal, fill, 1);
+  return r && r[0];
+}
+/* Same as readGrid for the first `nb` samples of a multi-band COG (e.g. the 3-band TCI). */
+async function readGridBands(url, bbox, W, H, signal, fill, nb) {
   const p = await pyramid(url);
   const target = (bbox[2] - bbox[0]) / W, targetY = (bbox[3] - bbox[1]) / H;
 
@@ -935,33 +944,43 @@ async function readGrid(url, bbox, W, H, signal, fill) {
   const y1 = Math.min(lv.h, Math.ceil((p.oy - bbox[1]) / lv.ry));
   if (x1 <= x0 || y1 <= y0) return null;                 // tile misses the mosaic entirely
 
-  const raw = (await lv.im.readRasters({ window: [x0, y0, x1, y1], samples: [0], signal }))[0];
+  const samples = Array.from({ length: nb }, (_, i) => i), win = [x0, y0, x1, y1];
+  // YCbCr JPEG (TCI) needs the RGB conversion; the level's internal mask marks the valid pixels.
+  const [raws, mk] = await Promise.all([
+    lv.ycbcr ? lv.im.readRGB({ window: win, interleave: false, signal }) : lv.im.readRasters({ window: win, samples, signal }),
+    lv.mask ? lv.mask.readRasters({ window: win, samples: [0], signal }).then(r => r[0]) : null]);
+  if (mk) for (let k = 0; k < mk.length; k++) if (!mk[k]) for (const b of samples) raws[b][k] = 0;
   const sw = x1 - x0, sh = y1 - y0;
 
-  const out = new Float32Array(W * H);
-  if (fill) out.fill(fill);
-  for (let j = 0; j < H; j++) {
-    const gy = bbox[3] - (j + 0.5) * targetY;
-    const sr = Math.floor((p.oy - gy) / lv.ry) - y0;
-    if (sr < 0 || sr >= sh) continue;
-    for (let i = 0; i < W; i++) {
-      const gx = bbox[0] + (i + 0.5) * target;
-      const sc = Math.floor((gx - p.ox) / lv.rx) - x0;
-      if (sc < 0 || sc >= sw) continue;
-      out[j * W + i] = raw[sr * sw + sc];
+  return samples.map(b => {
+    const raw = raws[b], out = new Float32Array(W * H);
+    if (fill) out.fill(fill);
+    for (let j = 0; j < H; j++) {
+      const gy = bbox[3] - (j + 0.5) * targetY;
+      const sr = Math.floor((p.oy - gy) / lv.ry) - y0;
+      if (sr < 0 || sr >= sh) continue;
+      for (let i = 0; i < W; i++) {
+        const gx = bbox[0] + (i + 0.5) * target;
+        const sc = Math.floor((gx - p.ox) / lv.rx) - x0;
+        if (sc < 0 || sc >= sw) continue;
+        out[j * W + i] = raw[sr * sw + sc];
+      }
     }
-  }
-  return out;
+    return out;
+  });
 }
 const readTile = (url, bbox, S, signal, fill) => readGrid(url, bbox, S, S, signal, fill);
 
-async function readPoint(url, x, y) {
+async function readPoint(url, x, y, nb) {
   const p = await pyramid(url);
   const lv = p.levels[0];
   const c = Math.floor((x - p.ox) / lv.rx), r = Math.floor((p.oy - y) / lv.ry);
   if (c < 0 || r < 0 || c >= lv.w || r >= lv.h) return null;
-  const d = await lv.im.readRasters({ window: [c, r, c + 1, r + 1], samples: [0] });
-  return d[0][0];
+  const win = [c, r, c + 1, r + 1];
+  const d = lv.ycbcr ? await lv.im.readRGB({ window: win, interleave: false })
+                     : await lv.im.readRasters({ window: win, samples: Array.from({ length: nb || 1 }, (_, i) => i) });
+  if (lv.mask && !(await lv.mask.readRasters({ window: win, samples: [0] }))[0][0]) return nb ? null : 0;
+  return nb ? Array.from({ length: nb }, (_, i) => d[i][0]) : d[0][0];
 }
 
 /* ============================================================
@@ -1093,11 +1112,12 @@ const VHI_SW = "linear-gradient(135deg,#b56a29,#f5cd85,#cbffca,#52bd9f,#0470b0)"
 
 const LAYERS = [
   /* ---- composites ---- */
-  { id:"true", group:"Composites", name:"True colour", type:"rgb", source:"s2", bands:["b04","b03","b02"],
+  /* Rendered from the TCI asset delivered with each mosaic; the bands serve the AOI statistics. */
+  { id:"true", group:"Composites", name:"True colour", type:"rgb", tci:true, source:"s2", bands:["b04","b03","b02"],
     icon:"sun", sw:"linear-gradient(135deg,#6f8f5c,#c9bb8e)", fg:"#1d2410",
     sub:"Based on bands 4, 3, 2",
-    desc:"Natural colour from red / green / blue surface reflectance.",
-    formula:"R = ρ(B04)\nG = ρ(B03)\nB = ρ(B02)\nρ = DN × 0.0001 − 0.1" },
+    desc:"True color image (TCI) delivered with the mosaic.",
+    formula:"tci_10m.tif — 8-bit RGB true color image (B04, B03, B02) as delivered with the mosaic\nR, G, B = (TCI / 255 × gain) ^ (1 / gamma), then the RGB ranges" },
 
   { id:"nir", group:"Composites", name:"False colour (infrared)", type:"rgb", source:"s2", bands:["b08","b04","b03"],
     icon:"spectrum", sw:"linear-gradient(135deg,#e0384a,#7fb0d8)", fg:"#2a0a10",
@@ -1214,8 +1234,8 @@ const LAYER = Object.fromEntries(LAYERS.map(r => [r.id, r]));
    src/assets/cache/configuration.json, public/previews). Layers without a Copernicus equivalent link to the
    swisstopo product page instead. */
 const COP_META = {
-  true: { name: "True color", sub: "Based on bands B4, B3, B2", thumb: "DEFAULT-THEME-a91f72-1_TRUE_COLOR.png",
-    cop: "# True color optimized\n\nThis optimized True color script uses the visible light bands red, green and blue in the corresponding red, green and blue color channels, resulting in a product with natural colours that represents the Earth as humans would naturally see it. The visualisation uses highlight compression and improves the contrast and color vividness through minor contrast and saturation enhancement.\n\n\n\nMore info for [L1C](https://custom-scripts.sentinel-hub.com/sentinel-2/l1c_optimized/) and for [L2A](https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-s2-sr)." },
+  true: { name: "True color", sub: "TCI — based on bands B4, B3, B2", thumb: "DEFAULT-THEME-a91f72-1_TRUE_COLOR.png",
+    cop: "# True color (TCI)\n\nThe true color image delivered with each swissEO S2-SR mosaic (asset `tci_10m`): the visible bands red (B04), green (B03) and blue (B02) rendered as an 8-bit RGB image at 10 m, representing the Earth as humans would naturally see it. It is shown as delivered; gain, gamma and the RGB ranges can be adjusted on top, and the cloud, shadow and vegetation masks apply. Statistics and the pixel inspector use the reflectance bands.\n\nMore info [here](https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-s2-sr)." },
   nir: { name: "False color", sub: "Based on bands B8, B4, B3", thumb: "DEFAULT-THEME-a91f72-2_FALSE_COLOR.png",
     cop: "# False color composite\n\nA false color composite uses at least one non-visible wavelength to image Earth. The false color composite using near infrared, red and green bands is very popular (a band is a region of the electromagnetic spectrum; a satellite sensor can image Earth in different bands). The false colour composite is most commonly used to assess plant density and health, since plants reflect near infrared and green light, while they absorb red. Cities and exposed ground are grey or tan, and water appears blue or black.\n\n\n\nMore info [here](https://custom-scripts.sentinel-hub.com/sentinel-2/false_color_infrared/) and [here.](https://eo.belspo.be/en/colour-composites)" },
   urban: { name: "False color (urban)", sub: "Based on bands B12, B11, B4", thumb: "DEFAULT-THEME-a91f72-4-FALSE-COLOR-URBAN.png",
@@ -1348,8 +1368,8 @@ function settingsToObj(rec, s) {
     if (s.terrain) o.terrainMask = true;
   }
   if (rec.source === "s2" && VEG_LABEL[s.veg]) o.vegetationMask = s.veg;
-  if (rec.type === "rgb" && s.autoGain) o.autoGain = true;
-  if (rec.type === "rgb" && s.look === "optimized") o.look = "optimized";
+  if (rec.type === "rgb" && !rec.tci && s.autoGain) o.autoGain = true;
+  if (rec.type === "rgb" && !rec.tci && s.look === "optimized") o.look = "optimized";
   return o;
 }
 function objToSettings(rec, o) {
@@ -1371,8 +1391,8 @@ function objToSettings(rec, o) {
   if (num(o.opacity) != null) s.opacity = clamp(Math.round(num(o.opacity)), 0, 100);
   s.cloud = bool(o.cloudMask); s.shadow = bool(o.shadowMask); s.terrain = bool(o.terrainMask);
   if (rec.source === "s2" && VEG_LABEL[o.vegetationMask]) s.veg = o.vegetationMask;
-  s.autoGain = rec.type === "rgb" && bool(o.autoGain);
-  if (rec.type === "rgb" && o.look === "optimized") s.look = "optimized";
+  s.autoGain = rec.type === "rgb" && !rec.tci && bool(o.autoGain);
+  if (rec.type === "rgb" && !rec.tci && o.look === "optimized") s.look = "optimized";
   return s;
 }
 const cloneSettings = s => JSON.parse(JSON.stringify(s));
@@ -1539,14 +1559,15 @@ async function renderScene(rec, s, id, bbox, W, H, signal) {
   if (box && (bbox[2] < box[0] || bbox[0] > box[2] || bbox[3] < box[1] || bbox[1] > box[3])) return null;
 
   const bands = rec.bands || [rec.band];
-  const all = bands.concat((rec.bg || []).filter(b => !bands.includes(b)));
+  const all = rec.tci ? [] : bands.concat((rec.bg || []).filter(b => !bands.includes(b)));
   const maskable = !!MASKABLE[rec.type];
   const reads = all.map(b => readGrid(assetUrl(id, b), bbox, W, H, signal, b === "terrain" ? 255 : 0));
   reads.push(maskable && (s.cloud || s.shadow) ? readGrid(assetUrl(id, "cloud"), bbox, W, H, signal, 0) : null);
   reads.push(maskable && s.terrain ? readGrid(assetUrl(id, "terrain"), bbox, W, H, signal, 255) : null);
   reads.push(VEG_LABEL[s.veg] ? readVegMask(s.veg, id.slice(0, 10), bbox, W, H, signal) : null);
-  const res = await Promise.all(reads);
-  const vm = res.pop(), tm = res.pop(), cm = res.pop(), a = res;
+  const [res, tci] = await Promise.all([Promise.all(reads),
+    rec.tci ? readGridBands(assetUrl(id, "tci"), bbox, W, H, signal, 0, 3) : null]);
+  const vm = res.pop(), tm = res.pop(), cm = res.pop(), a = rec.tci ? (tci || [null]) : res;
   if (a.some(x => !x)) return null;
 
   const masked = k => (vm && vm[k] === 0) ||
@@ -1554,6 +1575,22 @@ async function renderScene(rec, s, id, bbox, W, H, signal) {
     (tm && tm[k] === 200);
   const img = new ImageData(W, H), d = img.data, n = W * H;
   const put = (k, c) => { d[k*4] = c[0]; d[k*4+1] = c[1]; d[k*4+2] = c[2]; d[k*4+3] = 255; };
+
+  if (rec.tci) {
+    // the delivered TCI; gain / gamma / RGB ranges on top (1 / 1 / [0, 1] = unchanged)
+    const ig = 1 / s.gamma, rg = [s.r, s.g, s.b];
+    for (let k = 0; k < n; k++) {
+      if ((a[0][k] === 0 && a[1][k] === 0 && a[2][k] === 0) || masked(k)) continue;
+      for (let c = 0; c < 3; c++) {
+        let v = clamp(a[c][k] / 255 * s.gain, 0, 1);
+        if (ig !== 1) v = Math.pow(v, ig);
+        v = clamp((v - rg[c][0]) / ((rg[c][1] - rg[c][0]) || 1e-6), 0, 1);
+        d[k * 4 + c] = 255 * v;
+      }
+      d[k * 4 + 3] = 255;
+    }
+    return img;
+  }
 
   if (rec.type === "rgb" && s.look === "optimized") {
     // Copernicus Browser "True color optimized"; Gain scales the input, Gamma and RGB ranges the output
@@ -1739,7 +1776,7 @@ function refreshPending() {
    saturation (0.95 after gain). It only ever lowers the gain, by at most a factor of 4, and only
    for the colour composites. Masks of the layer (clouds, shadows, vegetation) are respected. */
 async function autoGainFactor(rec, s, scenes, bbox, signal, grid) {
-  if (rec.type !== "rgb" || !scenes.length || s.look === "optimized") return 1;
+  if (rec.type !== "rgb" || rec.tci || !scenes.length || s.look === "optimized") return 1;
   let g = grid;
   if (!g) {
     const res = Math.max(10, Math.max(bbox[2] - bbox[0], bbox[3] - bbox[1]) / 64);
@@ -2201,7 +2238,7 @@ function layerBody(rec) {
   body.append(adv);
   if (open) {
     sec("Effects and advanced options");
-    if (rec.type === "rgb") {
+    if (rec.type === "rgb" && !rec.tci) {
       const lk = el("div", "tog");
       lk.innerHTML = "<span>Look<small>Standard stretch, or the Copernicus Browser True color optimized curve (highlight compression)</small></span>";
       const seg = el("div", "seg");
@@ -2213,8 +2250,12 @@ function layerBody(rec) {
       });
       lk.append(seg);
       body.append(lk);
+    }
+    if (rec.type === "rgb") {
       body.append(sliderRow("Gain", 0, 3, 0.01, s.gain, v => { s.gain = v; onSettings(rec); }));
       body.append(sliderRow("Gamma", 0.1, 3, 0.01, s.gamma, v => { s.gamma = v; onSettings(rec); }));
+    }
+    if (rec.type === "rgb" && !rec.tci) {
       const ag = el("label", "tog");
       ag.innerHTML = '<span>Adaptive gain<small id="agInfo"></small></span>';
       const ai = el("input");
@@ -2223,6 +2264,8 @@ function layerBody(rec) {
       ag.append(ai);
       body.append(ag);
       setTimeout(() => showAutoGain(currentCfg && currentCfg.rec === rec ? currentCfg.gf || 1 : 1), 0);
+    }
+    if (rec.type === "rgb") {
       const h = el("div", null, "Advanced RGB effects");
       h.style.cssText = "font-weight:700;font-size:12.5px;margin:12px 0 4px";
       body.append(h);
@@ -3540,6 +3583,10 @@ map.on("click", async e => {
       const ok = v.every(x => x != null && x !== 0);
       tr("<b>" + rec.name + "</b>", ok ? "<b>" + rec.fn(rec.bands.map(b => physIdx(b, vals[b]))).toFixed(4) + "</b>" : "—");
     }
+    if (rec.tci) {
+      const t = await readPoint(assetUrl(id, "tci"), p.x, p.y, 3).catch(() => null);
+      tr("TCI (R, G, B)", t ? t.join(", ") : "—");
+    }
     tr("SCL", scl == null ? "—" : scl + " · " + (P_SCL[scl] ? P_SCL[scl][0] : "?"));
     tr("Cloud mask", cld == null ? "—" : cld + " · " + (P_CLOUD[cld] ? P_CLOUD[cld][0] : "?"));
     tr("Terrain mask", TERRAIN_TXT(ter));
@@ -4633,8 +4680,8 @@ function openTimelapse() {
   const sz = tlDefaultSize();
   $("#tlW").value = sz[0]; $("#tlH").value = sz[1];
   $("#tlOv").checked = map.hasLayer(asitLayer);
-  $("#tlAutoRow").hidden = rec.type !== "rgb";
-  $("#tlAuto").checked = rec.type === "rgb" && S(rec).autoGain;
+  $("#tlAutoRow").hidden = rec.type !== "rgb" || !!rec.tci;
+  $("#tlAuto").checked = rec.type === "rgb" && !rec.tci && S(rec).autoGain;
   $("#tlCc").disabled = rec.source !== "s2";
   $("#tlTr").onchange();
   openModal("tlModal");
