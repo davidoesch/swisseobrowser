@@ -30,6 +30,7 @@ the swisstopo WMS/WMTS services directly in the browser.
 | [swissEO VHI v100](https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-vhi) | Own collection: `wms.geo.admin.ch` (`ch.swisstopo.swisseo_vhi_v100`, `…_vegetation`) for display; for AOI statistics and analytical downloads the `forest-10m` / `vegetation-10m` COGs, addressed through the STAC items of `ch.swisstopo.swisseo_vhi_v100` | Vegetation Health Index for forest and all vegetation, relative to 1991–2020 |
 | [swissEO NDVIdiff v100](https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-ndvidiff) | `forest-10m` COGs of the STAC collection `ch.swisstopo.swisseo_ndvi_diff_v100` | NDVI change of the current year compared to the previous year, forest perimeter, 10 m; one product for the end of July, August and September each year (since 2018) |
 | [swissEO NDVIz v100](https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-ndviz) | `forest-10m` COGs of the STAC collection `ch.swisstopo.swisseo_ndvi_z_v100` | NDVI anomaly as z-score, forest perimeter, 10 m; end of July, August and September (since 2017) |
+| swissEO NDVIdiff v200 **BETA** | 30 example COGs on `cms.geo.admin.ch/Topo/umweltbeobachtung/beispiele/NDVIDIFFV2/` (not in STAC; the item list is in the page) | Year-on-year NDVI change of two-month first-quartile cloud-free mosaics of S2-SR v200 (June/July, July/August, August/September, 2017–2026), forest, 10 m |
 | Vegetation masks | The `forest-10m` / `vegetation-10m` COGs of swissEO VHI v100 (STAC collection `ch.swisstopo.swisseo_vhi_v100`, most recent item): inside the mask = value ≠ 255 | Forest / all-vegetation mask for every S2-SR layer, statistics and exports |
 | Basemaps | `wmts.geo.admin.ch` (pixelkarte-farbe, swissimage, pixelkarte-grau) | Background maps on the native LV95 grid |
 | Label overlay | `wmts.asit-asso.ch` (`asitvd.fond_pourortho`) | Roads and place names above the data |
@@ -71,13 +72,15 @@ sheets ([S2-SR v200](https://www.swisstopo.admin.ch/dam/en/sd-web/-i2Y10KmboPf/s
 | VHI | 1 | 0 | 0–100 index · 110 no data (class) · 255 no data (raster) |
 | NDVIdiff (int16) | 0.001 | 0 | 32700 missing data (shown grey) · 32701 no data |
 | NDVIz (int16) | 0.01 | 0 | 32700 missing data (shown grey) · 32701 no data |
+| NDVIdiff v200 BETA (int16) | 0.001 | 0 | 32701 no data (values −2000…2000) |
 
 **NDVIdiff / NDVIz overviews:** the internal overviews of these COGs average the missing-data code 32700
 into valid values (e.g. 31630 or −9395 in the overviews, while the full resolution stays within
 −0.8…0.65 ΔNDVI). The browser therefore treats overview values outside |ΔNDVI| ≤ 1 and |z| ≤ 20 as no
 data; at full resolution (zoomed in, or AOI statistics on a grid finer than 14.8 m) every value is used,
 and the statistics then match a rasterio read of the COG exactly. The overviews should be rebuilt with
-32700 excluded (e.g. as an additional no-data value or a mask).
+32700 excluded (e.g. as an additional no-data value or a mask). The NDVIdiff v200 BETA COGs have clean
+overviews (no-data handled when they were built) and need no such filter.
 
 Indices (NDVI, NDWI, …) are computed from ρ after this scaling. Very dark pixels can fall slightly below
 0 after the −0.1 offset; such negative reflectance is set to 0 before an index is computed, so ratio
@@ -110,8 +113,8 @@ The swissEO Browser therefore always uses the physical reflectance.
   - *Agriculture* — as the Copernicus Browser Agriculture theme, with the TCI as true color and without
     custom scripts: true color, false color, NDVI, EVI, Barren Soil, Moisture Stress, moisture index,
     agriculture, SAVI (colour steps and scripts of the Copernicus layers);
-  - *Drought* — NDVI, swissEO VHI forest / vegetation, swissEO NDVIdiff, swissEO NDVIz, NDDI, NDDI change
-    vs. the previous year and the NDVI Analyst (Canton of Aargau);
+  - *Drought* — NDVI, swissEO VHI forest / vegetation, swissEO NDVIdiff, **swissEO NDVIdiff v200 BETA**,
+    swissEO NDVIz, NDDI, NDDI change vs. the previous year and the NDVI Analyst (Canton of Aargau);
   - *Drought 2026* — as the Copernicus Browser *Drought and Floods* theme: true color, moisture index,
     NDWI, Moisture Stress, NDVI, SWIR, urban and Highlight Optimized Natural Color, plus **highlights**.
 - **Highlights** (*Drought 2026*) — story cards as in the Copernicus Browser (live thumbnail, title,
@@ -145,6 +148,17 @@ The swissEO Browser therefore always uses the physical reflectance.
     information sheets (missing data grey). There are only three products per year (end of July, August,
     September), so the product **nearest to the selected date** is shown — also in compare, timelapse,
     statistics and exports; the date line names the product used.
+  - *swissEO NDVIdiff v200 BETA* — beta data, not an official product: the year-on-year NDVI change of
+    two-month **cloud-free mosaics** instead of single acquisitions. The mosaic
+    ([main_cloudfree_mosaic_csde.py](https://github.com/swisstopo/topo-satromo-v2/blob/dev-20261006/main_functions/main_cloudfree_mosaic_csde.py))
+    takes, per pixel and band (B02, B03, B04, B08), the first quartile of all observations of the window that
+    are not cloud (mask 1–3), outside the footprint or in terrain shadow (200), as in the CDSE Sentinel-2
+    quarterly mosaics; the windows are June/July, July/August and August/September
+    ([util_reprocess_mosaic_csde.py](https://github.com/swisstopo/topo-satromo-v2/blob/dev-20261006/main_functions/util_reprocess_mosaic_csde.py)),
+    named by their end date. NDVI from the mosaic reflectance minus the NDVI of the same window one year
+    earlier ([test_reprocess_ndvidiff_csde.py](https://github.com/swisstopo/topo-satromo-v2/blob/dev-20261006/main_functions/test_reprocess_ndvidiff_csde.py)),
+    clipped to forest. The window nearest to the selected date is shown; colours as swissEO NDVIdiff. Read
+    with geotiff.js it matches a rasterio read exactly (test area near Aarau, 2026-08-31).
   - *NDDI* = (NDVI − NDWI) / (NDVI + NDWI), clipped to −1…1, with the palette of the
     [openEO drought notebook](https://github.com/Open-EO/openeo-community-examples/blob/main/python/50_thematic-notebooks/drought-nddi/drought-nddi.ipynb).
     By default the NDWI is computed from NIR and SWIR (B08, B11) as in
@@ -176,8 +190,14 @@ The swissEO Browser therefore always uses the physical reflectance.
     and scaling;
   - legend with adjustable colour scale (min / max); NDSI is rendered as in the Copernicus Browser (snow
     above an adjustable threshold in blue, true color elsewhere);
-  - masks: clouds and cloud shadows (OmniCloudMask), terrain shadow (terrain mask 200) and a vegetation
-    mask (Off / Forest / All vegetation, from swissEO VHI v100);
+  - masks: clouds and cloud shadows (OmniCloudMask), terrain shadow (terrain mask 200), a vegetation
+    mask (Off / Forest / All vegetation, from swissEO VHI v100) and a **custom mask**: your own polygons —
+    e.g. a forest map — loaded from a file or URL with the same import and limits as the area of interest;
+    *Inside* keeps the data inside the polygons, *Outside* (inverted) the data outside. It works for every
+    layer rendered from COGs (not the VHI WMS) and applies to the map, compare, AOI statistics, exports and
+    the timelapse. After loading, the map zooms to the mask (a mask that comes with a shared link keeps the
+    link's view). The layer pull-down shows the mask's file name, number of polygons and vertices, with
+    *Replace* and *Remove*. A mask loaded from a URL is part of copied links, one from a file is not;
   - *effects and advanced options*: gain, gamma, red / green / blue ranges and opacity for all colour
     layers (for the TCI applied on top of the delivered image); for the composites computed from the bands
     also **Look** — *Standard* stretch or *True
@@ -189,11 +209,18 @@ The swissEO Browser therefore always uses the physical reflectance.
     also for true color; the inspector additionally shows the TCI value.
 - **Compare** — add layers to the compare list; opening the Compare panel (or the ⇄ map button) shows
   them with a split or opacity effect, going back to Layers shows the single layer again. Reorder,
-  remove and zoom to each entry. With the split effect a handle on the map swipes the top layer, with the
+  remove and zoom to each entry (each titled with its layer name, prefixed by the data source only for
+  the S2-SR layers). With the split effect a handle on the map swipes the top layer, with the
   date of each side next to it.
 - **Area of interest** — draw a rectangle (axis-aligned in LV95) or polygon, or import KML/KMZ, GPX, WKT,
   GeoJSON, a zipped Shapefile, an MGRS / GEOREF cell or a bounding box (WGS84, LV95 and LV03 coordinates
-  are detected). Vertices stay editable and drawing again adds a polygon. The AOI is shown as an outline
+  are detected). Files can be uploaded or **loaded from a URL** (KML, KMZ, GPX, GeoJSON / JSON — also API or
+  WFS URLs returning GeoJSON —, WKT, zipped Shapefile; the type comes from the extension, otherwise from
+  the content; the server must allow cross-origin requests, CORS). **Sharing:** an area imported from a
+  file or pasted is part of a copied link only when it is small (about 280 vertices; the link holds at
+  most 8000 characters) — the import dialog warns about this and the AOI bar shows *⚠ not in link*; an
+  area loaded from a URL is shared as the URL (`aoiUrl`). Vertices stay editable (up to 2,000) and
+  drawing again adds a polygon. The AOI is shown as an outline
   only; its toolbar copies the geometry, shows the area, centres the map and downloads the AOI as GeoJSON.
   For the area:
   - *Statistical info*: statistics and histogram for the selected date, and a time series over a date
@@ -201,8 +228,9 @@ The swissEO Browser therefore always uses the physical reflectance.
     AOI itself, not by the cloud cover of the whole scene — least cloudy first (Stop keeps what has been
     read), and reports which dates were not reached by that day's orbit and which were fully masked. Clouds can additionally be excluded with the scene classification (SCL 3, 8, 9, 10),
     which catches clouds OmniCloudMask misses, and the area can be restricted to forest or to all
-    vegetation (the share of valid pixels then refers to the masked area). VHI, NDVIdiff and NDVIz
-    statistics are read from their COGs; the two-date layers report the difference (and the NDVI Analyst
+    vegetation (the share of valid pixels then refers to the masked area); a custom mask that is switched
+    on for the layer restricts the area in the same way. VHI, NDVIdiff and NDVIz statistics are read from
+    their COGs; the two-date layers report the difference (and the NDVI Analyst
     report) instead of a time series.
   - *Spectral explorer*: mean surface reflectance of all 12 bands (± σ), with CSV download.
 - **Image download** — three tabs as in the Copernicus Browser:
@@ -230,10 +258,11 @@ The swissEO Browser therefore always uses the physical reflectance.
   6 s of continuous loading it says that the connection is slow.
 - **Pixel inspector** — band values (DN and physical value), index value, SCL, cloud mask, terrain mask
   and forest / vegetation mask at a clicked location; for the two-date layers the index on both sides and
-  the difference; for VHI, NDVIdiff and NDVIz the product value.
+  the difference; for VHI, NDVIdiff, NDVIdiff v200 BETA and NDVIz the product value.
 - **Permalink** — the URL is updated on every change (configuration, view, date, cloud filter, layer,
-  legend range, masks, look and effects, reference date, compare list, AOI); *Copy link* in the header
-  copies it.
+  legend range, masks incl. the custom mask mode, look and effects, reference date, compare list, AOI);
+  *Copy link* in the header copies it. Areas and custom masks loaded from a URL are shared as that URL;
+  areas imported from a file only when they are small, masks from a file never.
 - **Info tab** — the *not for operational use* notice, the acquisitions of the selected date with their
   metadata, the scaling / no-data table, a description of the services used and links to all
   repositories and libraries the website builds on.
@@ -277,11 +306,25 @@ repository reads this README itself.
 - [ ] `mstress` — Moisture Stress *(Agriculture, Drought 2026)*
 - [ ] `hon` — Highlight Optimized Natural Color *(Drought 2026)*
 - [ ] `ndvidiff` — swissEO NDVIdiff *(Default, Drought)*
+- [ ] `ndvidiff2` — swissEO NDVIdiff v200 BETA *(Drought)*
 - [ ] `ndviz` — swissEO NDVIz *(Drought)*
 - [ ] `nddi` — NDDI *(Drought)*
 - [ ] `nddichg` — NDDI change vs. previous year *(Drought)*
 - [ ] `analyst` — NDVI Analyst (Kt. Aargau) *(Drought)*
 <!-- verification:end -->
+
+### Limits of the browser
+
+Everything runs in the browser, so very large inputs are refused instead of freezing the page. Measured in
+Firefox on a laptop:
+
+| Input | Limit | Measured |
+| --- | --- | --- |
+| File size (upload or URL) | 50 MB | a 27.6 MB GeoJSON with 1,000,000 vertices is read and reprojected in 0.5 s (plus download time) |
+| Area of interest | 100,000 vertices | 99,000 vertices: drawn in 2.5 s, rasterised for statistics in 0.2 s |
+| Vertex editing of the AOI | 2,000 vertices | one edit handle per vertex; above this the area is shown without handles |
+| Custom mask | 1,000,000 vertices | 20,000 polygons: 3 ms per 256 px tile at 10 m, 70–90 ms per tile when the whole country is in view |
+| Area in a copied link | ≈ 280 vertices | the geometry is written into the link only below 8000 characters; URL-loaded areas and masks are shared as their URL |
 
 ## Running it
 
@@ -318,7 +361,7 @@ Parameter names follow the Copernicus Browser where an equivalent exists.
 | `fromTime`, `toTime` | `2026-10-05T00:00:00.000Z` | Selected date |
 | `cloudCoverage` | `30` | Maximum cloud coverage in % |
 | `themeId` | `DROUGHT` | Configuration: `DEFAULT`, `AGRICULTURE`, `DROUGHT`, `DROUGHT2026` (when missing or not containing the layer, the first configuration with the layer is used) |
-| `layerId` | `ndvi` | `true`, `nir`, `urban`, `swir`, `agri`, `geo`, `barren`, `hon`, `ndvi`, `ndwi`, `ndmi`, `ndsi`, `nbr`, `aot`, `evi`, `savi`, `mstress`, `nddi`, `nddichg`, `analyst`, `scl`, `cloud`, `terrain` (S2-SR); `vhi`, `vhiveg` (VHI); `ndvidiff`, `ndviz` |
+| `layerId` | `ndvi` | `true`, `nir`, `urban`, `swir`, `agri`, `geo`, `barren`, `hon`, `ndvi`, `ndwi`, `ndmi`, `ndsi`, `nbr`, `aot`, `evi`, `savi`, `mstress`, `nddi`, `nddichg`, `analyst`, `scl`, `cloud`, `terrain` (S2-SR); `vhi`, `vhiveg` (VHI); `ndvidiff`, `ndvidiff2` (v200 BETA), `ndviz` |
 | `valueRange` | `[0,0.9]` | Colour-scale min/max of index and continuous layers |
 | `threshold` | `0.5` | NDSI snow threshold (default 0.42; above it snow is shown in blue, otherwise true colour, as in the Copernicus Browser); NDVI Analyst change threshold (default −0.08) |
 | `refDate` | `2025-07-01` | Reference date of the two-date layers (default: the same day one year earlier) |
@@ -333,7 +376,10 @@ Parameter names follow the Copernicus Browser where an equivalent exists.
 | `vegetationMask` | `forest` | Vegetation mask: `off`, `forest` or `vegetation` (S2-SR layers; from swissEO VHI v100; the NDVI Analyst defaults to `forest`) |
 | `basemap`, `labels` | `swissimage`, `true` | Basemap (`pixelkarte`, `swissimage`, `grey`, `none`) and label overlay |
 | `compareLayers`, `comparedOpacity`, `comparedClipping`, `compareMode` | | Compare list (base64url JSON), per-layer opacity and split range; `compareMode` is `split` / `opacity` when comparing and `off` otherwise (links without it open in compare mode) |
-| `aoi` | | Area of interest as base64url GeoJSON |
+| `aoi` | | Area of interest as base64url GeoJSON (only areas up to ≈ 280 vertices) |
+| `aoiUrl` | `https://…/area.geojson` | Area of interest loaded from this URL (written instead of `aoi` when the area came from a URL and was not edited) |
+| `maskUrl` | `https://…/forest.geojson` | Custom mask loaded from this URL |
+| `customMask` | `in` | Custom mask of the layer: `in` (keep inside the polygons) or `out` (keep outside); needs a mask (`maskUrl` or loaded in the page) |
 
 Example:
 `swisseo-browser.html?zoom=17&lat=46.55&lng=6.70&fromTime=2026-10-05T00:00:00.000Z&toTime=2026-10-05T23:59:59.999Z&cloudCoverage=77&layerId=ndvi&valueRange=[0,0.9]`
@@ -350,7 +396,9 @@ Example:
 - The NDVI Analyst works on the swissEO S2-SR mosaics instead of the original script's own Sentinel-2
   processing; AOI reports use a grid of at least 10 m (coarser for large areas, which the report states).
 - Statistics, time series, analytical downloads and high-res prints read the COGs in the browser; large
-  areas, long date ranges and large prints take a while.
+  areas, long date ranges and large prints take a while. Imports and custom masks have size limits (see
+  *Limits of the browser*); areas and masks from files are not shared through links.
+- swissEO NDVIdiff v200 BETA is beta data from example files outside STAC; its list of windows is fixed in the page.
 
 ## Credits and terms
 
@@ -362,7 +410,7 @@ Example:
   themes, layer descriptions, preview thumbnails). This project is not affiliated with or endorsed by the
   Copernicus Data Space Ecosystem.
 - Builds on: [swisstopo/topo-satromo-v2](https://github.com/swisstopo/topo-satromo-v2) (processing of the
-  swissEO products), [swisstopo/topo-drought-briefing](https://github.com/swisstopo/topo-drought-briefing)
+  swissEO products; NDVIdiff v200 BETA from the `dev-20261006` branch), [swisstopo/topo-drought-briefing](https://github.com/swisstopo/topo-drought-briefing)
   (colour scheme), [RaffiBienz/ndvi_analyst](https://github.com/RaffiBienz/ndvi_analyst) (NDVI Analyst of
   the Canton of Aargau), [Open-EO/openeo-community-examples](https://github.com/Open-EO/openeo-community-examples)
   (NDDI drought notebook), [sentinel-hub/custom-scripts](https://github.com/sentinel-hub/custom-scripts)

@@ -264,6 +264,10 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 .tgroup button.on{background:var(--blue);color:#fff}
 .tgroup svg{width:18px;height:18px}
 .tgroup .area{font-weight:700;color:var(--blue);font-size:12.5px;padding:0 6px;white-space:nowrap}
+.tgroup .nolink{color:#b07a00;font-size:11.5px;font-weight:700;padding:0 6px 0 0;white-space:nowrap;cursor:help}
+.cmrow{display:flex;gap:12px;align-items:center;margin:2px 0 4px;font-size:12px}
+.cmname{font-size:11px;color:var(--muted);overflow-wrap:anywhere;margin:-2px 0 4px}
+.tog > span{min-width:0;overflow-wrap:anywhere}
 #drawHint{position:absolute;left:50%;top:10px;transform:translateX(-50%);z-index:905;background:var(--blue);color:#fff;
   padding:6px 12px;border-radius:4px;font-size:12px;box-shadow:var(--shadow)}
 
@@ -536,7 +540,9 @@ table.kv td:first-child{color:var(--muted)}
             <p><b>VHI:</b> <code>wms.geo.admin.ch</code> layers <code>ch.swisstopo.swisseo_vhi_v100</code> and
               <code>…_vegetation</code> with the <code>item=</code> day selector. Titles and abstracts come from the WMS GetCapabilities document.</p>
             <p><b>Area of interest:</b> the pentagon button on the map draws a rectangle (axis-aligned in LV95) or polygon,
-              or imports KML/KMZ, GPX, WKT, GeoJSON, zipped Shapefiles, an MGRS/GEOREF cell or a bounding box (WGS84, LV95, LV03).
+              or imports KML/KMZ, GPX, WKT, GeoJSON, zipped Shapefiles (from a file or a URL), an MGRS/GEOREF cell or a bounding box
+              (WGS84, LV95, LV03). Limits: files up to 50 MB, areas up to 100,000 vertices. An area imported from a file is only part of a
+              copied link when it is small (about 280 vertices); one loaded from a URL is shared as the URL.
               Vertices stay editable; drawing again adds a polygon. <i>Statistical info</i> reads the COGs over the area for the
               selected date (statistics, histogram) and over a date range (time series, CSV); swissEO VHI statistics come from the
               <code>forest-10m</code> / <code>vegetation-10m</code> COGs. The <i>spectral explorer</i> plots mean reflectance of
@@ -544,6 +550,9 @@ table.kv td:first-child{color:var(--muted)}
             <p><b>Configurations:</b> as the themes of the Copernicus Browser, a configuration lists the layers for a task —
               <i>Default</i>, <i>Agriculture</i>, <i>Drought</i> and <i>Drought 2026</i> with highlights. Each layer keeps its own
               data source and dates.</p>
+            <p><b>Custom mask:</b> the fifth mask of every layer keeps the data inside (or, inverted, outside) your own polygons —
+              e.g. a forest map — loaded from a file or URL like an area of interest (up to 50 MB and 1,000,000 vertices).
+              It applies to the map, statistics, exports and the timelapse.</p>
             <p><b>Highlights:</b> click a story to open it on the map (the card turns blue; a split comparison of two dates, drag
               the handle); the chevron shows the text, whose last line opens the compare settings. Texts after watson.ch
               (10 August 2026) and SRF Meteo (9 July 2026), credited in each story.</p>
@@ -552,7 +561,9 @@ table.kv td:first-child{color:var(--muted)}
             <p><b>Loading:</b> the box at the bottom left counts the tiles still rendering and the requests in flight, and flags a
               slow connection after 6 s.</p>
             <p><b>NDVIdiff / NDVIz:</b> monthly products for the end of July, August and September (forest perimeter); the product
-              nearest to the selected date is shown, also in compare, timelapse and export.</p>
+              nearest to the selected date is shown, also in compare, timelapse and export. <b>NDVIdiff v200 BETA</b> (beta data, example
+              COGs on cms.geo.admin.ch, not in STAC): the NDVI change of two-month first-quartile cloud-free mosaics (June/July, July/August,
+              August/September) against the same window one year earlier.</p>
             <p><b>Two-date layers:</b> <i>NDDI change</i> and the <i>NDVI Analyst</i> compare the selected date with a reference:
               the acquisitions within ±20 days of the same day one year earlier (or of a chosen date), clearest first, per pixel the
               first clear one.</p>
@@ -616,6 +627,8 @@ table.kv td:first-child{color:var(--muted)}
         <div class="tgroup" id="aoiInfo" hidden>
           <button id="aoiCopy" title="Copy geometry (GeoJSON) to clipboard"></button>
           <span class="area" id="aoiArea"></span>
+          <span class="nolink" id="aoiNoLink" hidden
+            title="This area is too large for a link (more than about 280 vertices) and is not shared when you copy the link. Load it from a URL to share it.">⚠ not in link</span>
           <button id="aoiCenter" title="Center map on area of interest"></button>
           <button id="aoiStats" title="Statistical info / time series for the area of interest"></button>
           <button id="aoiSpec" title="Spectral explorer for the area of interest"></button>
@@ -704,9 +717,10 @@ table.kv td:first-child{color:var(--muted)}
       </div></div>
 
       <div class="modal" id="aoiModal"><div class="box narrow">
-        <div class="mhead"><h3>Import area of interest</h3><button class="x" data-close title="Close">×</button></div>
+        <div class="mhead"><h3 id="geoTitle">Import area of interest</h3><button class="x" data-close title="Close">×</button></div>
         <div class="mtabs" id="aoiTabs">
           <button data-m="file" class="on">File</button>
+          <button data-m="url">URL</button>
           <button data-m="text">Geometry</button>
           <button data-m="grid">Grid reference</button>
           <button data-m="bbox">Bounding box</button>
@@ -714,9 +728,20 @@ table.kv td:first-child{color:var(--muted)}
         <div data-mp="file">
           <div class="hint" style="margin:0 0 8px">Upload a KML/KMZ, GPX, WKT, GeoJSON/JSON file or a zipped Shapefile
             (.zip with .shp and .prj). Coordinates in WGS84, LV95 (EPSG:2056) or LV03 (EPSG:21781) are detected automatically.</div>
+          <div class="warnbox" id="aoiFileWarn" style="margin:0 0 8px">An area imported from a file is <b>not shared when you copy the
+            link</b> — only small areas (up to about 280 vertices) fit into a link. To share an imported area, load it from a URL.</div>
           <label class="drop" id="aoiDrop">
             <input type="file" id="aoiFile" accept=".kml,.kmz,.gpx,.wkt,.txt,.geojson,.json,.zip" hidden>
             <b>Drop a file here</b><span>or click to choose one</span></label>
+        </div>
+        <div data-mp="url" hidden>
+          <div class="hint" style="margin:0 0 8px">Load a <b>KML / KMZ, GPX, GeoJSON / JSON, WKT</b> file or a <b>zipped Shapefile</b>
+            from the web (also API or WFS URLs that return GeoJSON). The type is taken from the file extension, otherwise from the
+            content. The server must allow cross-origin requests (CORS), e.g. raw.githubusercontent.com, data.geo.admin.ch or most
+            open-data portals; links to web pages or cloud-drive previews do not work. An area or mask loaded from a URL is
+            <b>included in copied links</b> (as the URL).</div>
+          <div class="mrow"><input type="url" id="aoiUrlIn" style="flex:1" spellcheck="false" placeholder="https://…/area.geojson">
+            <button class="btn sm" id="aoiUrlGo">Load</button></div>
         </div>
         <div data-mp="text" hidden>
           <div class="hint" style="margin:0 0 8px">Paste a WKT polygon, GeoJSON, or a bounding box
@@ -744,6 +769,7 @@ table.kv td:first-child{color:var(--muted)}
           <div class="mrow"><button class="btn sm" id="aoiBbGo">Upload</button>
             <button class="lnk" id="aoiBbView">Use current map view</button></div>
         </div>
+        <div class="hint" id="geoLimits"></div>
         <div class="merr" id="aoiMsg"></div>
       </div></div>
 
@@ -986,8 +1012,13 @@ const SOURCES = {
   vhi: { coll: COLL_VHI, name: "swissEO VHI v100",   firstYear: 1991 },
   // monthly products for the end of July, August and September: the item nearest to the date is shown
   ndvidiff: { coll: "ch.swisstopo.swisseo_ndvi_diff_v100", name: "swissEO NDVIdiff", firstYear: 2018, sparse: true },
-  ndviz:    { coll: "ch.swisstopo.swisseo_ndvi_z_v100",    name: "swissEO NDVIz",    firstYear: 2017, sparse: true }
+  ndviz:    { coll: "ch.swisstopo.swisseo_ndvi_z_v100",    name: "swissEO NDVIz",    firstYear: 2017, sparse: true },
+  // BETA, not in STAC: two-month cloud-free mosaics (June/July, July/August, August/September), named by their end date
+  ndvidiff2: { coll: null, name: "swissEO NDVIdiff v200 BETA", firstYear: 2017, sparse: true,
+    note: "two-month mosaics ending 31 July, 31 August and 30 September",
+    items: ["2017-07-31t235959", "2017-08-31t235959", "2017-09-30t235959", "2018-07-31t235959", "2018-08-31t235959", "2018-09-30t235959", "2019-07-31t235959", "2019-08-31t235959", "2019-09-30t235959", "2020-07-31t235959", "2020-08-31t235959", "2020-09-30t235959", "2021-07-31t235959", "2021-08-31t235959", "2021-09-30t235959", "2022-07-31t235959", "2022-08-31t235959", "2022-09-30t235959", "2023-07-31t235959", "2023-08-31t235959", "2023-09-30t235959", "2024-07-31t235959", "2024-08-31t235959", "2024-09-30t235959", "2025-07-31t235959", "2025-08-31t235959", "2025-09-30t235959", "2026-07-31t235959", "2026-08-31t235959", "2026-09-30t235959"] }
 };
+const NDVIDIFF2_BASE = "https://cms.geo.admin.ch/Topo/umweltbeobachtung/beispiele/NDVIDIFFV2/";
 
 const SUFFIX = {
   b01:"b01_60m", b02:"b02_10m", b03:"b03_10m", b04:"b04_10m", b05:"b05_20m",
@@ -1448,6 +1479,16 @@ const LAYERS = [
     desc:"Current vegetation vitality as NDVI anomaly (z-score), masked to the forest perimeter, 10 m.",
     formula:"forest-10m.tif — z-score = value / 100\n32700 = missing data · 32701 = no data" },
 
+  { id:"ndvidiff2", group:"Indices", name:"swissEO NDVIdiff v200 BETA", type:"cont", source:"ndvidiff2", band:"prod",
+    ramp:R_NDVIDIFF, min:-0.3, max:0.3, lim:[-1, 1], cogScale:0.001, cogFill:32701, unit:"NDVI change",
+    cogValid:v => v >= -2000 && v <= 2000, cogUrl:id => NDVIDIFF2_BASE + "swisseo_s2-sr_v200_mosaic_" + id + "_ndvidiff-forest_10m.tif",
+    icon:"tree", sw:"linear-gradient(135deg,#b71c1c,#f5f5f5,#004d40)", fg:"#1a1206",
+    sub:"BETA: NDVI change of two-month cloud-free mosaics vs. the previous year (forest)",
+    desc:"Year-on-year NDVI change computed from first-quartile two-month cloud-free mosaics of swissEO S2-SR v200, forest perimeter, 10 m.",
+    formula:"ndvidiff-forest_10m.tif (int16) — ΔNDVI = value / 1000 (−2…2) · 32701 = no data\n" +
+      "NDVI = (ρ(B08) − ρ(B04)) / (ρ(B08) + ρ(B04)), ρ = DN × 0.0001 − 0.1, of the first-quartile mosaic of the window\n" +
+      "ΔNDVI = NDVI(window) − NDVI(same window one year earlier)" },
+
   { id:"nddi", group:"Indices", name:"NDDI", type:"index", source:"s2", bands:["b08","b04","b03","b11"], ramp:R_NDDI, ndwiOpt:true,
     min:-1, max:1, lim:[-1, 1], icon:"drop", sw:"linear-gradient(135deg,#f2f5ef,#63a3e7,#b2182b)", fg:"#1a0a0a",
     sub:"Normalized Difference Drought Index (Gu et al. 2007)",
@@ -1511,6 +1552,8 @@ const COP_META = {
     cop: "# swissEO NDVIdiff\n\nThe NDVI changes show the difference between the vegetation's state of the current year compared to the previous year as observed by satellites, for the forest areas of Switzerland at 10 m. Negative values (red) mean less vital vegetation than a year ago, positive values (green) more. The product is published for the end of July, August and September; the product nearest to the selected date is shown. Grey: missing data.\n\nMore info [here](https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-ndvidiff) and in the [content information](https://www.swisstopo.admin.ch/dam/en/sd-web/bODfHY8ioFyS/swissEO_NDVIdiff_AdditionalContentInfo.pdf)." },
   ndviz: { more: "https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-ndviz",
     cop: "# swissEO NDVIz\n\nThe NDVI anomalies show the current vegetation vitality as observed by satellites, as a z-score relative to the long-term behaviour, for the forest areas of Switzerland at 10 m. Negative values (brown) mean lower vitality than usual, positive values (green) higher. The product is published for the end of July, August and September; the product nearest to the selected date is shown. Grey: missing data.\n\nMore info [here](https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-ndviz) and in the [content information](https://www.swisstopo.admin.ch/dam/en/sd-web/mZTj7kABmTrD/swissEO_NDVIz_AdditionalContentInfo.pdf)." },
+  ndvidiff2: { more: "https://github.com/swisstopo/topo-satromo-v2/blob/dev-20261006/main_functions/test_reprocess_ndvidiff_csde.py",
+    cop: "# swissEO NDVIdiff v200 BETA\n\n**Beta version, not an official product.** Year-on-year NDVI change for the forest areas of Switzerland at 10 m, computed from **cloud-free two-month mosaics** of swissEO S2-SR v200 instead of single acquisitions. Three overlapping windows per year: June/July, July/August and August/September, each named after its end date (31 July, 31 August, 30 September); the window nearest to the selected date is shown.\n\n**Mosaic** ([main_cloudfree_mosaic_csde.py](https://github.com/swisstopo/topo-satromo-v2/blob/dev-20261006/main_functions/main_cloudfree_mosaic_csde.py)): for every pixel and band (B02, B03, B04, B08) all observations of the window are used; observations flagged by the cloud mask (1, 2, 3), outside the scene footprint or in terrain shadow (200) are discarded, and the **first quartile** of the remaining values is taken — following the Sentinel-2 quarterly mosaic algorithm of the Copernicus Data Space Ecosystem, more robust to cloud and haze residues than the first cloud-free value or the mean.\n\n**NDVI difference** ([test_reprocess_ndvidiff_csde.py](https://github.com/swisstopo/topo-satromo-v2/blob/dev-20261006/main_functions/test_reprocess_ndvidiff_csde.py)): NDVI = (NIR − Red) / (NIR + Red) from the reflectance of the mosaic (ρ = DN × 0.0001 − 0.1), minus the NDVI of the same window one year earlier; Int16, value / 1000, no data 32701. Negative values (red) mean less vital vegetation than a year ago, positive values (green) more.\n\nThe COGs are published as examples on cms.geo.admin.ch, not in the STAC catalogue." },
   nddi: { cop: "# Normalized Difference Drought Index (NDDI)\n\nThe NDDI (Gu et al. 2007) combines vegetation greenness (NDVI) and vegetation water content (NDWI): NDDI = (NDVI − NDWI) / (NDVI + NDWI). Vegetation under drought stress has less water and less green, which raises the NDDI (red). By default the NDWI is computed from NIR and SWIR (B08, B11), as in the original paper; values are clipped to −1…1.\n\nThe openEO drought notebook uses the Awesome Spectral Indices formula with an NDWI from green and NIR (B03, B08), selectable as *Green*. With it NDVI + NDWI is close to zero over vegetation, and almost every pixel ends up at −1 or +1 (99.8 % in a test over Aarau, independent of the reflectance offset), so the map is saturated.\n\nMore info [here](https://doi.org/10.1029/2006GL029127) and in the [openEO notebook](https://github.com/Open-EO/openeo-community-examples/blob/main/python/50_thematic-notebooks/drought-nddi/drought-nddi.ipynb)." },
   nddichg: { cop: "# NDDI change vs. previous year\n\nDifference between the NDDI of the selected date and the NDDI one year earlier, as in the openEO drought notebook, which compares a drought year with a baseline year. Positive values (red) mean drier conditions than a year ago, negative values (blue) wetter. The NDWI is computed from NIR and SWIR (Gu et al. 2007) by default; the notebook's green NDWI is selectable but saturates. The reference uses the acquisitions within ±20 days of the same day one year earlier (or of a reference date you choose), clearest first; each pixel takes the first one with clear data. Unlike the notebook, which averages May–July, single dates are compared, so clouds and cloud shadows are masked on both sides by default.\n\nMore info [here](https://github.com/Open-EO/openeo-community-examples/blob/main/python/50_thematic-notebooks/drought-nddi/drought-nddi.ipynb)." },
   analyst: { cop: "# NDVI Analyst (Canton of Aargau)\n\nPort of the NDVI Analyst by Raffael Bienz (Canton of Aargau): the NDVI difference between two dates (later minus earlier), using swissEO S2-SR reflectance with negative values set to 0, masked to forest. Changes are pixels with an NDVI drop below the threshold (default −0.08); a 3 × 3 majority filter removes edge effects. *Detected change* shows the binary result. The statistics of an area of interest report the forest area and the affected area in ha and %, with and without edge-effect removal, like the original script.\n\nMore info [here](https://github.com/RaffiBienz/ndvi_analyst)." }
@@ -1530,7 +1573,7 @@ const CONFIGS = {
   AGRICULTURE: { name: "Agriculture", groups: [
     ["Layers", ["true", "nir", "ndvi", "evi", "barren", "mstress", "ndmi", "agri", "savi"]]] },
   DROUGHT: { name: "Drought", groups: [
-    ["Layers", ["ndvi", "vhi", "vhiveg", "ndvidiff", "ndviz", "nddi", "nddichg", "analyst"]]] },
+    ["Layers", ["ndvi", "vhi", "vhiveg", "ndvidiff", "ndvidiff2", "ndviz", "nddi", "nddichg", "analyst"]]] },
   DROUGHT2026: { name: "Drought 2026", groups: [
     ["Layers", ["true", "ndmi", "ndwi", "mstress", "ndvi", "swir", "urban", "hon"]]],
     highlights: [
@@ -1596,7 +1639,9 @@ function mdLite(text) {
   const esc = t => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   const inline = t => esc(t)
     .replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
-    .replace(/`([^`]+)`/g, "<code>$1</code>");
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>")
+    .replace(/(^|[\s(])\*([^*\s][^*]*?)\*(?=[\s.,;:)]|$)/g, "$1<i>$2</i>");
   return text.split(/\n{2,}/).map(t => t.trim()).filter(Boolean).map(t => t.startsWith("# ")
     ? '<div class="dt">' + inline(t.slice(2)) + "</div>"
     : "<p>" + inline(t).replace(/\n/g, "<br>") + "</p>").join("");
@@ -1673,14 +1718,14 @@ const sRGB = c => c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.
 function defaults(rec) {
   return Object.assign({ gain: 1, gamma: 1, r: [0, 1], g: [0, 1], b: [0, 1], min: rec.min, max: rec.max, thr: rec.threshold,
            opacity: 100, cloud: false, shadow: false, terrain: false, veg: "off", autoGain: false, look: "standard",
-           refDate: "", mode: "diff", ndwi: "swir" }, rec.def || {});
+           refDate: "", mode: "diff", ndwi: "swir", cmask: "off" }, rec.def || {});
 }
 const settings = {};
 const S = rec => settings[rec.id] || (settings[rec.id] = defaults(rec));
 
 const RNG_KEYS = [["r", "redRange"], ["g", "greenRange"], ["b", "blueRange"]];
 const SETTING_KEYS = ["gain", "gamma", "redRange", "greenRange", "blueRange", "valueRange", "threshold",
-                      "opacity", "cloudMask", "shadowMask", "terrainMask", "vegetationMask", "autoGain", "look", "refDate", "displayMode", "ndwi"];
+                      "opacity", "cloudMask", "shadowMask", "terrainMask", "vegetationMask", "autoGain", "look", "refDate", "displayMode", "ndwi", "customMask"];
 const r3 = v => +(+v).toFixed(4);
 
 /* Non-default settings as a flat object, named like the Copernicus Browser URL params. */
@@ -1696,6 +1741,7 @@ function settingsToObj(rec, s) {
   if (rec.type === "diff2" && s.refDate) o.refDate = s.refDate;
   if (rec.modal && s.mode !== d.mode) o.displayMode = s.mode;
   if (rec.ndwiOpt && s.ndwi !== d.ndwi) o.ndwi = s.ndwi;
+  if (rec.type !== "wms" && (s.cmask === "in" || s.cmask === "out")) o.customMask = s.cmask;
   if (s.opacity !== 100) o.opacity = s.opacity;
   if (MASKABLE[rec.type]) {
     if (s.cloud !== d.cloud) o.cloudMask = s.cloud;
@@ -1726,6 +1772,7 @@ function objToSettings(rec, o) {
   if (rec.type === "diff2" && DATE_RE.test(o.refDate || "")) s.refDate = o.refDate;
   if (rec.modal && (o.displayMode === "diff" || o.displayMode === "change")) s.mode = o.displayMode;
   if (rec.ndwiOpt && (o.ndwi === "swir" || o.ndwi === "green")) s.ndwi = o.ndwi;
+  if (rec.type !== "wms" && (o.customMask === "in" || o.customMask === "out")) s.cmask = o.customMask;
   if (num(o.opacity) != null) s.opacity = clamp(Math.round(num(o.opacity)), 0, 100);
   if (o.cloudMask != null) s.cloud = bool(o.cloudMask);
   if (o.shadowMask != null) s.shadow = bool(o.shadowMask);
@@ -1770,6 +1817,7 @@ async function stacAll(coll, from, to) {
 
 const monthCache = new Map();
 function loadMonth(src, ym) {
+  if (SOURCES[src].items) return Promise.resolve(SOURCES[src].items.filter(id => id.startsWith(ym)).map(id => ({ id })));
   const key = src + "|" + ym;
   if (!monthCache.has(key)) {
     const [y, m] = ym.split("-").map(Number);
@@ -1905,6 +1953,7 @@ async function nearestVhiDay(dateStr) {
 const prodReq = {};
 /* All dated items of a sparse product collection (cached). */
 function productItems(src) {
+  if (SOURCES[src].items) return Promise.resolve(SOURCES[src].items.slice());
   if (!prodReq[src]) {
     prodReq[src] = stacAll(SOURCES[src].coll, SOURCES[src].firstYear + "-01-01", todayStr).then(fs => fs.map(f => f.id).sort());
     prodReq[src].catch(() => { delete prodReq[src]; });
@@ -2008,9 +2057,10 @@ async function renderScene(rec, s, id, bbox, W, H, signal) {
   const vm = res.pop(), tm = res.pop(), cm = res.pop(), a = rec.tci ? (tci || [null]) : res;
   if (a.some(x => !x)) return null;
 
+  const cg = cmaskOn(s) ? customMaskGrid(bbox, W, H) : null, cmode = s.cmask;
   const masked = k => (vm && vm[k] === 0) ||
     (cm && ((s.cloud && (cm[k] === 1 || cm[k] === 2)) || (s.shadow && cm[k] === 3))) ||
-    (tm && tm[k] === 200);
+    (tm && tm[k] === 200) || (cg && cmaskOut(cmode, cg, k));
   const img = new ImageData(W, H), d = img.data, n = W * H;
   const put = (k, c) => { d[k*4] = c[0]; d[k*4+1] = c[1]; d[k*4+2] = c[2]; d[k*4+3] = 255; };
 
@@ -2151,7 +2201,7 @@ async function renderScene(rec, s, id, bbox, W, H, signal) {
 
   if (rec.type === "class") {
     for (let k = 0; k < n; k++) {
-      if (vm && vm[k] === 0) continue;
+      if ((vm && vm[k] === 0) || (cg && cmaskOut(cmode, cg, k))) continue;
       const e = rec.palette[a[0][k]];
       if (e && e[1]) put(k, e[1]);
     }
@@ -2199,7 +2249,11 @@ async function renderDiff2(cfg, bbox, W, H, signal) {
     VEG_LABEL[s.veg] ? readVegMask(s.veg, cfg.date || state.date, bb, W2, H2, signal) : null]);
   const n2 = W2 * H2, dif = new Float32Array(n2);
   let any = false;
-  for (let k = 0; k < n2; k++) { dif[k] = vm && vm[k] === 0 ? NaN : A[k] - B[k]; if (dif[k] === dif[k]) any = true; }
+  const cg = cmaskOn(s) ? customMaskGrid(bb, W2, H2) : null;
+  for (let k = 0; k < n2; k++) {
+    dif[k] = (vm && vm[k] === 0) || (cg && cmaskOut(s.cmask, cg, k)) ? NaN : A[k] - B[k];
+    if (dif[k] === dif[k]) any = true;
+  }
   if (!any) return null;
   const img = new ImageData(W, H), d = img.data;
   const put = (k, c) => { d[k*4] = c[0]; d[k*4+1] = c[1]; d[k*4+2] = c[2]; d[k*4+3] = 255; };
@@ -2365,7 +2419,8 @@ async function autoGainFactor(rec, s, scenes, bbox, signal, grid) {
     g = { bbox, W, H, mask: new Uint8Array(W * H).fill(1), n: W * H };
   }
   const r = await sampleAoi({ type: "rgb", source: "s2", bands: rec.bands }, scenes, g,
-    { maskClouds: s.cloud || s.shadow, cloudCodes: { 1: s.cloud, 2: s.cloud, 3: s.shadow }, maskTerrain: s.terrain, veg: s.veg }, signal);
+    { maskClouds: s.cloud || s.shadow, cloudCodes: { 1: s.cloud, 2: s.cloud, 3: s.shadow }, maskTerrain: s.terrain, veg: s.veg,
+      cmask: cmaskOn(s) ? s.cmask : "off" }, signal);
   const br = [];
   for (let k = 0; k < g.W * g.H; k++) {
     const a = r.vals[0][k], b = r.vals[1][k], c = r.vals[2][k];
@@ -2526,7 +2581,7 @@ function updateDateInfo(rec, scenes) {
   } else if (SOURCES[rec.source].sparse) {
     const day = scenes[0].slice(0, 10);
     t = SOURCES[rec.source].name + " " + day + (day === state.date ? "" : " — the product nearest to " + state.date +
-        " (published for the end of July, August and September)");
+        " (" + (SOURCES[rec.source].note || "published for the end of July, August and September") + ")");
   } else {
     t = scenes.length + " acquisition" + (scenes.length > 1 ? "s" : "") + ": " + scenes.slice().reverse().map(id => {
       const c = cloudPct.get(id);
@@ -2911,6 +2966,38 @@ function layerBody(rec) {
     l.innerHTML = "<span>Vegetation mask<small>forest / vegetation mask of swissEO VHI v100</small></span>";
     l.append(vegSeg(s.veg, v => { s.veg = v; onSettings(rec); }));
     body.append(l);
+  }
+  if (rec.type !== "wms") {                       // custom mask: the user's own polygons
+    if (rec.source !== "s2") sec("Masks");
+    const l = el("div", "tog"), lab = el("span", null, "Custom mask");
+    lab.append(el("small", null, customMask
+      ? fmtInt(customMask.nPoly) + " polygon" + (customMask.nPoly > 1 ? "s" : "") + " · " + fmtInt(customMask.nVert) + " vertices"
+      : "your own polygons from a file or URL, e.g. a forest map"));
+    const seg = el("div", "seg");
+    [["off", "Off"], ["in", "Inside"], ["out", "Outside"]].forEach(([v, t]) => {
+      const b = el("button", (customMask ? s.cmask : "off") === v ? "on" : "", t);
+      b.type = "button";
+      b.title = v === "in" ? "Keep the data inside the polygons" : v === "out" ? "Keep the data outside the polygons (inverted)" : "No custom mask";
+      b.onclick = e => {
+        e.preventDefault();
+        if (v !== "off" && !customMask) { pendingMaskMode = { rec, v }; openGeoModal("mask"); return; }
+        s.cmask = v; renderLayerList(); onSettings(rec);
+      };
+      seg.append(b);
+    });
+    l.append(lab, seg);
+    body.append(l);
+    if (customMask) body.append(el("div", "cmname", customMask.name));     // long file names wrap on their own line
+    const row = el("div", "cmrow"), load = el("button", "lnk", customMask ? "Replace polygons…" : "Load polygons…");
+    load.onclick = () => { pendingMaskMode = null; openGeoModal("mask"); };
+    row.append(load);
+    if (customMask) {
+      const rm = el("button", "lnk", "Remove");
+      rm.onclick = () => { customMask = null; maskChanged(); };
+      row.append(rm);
+    }
+    body.append(row);
+    if (customMask && !customMask.url) body.append(el("div", "hint", "Loaded from a file: the mask is not part of copied links. Load it from a URL to share it."));
   }
 
   /* ---- effects and advanced options ---- */
@@ -3312,7 +3399,8 @@ function renderCompare() {
     th.querySelector(".grip").onmousedown = () => { ci.draggable = true; };
     const m = el("div", "ci-m");
     const t = el("div", "t");
-    const nm = el("span", null, SOURCES[rec.source].name.replace(/ v\d+$/, "") + ": " + rec.name);
+    // the product layers already carry the product in their name (swissEO VHI forest, swissEO NDVIdiff …)
+    const nm = el("span", null, rec.name.startsWith("swissEO") ? rec.name : SOURCES[rec.source].name.replace(/ v\d+$/, "") + ": " + rec.name);
     nm.insertAdjacentHTML("beforeend", verBadge(rec));
     t.append(nm);
     const loc = el("button", "ib");
@@ -3367,6 +3455,7 @@ proj4.defs("EPSG:21781", "+proj=somerc +lat_0=46.9524055555556 +lon_0=7.43958333
 
 let aoi = null;              // GeoJSON geometry, Polygon or MultiPolygon, WGS84
 let aoiLayer = null, aoiOptsOpen = false, drawing = null, rectCleanup = null;
+let aoiSrc = null, aoiEnc = null;   // { url } when the area came from a URL (shared as the URL); cached link encoding
 
 Object.assign(UI, {
   pentagon: svg('<path d="M12 3l8.6 6.2-3.3 10.3H6.7L3.4 9.2z"/>', 2),
@@ -3430,14 +3519,16 @@ const geomArea = g => polysOf(g).reduce((s, p) => s + p.reduce((t, r, i) => t + 
 const areaLabel = m2 => m2 < 1e4 ? m2.toFixed(0) + " m²" : (m2 / 1e6).toFixed(2) + " km²";
 
 /* ---- AOI layer, editing (Leaflet-Geoman), info bar ---- */
-function setAoi(geom, fit) {
+function setAoi(geom, fit, src) {
   if (aoiLayer) { map.removeLayer(aoiLayer); aoiLayer = null; }
   aoi = geom ? normGeom(polysOf(geom)) : null;
+  aoiSrc = aoi && src ? src : null;
+  aoiEnc = null;
   if (aoi) {
     const ll = aoi.type === "Polygon" ? L.GeoJSON.coordsToLatLngs(aoi.coordinates, 1)
                                       : L.GeoJSON.coordsToLatLngs(aoi.coordinates, 2);
     aoiLayer = L.polygon(ll, Object.assign({ pane: "aoiPane" }, AOI_STYLE)).addTo(map);
-    if (aoiLayer.pm) {
+    if (aoiLayer.pm && countVert(polysOf(aoi)) <= AOI_EDIT_MAX) {       // editing many vertices freezes the page
       aoiLayer.pm.enable({ allowSelfIntersection: false });
       aoiLayer.on("pm:edit pm:vertexremoved", onAoiEdit);
     }
@@ -3451,6 +3542,7 @@ function onAoiEdit() {
   const n = g ? normGeom(polysOf(g)) : null;
   if (!n) { setAoi(null); return; }
   aoi = n;
+  aoiSrc = null; aoiEnc = null;                 // edited: no longer the file at the URL
   renderAoiTool();
   writeUrlSoon();
 }
@@ -3460,6 +3552,7 @@ function renderAoiTool() {
   $("#aoiUpload").hidden = has;
   $("#aoiInfo").hidden = !has;
   $("#aoiArea").textContent = has ? areaLabel(geomArea(aoi)) : "";
+  $("#aoiNoLink").hidden = !has || !!aoiParam();
   $("#btnAoi").classList.toggle("on", has || aoiOptsOpen);
   $("#btnAoi").title = has ? "Remove area of interest" : aoiOptsOpen ? "Close area of interest options" : "Create an area of interest";
   $("#aoiRect").classList.toggle("on", drawing === "rect");
@@ -3657,39 +3750,175 @@ async function toGeo(text, ext) {
   throw new Error("Could not read a polygon. Use WKT (POLYGON / MULTIPOLYGON), GeoJSON, KML, GPX or a bounding box.");
 }
 
-function acceptPolys(polys, label) {
+/* What a browser handles comfortably (tested in Firefox and Chrome): files up to 50 MB; an area of interest
+   up to 100,000 vertices (vertex editing up to 2,000); a custom mask up to 1,000,000 vertices. A copied link
+   holds an imported area only up to about 280 vertices; areas and masks loaded from a URL travel as the URL. */
+const GEO_MAX_MB = 50, AOI_MAX_VERT = 100000, AOI_EDIT_MAX = 2000, MASK_MAX_VERT = 1000000, LINK_MAX_CHARS = 8000;
+const countVert = polys => polys.reduce((t, p) => t + p.reduce((u, r) => u + r.length, 0), 0);
+const fmtInt = n => n.toLocaleString("en-US");
+const fmtMB = b => (b / 1048576).toFixed(b < 10485760 ? 1 : 0) + " MB";
+
+/* Polygons from a File or a URL: KML, KMZ, GPX, GeoJSON / JSON, WKT or a zipped Shapefile, recognised by the
+   extension, otherwise by the content. A URL needs a server that allows cross-origin requests (CORS). */
+async function readGeoSource(src, progress) {
+  let name, blob;
+  if (src.file) { name = src.file.name; blob = src.file; }
+  else {
+    let u;
+    try { u = new URL(String(src.url).trim()); } catch (e) { throw new Error("Enter a complete URL (https://…)."); }
+    if (!/^https?:$/.test(u.protocol)) throw new Error("Only http(s) URLs can be loaded.");
+    name = decodeURIComponent(u.pathname.split("/").pop() || u.hostname);
+    if (progress) progress("Loading " + u.href + "…");
+    let r;
+    try { r = await fetch(u.href); }
+    catch (e) { throw new Error("The URL could not be loaded. The server must allow cross-origin requests (CORS), as e.g. raw.githubusercontent.com, data.geo.admin.ch and most open-data portals do."); }
+    if (!r.ok) throw new Error("HTTP " + r.status + " for " + u.href);
+    const len = +r.headers.get("content-length");
+    if (len > GEO_MAX_MB * 1048576) throw new Error("The file is " + fmtMB(len) + "; at most " + GEO_MAX_MB + " MB can be read in the browser.");
+    blob = await r.blob();
+  }
+  if (blob.size > GEO_MAX_MB * 1048576) throw new Error("The file is " + fmtMB(blob.size) + "; at most " + GEO_MAX_MB + " MB can be read in the browser.");
+  if (progress) progress("Reading " + name + " (" + fmtMB(blob.size) + ")…");
+  const ext = name.includes(".") ? name.split(".").pop().toLowerCase() : "";
+  const head = new Uint8Array(await blob.slice(0, 2).arrayBuffer());
+  let gj;
+  if ((head[0] === 0x50 && head[1] === 0x4b) || ext === "zip" || ext === "kmz") {           // ZIP: KMZ or Shapefile
+    const JSZip = await lib("JSZip"), zip = await JSZip.loadAsync(blob), files = Object.keys(zip.files);
+    const kml = files.find(f => /\.kml$/i.test(f));
+    if (kml && !files.some(f => /\.shp$/i.test(f))) gj = await toGeo(await zip.file(kml).async("text"), "kml");
+    else if (files.some(f => /\.shp$/i.test(f))) { const shp = await lib("shp"); gj = await shp(await blob.arrayBuffer()); }
+    else throw new Error("The archive contains neither a .kml nor a .shp file.");
+  } else gj = await toGeo(await blob.text(), ext === "kml" || ext === "gpx" ? ext : "");
+  const polys = collectPolys(gj, []);
   if (!polys.length) throw new Error("The input contains no polygon (lines and points cannot define an area).");
+  return { polys, name, size: blob.size, vertices: countVert(polys) };
+}
+
+/* The import dialog serves the area of interest and the custom mask. */
+let geoTarget = "aoi", pendingMaskMode = null;
+function openGeoModal(target) {
+  geoTarget = target;
+  const mask = target === "mask";
+  $("#geoTitle").textContent = mask ? "Load a custom mask" : "Import area of interest";
+  $$('#aoiTabs button[data-m="grid"], #aoiTabs button[data-m="bbox"]').forEach(b => { b.hidden = mask; });
+  $("#aoiFileWarn").hidden = mask;
+  $("#geoLimits").innerHTML = mask
+    ? "<b>Limits</b> of the browser: files up to " + GEO_MAX_MB + " MB, up to " + fmtInt(MASK_MAX_VERT) + " vertices. The polygons keep " +
+      "(<i>Inside</i>) or remove (<i>Outside</i>) the data of every layer whose custom mask is switched on. A mask loaded from a file is " +
+      "not part of copied links; one loaded from a URL is."
+    : "<b>Limits</b> of the browser: files up to " + GEO_MAX_MB + " MB; an area of interest up to " + fmtInt(AOI_MAX_VERT) +
+      " vertices (vertices can be edited up to " + fmtInt(AOI_EDIT_MAX) + "). Larger polygon sets can be used as a custom mask (up to " +
+      fmtInt(MASK_MAX_VERT) + " vertices).";
+  const tab = $('#aoiTabs button[data-m="file"]');
+  if (tab) tab.click();
+  $("#aoiMsg").textContent = "";
+  openModal("aoiModal");
+}
+function acceptGeo(polys, label, src) {
+  if (geoTarget === "mask") acceptMask(polys, label, src, true); else acceptPolys(polys, label, src);
+}
+async function importGeo(src) {
+  try {
+    const r = await readGeoSource(src, t => { $("#aoiMsg").textContent = t; });
+    $("#aoiMsg").textContent = "";
+    acceptGeo(r.polys, r.name, src.url ? { url: String(src.url).trim() } : null);
+  } catch (e) { aoiErr(e); }
+}
+
+function acceptPolys(polys, label, src, fit) {
+  if (!polys.length) throw new Error("The input contains no polygon (lines and points cannot define an area).");
+  const nv = countVert(polys);
+  if (nv > AOI_MAX_VERT) throw new Error("The area has " + fmtInt(nv) + " vertices; an area of interest can have at most " +
+    fmtInt(AOI_MAX_VERT) + ". Simplify it, or use it as a custom mask (up to " + fmtInt(MASK_MAX_VERT) + " vertices).");
   const r = polysToWgs(polys);
   const g = normGeom(r.polys);
   if (!g) throw new Error("The polygon has too few vertices.");
-  setAoi(g, true);
+  setAoi(g, fit !== false, src || null);
   closeModal($("#aoiModal"));
-  setStatus("Area of interest imported from " + label + (r.crs !== "EPSG:4326" ? " (reprojected from " + r.crs + ")" : "") + ".");
-  setTimeout(() => { if (statusKind === "msg") setStatus(""); }, 3500);
+  setStatus("Area of interest imported from " + label + (r.crs !== "EPSG:4326" ? " (reprojected from " + r.crs + ")" : "") + "." +
+    (aoiParam() ? "" : " It is too large for a link and is <b>not shared</b> when you copy the link — load it from a URL to share it."));
+  setTimeout(() => { if (statusKind === "msg") setStatus(""); }, aoiParam() ? 3500 : 9000);
+}
+
+/* ---- custom mask: the user's polygons (file or URL) keep the data inside or outside them ---- */
+let customMask = null;             // { name, url, polys: LV95 rings, boxes, nPoly, nVert }
+let maskUrlPending = null, aoiUrlPending = null;
+function acceptMask(polys, label, src, fit) {
+  const nv = countVert(polys);
+  if (nv > MASK_MAX_VERT) throw new Error("The mask has " + fmtInt(nv) + " vertices; at most " + fmtInt(MASK_MAX_VERT) + " can be handled in the browser.");
+  const f = polys[0] && polys[0][0] && polys[0][0][0];
+  if (!f) throw new Error("No polygon found.");
+  const crs = detectCrs(+f[0], +f[1]) || "EPSG:4326";
+  const lv = crs === "EPSG:2056" ? polys.map(pl => pl.map(r => r.map(c => [+c[0], +c[1]])))
+                                 : polys.map(pl => pl.map(r => r.map(c => proj4(crs, "EPSG:2056", [+c[0], +c[1]]))));
+  const boxes = lv.map(pl => {
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    pl[0].forEach(c => { if (c[0] < x0) x0 = c[0]; if (c[0] > x1) x1 = c[0]; if (c[1] < y0) y0 = c[1]; if (c[1] > y1) y1 = c[1]; });
+    return [x0, y0, x1, y1];
+  });
+  if (!boxes.some(b => b[2] > 2420000 && b[0] < 2900000 && b[3] > 1030000 && b[1] < 1350000))
+    throw new Error("The polygons do not lie in Switzerland (checked as " + crs + ").");
+  customMask = { name: label, url: src && src.url ? src.url : null, polys: lv, boxes, nPoly: lv.length, nVert: nv };
+  maskUrlPending = null;
+  if (pendingMaskMode) { S(pendingMaskMode.rec).cmask = pendingMaskMode.v; pendingMaskMode = null; }
+  else if (S(currentRec).cmask === "off" && currentRec.type !== "wms") S(currentRec).cmask = "in";
+  closeModal($("#aoiModal"));
+  setStatus("Custom mask loaded: " + fmtInt(lv.length) + " polygon" + (lv.length > 1 ? "s" : "") + ", " + fmtInt(nv) + " vertices" +
+    (crs !== "EPSG:4326" ? " (" + crs + ")" : "") + "." + (customMask.url ? "" : " Loaded from a file, so it is not part of copied links."));
+  setTimeout(() => { if (statusKind === "msg") setStatus(""); }, 5000);
+  if (fit) {                                       // zoom to the mask (not for a shared link, which has its own view)
+    const b = boxes.reduce((a, x) => [Math.min(a[0], x[0]), Math.min(a[1], x[1]), Math.max(a[2], x[2]), Math.max(a[3], x[3])],
+                           [Infinity, Infinity, -Infinity, -Infinity]);
+    map.fitBounds(L.latLngBounds(lv95(b[0], b[1]), lv95(b[2], b[3])), { padding: [40, 40] });
+  }
+  maskChanged();
+}
+function maskChanged() {
+  renderLayerList();
+  if (currentCfg) currentCfg.refP = null;
+  if (compareMode) rebuildCompare();
+  else if (current && current.redraw && current._tiles) current.redraw();
+  writeUrlSoon();
+}
+const cmaskOn = s => !!(customMask && s && (s.cmask === "in" || s.cmask === "out"));
+const cmaskOut = (mode, g, k) => mode === "in" ? !g[k] : g[k] === 1;          // true = removed by the mask
+let cmCanvas = null;
+/* The mask rasterised on a grid (1 = inside a polygon); only polygons whose box meets the grid are drawn. */
+function customMaskGrid(bbox, W, H) {
+  if (!cmCanvas) cmCanvas = document.createElement("canvas");
+  cmCanvas.width = W; cmCanvas.height = H;                                    // also clears it
+  const ctx = cmCanvas.getContext("2d", { willReadFrequently: true });
+  const sx = W / (bbox[2] - bbox[0]), sy = H / (bbox[3] - bbox[1]), P = customMask.polys, B = customMask.boxes;
+  ctx.fillStyle = "#000";
+  for (let i = 0; i < P.length; i++) {
+    const b = B[i];
+    if (b[2] < bbox[0] || b[0] > bbox[2] || b[3] < bbox[1] || b[1] > bbox[3]) continue;
+    ctx.beginPath();
+    for (const r of P[i]) {
+      for (let j = 0; j < r.length; j++) {
+        const x = (r[j][0] - bbox[0]) * sx, y = (bbox[3] - r[j][1]) * sy;
+        if (j) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+      }
+      ctx.closePath();
+    }
+    ctx.fill("evenodd");
+  }
+  const d = ctx.getImageData(0, 0, W, H).data, m = new Uint8Array(W * H);
+  for (let k = 0; k < m.length; k++) m[k] = d[k * 4 + 3] >= 128 ? 1 : 0;
+  return m;
+}
+async function loadGeoUrl(url, target) {
+  try {
+    const r = await readGeoSource({ url });
+    if (target === "mask") { geoTarget = "mask"; acceptMask(r.polys, r.name, { url }); }
+    else { acceptPolys(r.polys, r.name, { url }, false); aoiUrlPending = null; }
+  } catch (e) {
+    setStatus("The " + (target === "mask" ? "custom mask" : "area of interest") + " of this link could not be loaded: " + (e.message || e));
+  }
 }
 const aoiErr = e => { $("#aoiMsg").textContent = e && e.message ? e.message : String(e); };
 
-async function importFile(file) {
-  $("#aoiMsg").textContent = "Reading " + file.name + "…";
-  try {
-    const ext = (file.name.split(".").pop() || "").toLowerCase();
-    let gj;
-    if (ext === "zip") {
-      const shp = await lib("shp");
-      gj = await shp(await file.arrayBuffer());       // shpjs reprojects to WGS84 using the .prj
-    } else if (ext === "kmz") {
-      const JSZip = await lib("JSZip");
-      const zip = await JSZip.loadAsync(file);
-      const k = Object.keys(zip.files).find(f => /\.kml$/i.test(f));
-      if (!k) throw new Error("The KMZ archive contains no .kml file.");
-      gj = await toGeo(await zip.file(k).async("text"), "kml");
-    } else if (["kml", "gpx", "wkt", "txt", "geojson", "json"].includes(ext)) {
-      gj = await toGeo(await file.text(), ext === "kml" || ext === "gpx" ? ext : "");
-    } else throw new Error("File type ." + ext + " is not supported.");
-    $("#aoiMsg").textContent = "";
-    acceptPolys(collectPolys(gj, []), file.name);
-  } catch (e) { aoiErr(e); }
-}
+const importFile = file => importGeo({ file });       // shpjs reprojects shapefiles to WGS84 using the .prj
 
 /* GEOREF (World Geographic Reference System): 15° tiles, 1° cells, then minutes. */
 function georefBounds(ref) {
@@ -3709,7 +3938,9 @@ function georefBounds(ref) {
   return [lon, lat, lon + size, lat + size];
 }
 
-$("#aoiUpload").onclick = () => { $("#aoiMsg").textContent = ""; openModal("aoiModal"); };
+$("#aoiUpload").onclick = () => openGeoModal("aoi");
+$("#aoiUrlGo").onclick = () => importGeo({ url: $("#aoiUrlIn").value });
+$("#aoiUrlIn").onkeydown = e => { if (e.key === "Enter") importGeo({ url: $("#aoiUrlIn").value }); };
 $$("#aoiTabs button").forEach(b => {
   b.onclick = () => {
     $$("#aoiTabs button").forEach(x => x.classList.toggle("on", x === b));
@@ -3723,7 +3954,7 @@ drop.ondragover = e => { e.preventDefault(); drop.classList.add("over"); };
 drop.ondragleave = () => drop.classList.remove("over");
 drop.ondrop = e => { e.preventDefault(); drop.classList.remove("over"); if (e.dataTransfer.files[0]) importFile(e.dataTransfer.files[0]); };
 $("#aoiTextGo").onclick = async () => {
-  try { acceptPolys(collectPolys(await toGeo($("#aoiText").value), []), "the pasted geometry"); }
+  try { acceptGeo(collectPolys(await toGeo($("#aoiText").value), []), "the pasted geometry", null); }
   catch (e) { aoiErr(e); }
 };
 $("#aoiGridGo").onclick = async () => {
@@ -3825,6 +4056,10 @@ async function sampleAoi(r, scenes, grid, o, signal) {
   if (VEG_LABEL[o.veg] && r.source === "s2" && scenes.length) {
     const vm = await readVegMask(o.veg, scenes[0].slice(0, 10), bbox, W, H, signal);
     if (vm) for (let k = 0; k < n; k++) if (mask[k] && vm[k] === 0) { done[k] = 1; outside++; }
+  }
+  if (customMask && (o.cmask === "in" || o.cmask === "out")) {          // the custom mask restricts the area
+    const g = customMaskGrid(bbox, W, H);
+    for (let k = 0; k < n; k++) if (mask[k] && !done[k] && cmaskOut(o.cmask, g, k)) { done[k] = 1; outside++; }
   }
   for (const id of scenes) {
     let open = 0;
@@ -4030,13 +4265,15 @@ $("#stCloud").onchange = $("#stScl").onchange = $("#stTerr").onchange = () => { 
 async function runCurrentStats() {
   const rec = stRec, r = statRec(rec), box = $("#stCur");
   const grid = aoiGrid(320);
-  $("#stMeta").textContent = (VEG_LABEL[stVeg] ? VEG_LABEL[stVeg] + " mask · " : "") + "Area " + areaLabel(geomArea(aoi)) + " · sampled on a " + grid.W + " × " + grid.H +
+  $("#stMeta").textContent = (VEG_LABEL[stVeg] ? VEG_LABEL[stVeg] + " mask · " : "") +
+    (cmaskOn(S(rec)) ? "Custom mask (" + (S(rec).cmask === "in" ? "inside" : "outside") + " the polygons) · " : "") + "Area " + areaLabel(geomArea(aoi)) + " · sampled on a " + grid.W + " × " + grid.H +
     " grid at " + grid.res + " m · " + grid.n + " cells inside the area of interest.";
   box.innerHTML = '<div class="hint">Reading the COGs over the area of interest…</div>';
   try {
     const scenes = await scenesFor(rec, state.date, state.cc);
     if (!scenes.length) { box.innerHTML = '<div class="hint">No acquisition on ' + state.date + ".</div>"; return; }
-    const opt = { maskClouds: $("#stCloud").checked, maskScl: $("#stScl").checked, maskTerrain: $("#stTerr").checked, veg: stVeg };
+    const opt = { maskClouds: $("#stCloud").checked, maskScl: $("#stScl").checked, maskTerrain: $("#stTerr").checked, veg: stVeg,
+                  cmask: cmaskOn(S(rec)) ? S(rec).cmask : "off" };
     if (rec.type === "diff2") { await diffStats(rec, r, scenes, grid, opt, box); return; }
     const res = await sampleAoi(r, scenes, grid, opt);
     if (stRec !== rec) return;
@@ -4220,7 +4457,8 @@ async function runSeries() {
                                               a.date.localeCompare(b.date));
     total = todo.length;
     const grid = aoiGrid(140);
-    const opt = { maskClouds: $("#stCloud").checked, maskScl: $("#stScl").checked, maskTerrain: $("#stTerr").checked, veg: stVeg };
+    const opt = { maskClouds: $("#stCloud").checked, maskScl: $("#stScl").checked, maskTerrain: $("#stTerr").checked, veg: stVeg,
+                  cmask: cmaskOn(S(rec)) ? S(rec).cmask : "off" };
     let redraw = null;
     await pool(todo, 4, async d => {
       if (ctrl.signal.aborted) return;
@@ -4308,6 +4546,16 @@ const b64e = o => btoa(unescape(encodeURIComponent(JSON.stringify(o))))
   .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 const b64d = s => JSON.parse(decodeURIComponent(escape(atob(s.replace(/-/g, "+").replace(/_/g, "/")))));
 
+/* The area in the link: the URL it was loaded from, or the geometry when it is small enough (≈ 280 vertices). */
+function aoiParam() {
+  if (!aoi) return null;
+  if (aoiSrc && aoiSrc.url) return ["aoiUrl", aoiSrc.url];
+  if (aoiEnc == null) {
+    const g = { type: aoi.type, coordinates: JSON.parse(JSON.stringify(aoi.coordinates, (k, v) => typeof v === "number" ? +v.toFixed(6) : v)) };
+    aoiEnc = b64e(g);
+  }
+  return aoiEnc.length < LINK_MAX_CHARS ? ["aoi", aoiEnc] : null;
+}
 function writeUrlSoon() { if (!booted) return; clearTimeout(urlTimer); urlTimer = setTimeout(writeUrl, 200); }
 function writeUrl() {
   const c = map.getCenter(), p = new URLSearchParams();
@@ -4332,11 +4580,11 @@ function writeUrl() {
     p.set("comparedClipping", JSON.stringify(compare.map(it => it.clip.map(r3))));
     p.set("compareMode", compareMode ? compareEffect : "off");
   }
-  if (aoi) {
-    const g = { type: aoi.type, coordinates: JSON.parse(JSON.stringify(aoi.coordinates, (k, v) => typeof v === "number" ? +v.toFixed(6) : v)) };
-    const enc = b64e(g);
-    if (enc.length < 8000) p.set("aoi", enc);      // very detailed imports stay out of the URL
-  }
+  const ap = aoiParam();
+  if (ap) p.set(ap[0], ap[1]);
+  else if (!aoi && aoiUrlPending) p.set("aoiUrl", aoiUrlPending);       // still loading
+  if (customMask && customMask.url) p.set("maskUrl", customMask.url);
+  else if (!customMask && maskUrlPending) p.set("maskUrl", maskUrlPending);
   history.replaceState(null, "", location.pathname + "?" + p.toString() + location.hash);
 }
 map.on("moveend", writeUrlSoon);
@@ -4378,6 +4626,8 @@ function readUrl() {
   const cm = q.get("compareMode");
   if (cm === "split" || cm === "opacity") compareEffect = cm;
   if (q.has("aoi")) { try { setAoi(b64d(q.get("aoi")), false); } catch (e) { /* ignore a broken aoi */ } }
+  else if (q.has("aoiUrl")) aoiUrlPending = q.get("aoiUrl");
+  if (q.has("maskUrl")) maskUrlPending = q.get("maskUrl");
 
   const lat = parseFloat(q.get("lat")), lng = parseFloat(q.get("lng")), z = parseFloat(q.get("zoom"));
   const hasView = isFinite(lat) && isFinite(lng) && isFinite(z);
@@ -4399,10 +4649,12 @@ $("#btnLink").onclick = () => copyLink($("#btnLink"), "Copy link");
 async function showSceneInfo(rec, ids) {
   const box = $("#sceneInfo");
   if (!ids.length) { box.textContent = "No acquisition for " + state.date + "."; return; }
-  if (rec.source === "vhi") {
-    box.innerHTML = '<table class="kv"><tr><td>Product</td><td>' + COLL_VHI + "</td></tr><tr><td>Item</td><td>" + ids[0] +
-      '</td></tr></table><div class="hint"><a target="_blank" href="https://data.geo.admin.ch/browser/index.html#/collections/' +
-      COLL_VHI + "/items/" + ids[0] + '">Open in the swisstopo STAC browser</a></div>';
+  if (rec.source !== "s2") {                     // VHI, NDVIdiff, NDVIz, NDVIdiff v200 BETA
+    const src = SOURCES[rec.source], cog = rec.cogUrl ? rec.cogUrl(ids[0]) : null;
+    box.innerHTML = '<table class="kv"><tr><td>Product</td><td>' + (src.coll || src.name) + "</td></tr><tr><td>Item</td><td>" + ids[0] +
+      "</td></tr>" + (cog ? '<tr><td>COG</td><td style="word-break:break-all"><a target="_blank" href="' + cog + '">' + cog.split("/").pop() + "</a></td></tr>" : "") +
+      "</table>" + (src.coll ? '<div class="hint"><a target="_blank" href="https://data.geo.admin.ch/browser/index.html#/collections/' +
+      src.coll + "/items/" + ids[0] + '">Open in the swisstopo STAC browser</a></div>' : '<div class="hint">Not in the STAC catalogue (beta data).</div>');
     return;
   }
   const html = rows => '<table class="kv">' + rows.map(r => "<tr><td>" + r[0] + '</td><td style="word-break:break-all">' +
@@ -4990,7 +5242,8 @@ async function runAnalytical(signal, prog) {
     if (fmt === "tiff32" && (rec.type === "index" || rec.type === "cont" || rec.type === "terrain" || rec.type === "diff2")) {
       // the index / physical value itself (two-date layers: the difference), with the layer's masks
       const grid = { bbox, W, H, mask: inAoi || new Uint8Array(n).fill(1), n };
-      const o = { maskClouds: s.cloud || s.shadow, maskTerrain: s.terrain, cloudCodes: { 1: s.cloud, 2: s.cloud, 3: s.shadow }, veg: s.veg };
+      const o = { maskClouds: s.cloud || s.shadow, maskTerrain: s.terrain, cloudCodes: { 1: s.cloud, 2: s.cloud, 3: s.shadow }, veg: s.veg,
+                  cmask: cmaskOn(s) ? s.cmask : "off" };
       const r = statRec(rec), res = await sampleAoi(r, scenes, grid, o, signal);
       let band = res.vals[0];
       if (rec.type === "diff2") {
@@ -5657,6 +5910,8 @@ if (!VERIFIED_IDS) {                     // not deployed: read the checklist fro
 renderCompare();
 renderAoiTool();
 booted = true;
+if (aoiUrlPending) loadGeoUrl(aoiUrlPending, "aoi");
+if (maskUrlPending) loadGeoUrl(maskUrlPending, "mask");
 window.addEventListener("load", () => {
   map.invalidateSize();
   if (!boot.hasView) map.fitBounds(CH_BOUNDS);
