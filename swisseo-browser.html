@@ -901,8 +901,16 @@ table.kv td:first-child{color:var(--muted)}
           <div class="exgrid" style="margin-top:10px">
             <span>Image format</span>
             <select id="exFmtP"><option value="png">PNG (no georeference)</option><option value="jpg">JPG (no georeference)</option></select>
-            <span>Image width [inches]</span><input type="number" id="exWin" value="10" min="1" step="0.1">
-            <span>Image height [inches]</span><input type="number" id="exHin" min="1" step="0.1">
+            <span>Paper</span>
+            <select id="exPaper"><option value="custom">Custom size</option><option value="21x29.7">A4 portrait</option>
+              <option value="29.7x21">A4 landscape</option><option value="29.7x42">A3 portrait</option><option value="42x29.7">A3 landscape</option></select>
+            <span>Image width [cm]</span><input type="number" id="exWcm" value="25" min="2" step="0.1">
+            <span>Image height [cm]</span><input type="number" id="exHcm" min="2" step="0.1">
+            <span>Scale</span>
+            <select id="exScale" title="Fit: the view (or the area of interest) fills the paper. A scale: the extent follows from the paper size, centred on the area of interest (or the view).">
+              <option value="0">Fit to the view / area</option><option value="10000">1:10 000</option><option value="25000">1:25 000</option>
+              <option value="50000">1:50 000</option><option value="100000">1:100 000</option><option value="200000">1:200 000</option>
+              <option value="500000">1:500 000</option></select>
             <span>DPI</span><input type="number" id="exDpi" value="300" min="72" max="1200" step="1">
           </div>
           <div class="hint" id="exInfoP"></div>
@@ -6942,22 +6950,50 @@ async function runAnalytical(signal, prog) {
   return skipped.length ? "No data on " + state.date + " for: " + skipped.join(", ") + "." : "";
 }
 
-/* ---- High-res print: the view re-rendered at the printed size ---- */
+/* ---- High-res print: the view re-rendered at the printed size ----
+   Paper width and height in cm are independent. "Fit": the view (or, with Crop to AOI, the area of interest plus 5 %)
+   is enlarged to the paper's aspect ratio around its centre, so it is always fully on the print. A scale: the extent is
+   paper size × scale, centred on the area of interest (or the view); a warning tells when the area does not fit. */
+const printSubject = () => $("#exCropP").checked && aoi ? aoiBox(0.05) : viewBox();
 function printGrid() {
-  const bbox = $("#exCropP").checked && aoi ? aoiBox(0.05) : viewBox();
-  const wIn = +$("#exWin").value, dpi = +$("#exDpi").value;
-  const W = Math.round(wIn * dpi), H = Math.round(W * (bbox[3] - bbox[1]) / (bbox[2] - bbox[0]));
-  const ok = wIn > 0 && dpi >= 72 && W <= 12000 && H <= 12000 && W * H <= 60e6;
-  return { bbox, W, H, k: dpi / 96, mpp: (bbox[2] - bbox[0]) / W, ok,
+  const wCm = +$("#exWcm").value, hCm = +$("#exHcm").value, dpi = +$("#exDpi").value, scale = +$("#exScale").value;
+  const sb = printSubject(), c = aoi && scale ? aoiBox(0) : sb, cx = (c[0] + c[2]) / 2, cy = (c[1] + c[3]) / 2;
+  let ew, eh;
+  if (scale) { ew = wCm / 100 * scale; eh = hCm / 100 * scale; }
+  else {
+    const sw = sb[2] - sb[0], sh = sb[3] - sb[1];
+    if (sh / sw > hCm / wCm) { eh = sh; ew = sh * wCm / hCm; } else { ew = sw; eh = sw * hCm / wCm; }
+  }
+  const bbox = [cx - ew / 2, cy - eh / 2, cx + ew / 2, cy + eh / 2];
+  const W = Math.round(wCm / 2.54 * dpi), H = Math.round(hCm / 2.54 * dpi);
+  const ok = wCm > 0 && hCm > 0 && dpi >= 72 && W <= 12000 && H <= 12000 && W * H <= 60e6;
+  let warn = "";
+  if (aoi && scale) {
+    const a = aoiBox(0);
+    if (a[0] < bbox[0] || a[1] < bbox[1] || a[2] > bbox[2] || a[3] > bbox[3]) {
+      const need = Math.max((a[2] - a[0]) / (wCm / 100), (a[3] - a[1]) / (hCm / 100));
+      warn = "The area of interest does not fit on " + fmtCm(wCm) + " × " + fmtCm(hCm) + " cm at 1:" + fmtScale(scale) +
+             ": it needs 1:" + fmtScale(Math.ceil(need / 1000) * 1000) + " or a larger paper.";
+    }
+  }
+  return { bbox, W, H, k: dpi / 96, mpp: ew / W, ok, scale, wCm, hCm, warn,
            msg: ok ? "" : "The image is too large (max. 12000 px per side and 60 megapixels). Lower the size or DPI." };
 }
-function printAspect() { const b = $("#exCropP").checked && aoi ? aoiBox(0.05) : viewBox(); return (b[3] - b[1]) / (b[2] - b[0]); }
+const fmtCm = v => +(+v).toFixed(1) + "";
+const fmtScale = v => Math.round(v).toLocaleString("en-US").replace(/,/g, " ");
+/* Custom paper: the height that keeps the aspect ratio of the view (or of the area of interest). */
+function printFitHeight() {
+  if ($("#exPaper").value !== "custom") return;
+  const b = printSubject();
+  $("#exHcm").value = fmtCm(+$("#exWcm").value * (b[3] - b[1]) / (b[2] - b[0]));
+}
 
 async function runPrint(signal, prog) {
   const g = printGrid();
   if (!g.ok) throw new Error(g.msg);
   const { bbox, W, H, k } = g;
-  const o = { caption: $("#exCapP").checked, desc: $("#exCapP").checked ? $("#exDescP").value.trim() : "",
+  const desc = $("#exDescP").value.trim(), sc = g.scale ? "Scale 1:" + fmtScale(g.scale) + " at " + fmtCm(g.wCm) + " × " + fmtCm(g.hCm) + " cm" : "";
+  const o = { caption: $("#exCapP").checked, desc: $("#exCapP").checked ? [desc, sc].filter(Boolean).join(" · ") : "",
               legend: $("#exLegP").checked,
               crop: $("#exCropP").checked && !!aoi, aoiLine: $("#exLineP").checked && !!aoi };
   const cv = makeCanvas(W, H), ctx = cv.getContext("2d");
@@ -7013,9 +7049,12 @@ function exInfo() {
       : '<span style="color:var(--red)">' + (g.W ? g.W + " × " + g.H + " px. " : "") + g.msg + "</span>";
     $$(".exc").forEach(e => { e.hidden = $("#exResA").value !== "CUSTOM"; });
   } else {
-    const g = printGrid();
+    const g = printGrid(), km = v => +(v / 1000).toFixed(v < 10000 ? 2 : 1);
     $("#exInfoP").innerHTML = (g.ok ? "" : '<span style="color:var(--red)">') + g.W + " × " + g.H + " px (" +
-      (g.W * g.H / 1e6).toFixed(1) + " MP) · " + g.mpp.toFixed(g.mpp < 10 ? 2 : 1) + " m/px" + (g.ok ? "" : ". " + g.msg + "</span>");
+      (g.W * g.H / 1e6).toFixed(1) + " MP) · " + g.mpp.toFixed(g.mpp < 10 ? 2 : 1) + " m/px · " +
+      km(g.bbox[2] - g.bbox[0]) + " × " + km(g.bbox[3] - g.bbox[1]) + " km" +
+      (g.scale ? "" : " · scale about 1:" + fmtScale(Math.round((g.bbox[2] - g.bbox[0]) / (g.wCm / 100) / 100) * 100)) +
+      (g.ok ? "" : ". " + g.msg + "</span>") + (g.warn ? '<br><span style="color:var(--red)">' + g.warn + "</span>" : "");
   }
 }
 function exLists() {
@@ -7034,7 +7073,7 @@ function exShow(tab) {
 function openExport() {
   $("#expMsg").classList.remove("on");
   $("#exProg").textContent = "";
-  $("#exHin").value = (+$("#exWin").value * printAspect()).toFixed(1);
+  printFitHeight();
   exLists();
   exShow(exTab);
   openModal("expModal");
@@ -7042,9 +7081,14 @@ function openExport() {
 $("#btnExport").onclick = openExport;
 $$("#expTabs button").forEach(b => { b.onclick = () => exShow(b.dataset.e); });
 ["#exCropB", "#exResA", "#exRx", "#exRy", "#exCropA", "#exDpi"].forEach(q => { $(q).oninput = $(q).onchange = exInfo; });
-$("#exWin").oninput = () => { $("#exHin").value = (+$("#exWin").value * printAspect()).toFixed(1); exInfo(); };
-$("#exHin").oninput = () => { $("#exWin").value = (+$("#exHin").value / printAspect()).toFixed(1); exInfo(); };
-$("#exCropP").onchange = () => { $("#exHin").value = (+$("#exWin").value * printAspect()).toFixed(1); exInfo(); };
+$("#exWcm").oninput = $("#exHcm").oninput = () => { $("#exPaper").value = "custom"; exInfo(); };
+$("#exPaper").onchange = () => {
+  const p = $("#exPaper").value.split("x");
+  if (p.length === 2) { $("#exWcm").value = p[0]; $("#exHcm").value = p[1]; } else printFitHeight();
+  exInfo();
+};
+$("#exScale").onchange = exInfo;
+$("#exCropP").onchange = () => { printFitHeight(); exInfo(); };
 $("#expModal").onclose = () => { if (exAbort) exAbort.abort(); };
 
 $("#exGo").onclick = async () => {

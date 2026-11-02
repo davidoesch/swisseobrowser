@@ -350,8 +350,13 @@ The swissEO Browser therefore always uses the physical reflectance.
     10 m) or a custom resolution, up to 2500 × 2500 px, as PNG, JPG or GeoTIFF (8-bit, 16-bit = stored DN,
     32-bit float = index or physical value) in CH1903+ / LV95, optionally with a dataMask band. Several
     files are zipped.
-  - *High-res print*: the view re-rendered for a printed size (width / height in inches and DPI), with
-    the same captions, legend and AOI options, as PNG or JPG.
+  - *High-res print*: the view re-rendered for a printed size, with the same captions, legend and AOI options,
+    as PNG or JPG ([#2](https://github.com/swisstopo/topo-swisseobrowser/issues/2)): width and height in cm,
+    independent of each other, or a paper preset (A4 / A3, portrait / landscape), and DPI. *Scale*: *Fit*
+    enlarges the view (or, with *Crop to AOI*, the area of interest) to the paper's aspect ratio, so it is always
+    fully printed; a fixed scale (1:10 000 to 1:500 000) sets the extent to paper size × scale, centred on the
+    area of interest (or the view), warns when the area does not fit (and gives the scale it needs) and adds the
+    scale to the caption.
 - **Timelapse**: as in the Copernicus Browser, for the current layer over the area of interest (data
   clipped to it, no outline drawn) or the current view:
   - time range, *Select 1 image per* orbit / day / week / month / year, month filter, Search;
