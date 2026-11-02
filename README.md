@@ -102,7 +102,7 @@ The swissEO Browser therefore always uses the physical reflectance.
   the language (*EN* only for now), the collapse chevron and the title *swissEO Browser*; there is no header bar above the
   map. The chevron collapses the menu and a round button at the top left of the map opens it again; on small screens
   (up to 760 px) the menu starts collapsed and covers the map when opened. On the map:
-  - top left: the date and the number of acquisitions on the map, *Copy link* and the pixel inspector toggle;
+  - top left: the date and the number of acquisitions on the map, the *Copy link* (chain) and *Pixel inspector* ((i) with a pointer) icon buttons;
   - top right: the place search, the **help button (i)**, below it the basemap switcher (the layer button) and the area
     of interest, image download, compare and timelapse buttons;
   - bottom right: the zoom buttons and, on one line, the mouse position (LV95 easting and northing, `E 2'661'150 N 1'187'175`)
@@ -383,7 +383,7 @@ The swissEO Browser therefore always uses the physical reflectance.
 - **Permalink**: the URL is updated on every change (configuration, view, date, cloud filter, layer and
   whether it is shown, open layer menu,
   legend range, masks incl. the custom mask mode, look and effects, reference date, compare list including WMS / WMTS
-  layers, the open WMS / WMTS service and layer, basemap, AOI); *Copy link* at the top left of the map
+  layers, the open WMS / WMTS service and layer, basemap, AOI); the *Copy link* icon (chain) at the top left of the map
   copies it. Areas and custom masks loaded from a URL are shared as that URL;
   areas imported from a file only when they are small, masks from a file never.
 - **Feedback and issues** (Info tab, end of the *not for operational use* notice), as in
