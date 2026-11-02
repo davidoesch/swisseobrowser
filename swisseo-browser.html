@@ -197,6 +197,8 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 .tog input:checked{background:var(--blue)}
 .tog input:checked:before{left:18px}
 .seg{display:inline-flex;border:1px solid var(--border);border-radius:4px;overflow:hidden;flex:0 0 auto}
+.vsel{border:1px solid var(--border);border-radius:4px;background:#fff;color:var(--blue);font-weight:700;font-size:11.5px;
+  padding:3px 4px;max-width:210px;flex:0 1 auto;cursor:pointer}
 .seg button{border:0;background:#fff;padding:4px 8px;font-size:11.5px;color:var(--blue);cursor:pointer;font-weight:700}
 .seg button+button{border-left:1px solid var(--border)}
 .seg button.on{background:var(--blue);color:#fff}
@@ -700,8 +702,11 @@ table.kv td:first-child{color:var(--muted)}
               (geotiff.js). Only the overview matching the zoom and the tiles in view are fetched.</p>
             <p><b>Masks:</b> <i>Clouds</i> hides cloud-mask codes 1 and 2, <i>Cloud shadows</i> code 3, and <i>Terrain shadow</i>
               terrain-mask value 200 (cast or self-shadow from swissSURFACE3D at acquisition time).
-              The <i>vegetation mask</i> keeps forest or all vegetation, read from the <code>forest-10m</code> /
-              <code>vegetation-10m</code> COGs of swissEO VHI v100 (inside = value ≠ 255).</p>
+              The <i>vegetation mask</i> keeps forest or all vegetation of the habitat maps that the swissEO VHI processor
+              uses (COGs in <code>s3-topo-satromo-prod</code>, inside = value ≠ 0): by default the version matching the date
+              (v1-0 before 2024-07-12, v1-1 before 2025-12-11, v1-2 since), or a fixed version; or the swissTLM3D forest
+              (WMS <code>ch.swisstopo.swisstlm3d-wald</code>: Wald, Wald offen, Gebüschwald). The two-date layers use the mask
+              of the selected date on both dates.</p>
             <p><b>VHI:</b> <code>wms.geo.admin.ch</code> layers <code>ch.swisstopo.swisseo_vhi_v100</code> and
               <code>…_vegetation</code> with the <code>item=</code> day selector. Titles and abstracts come from the WMS GetCapabilities document.</p>
             <p><b>Area of interest:</b> the pentagon button on the map draws a rectangle (axis-aligned in LV95) or polygon,
@@ -1999,40 +2004,108 @@ function mdLite(text) {
 }
 LAYERS.forEach(r => { if (r.ramp) r.domain = [r.min, r.max]; });
 const MASKABLE = { rgb: 1, index: 1, cont: 1, terrain: 1, fnrgb: 1, diff2: 1, fnclass: 1 };
-const SCL_CLOUD = { 3: 1, 8: 1, 9: 1, 10: 1 };
+const SCL_CLOUD = { 3: 1, 8: 1, 9: 1, 10: 1 };   // SCL cloud shadow, cloud medium / high probability, cirrus
 
-/* Vegetation masks: the forest-10m / vegetation-10m COGs of swissEO VHI v100 (STAC collection
-   ch.swisstopo.swisseo_vhi_v100). The VHI processor sets every pixel outside its forest / vegetation
-   mask to 255 (no data) and missing VHI inside the mask to 110, so the mask is "value != 255".
-   The v100 mask is identical on every date, so the most recent VHI item serves all dates.
-   Versioned masks will come as COGs with VHI v200 (topo-satromo-v2 "vegetation_masks"). */
-const VEG_LABEL = { forest: "Forest", vegetation: "All vegetation" };
-const vegLayer = kind => kind === "forest" ? LAYER.vhi : LAYER.vhiveg;
-let vegRefReq = null;
-function vegRef() {
-  if (!vegRefReq) {
-    vegRefReq = stacAll(COLL_VHI, addDays(todayStr, -60), todayStr)
+/* Vegetation masks of the S2-SR layers (value of the setting, also in the link):
+   - "forest" / "vegetation": the habitat map that the swissEO VHI processor uses on that date
+     (topo-satromo-v2 step1_processor_vhi.py, PRODUCT_VHI["vegetation_masks"]): v1-0 before 2024-07-12,
+     v1-1 before 2025-12-11, v1-2 since;
+   - "forest@1-0" … "vegetation@1-2": one version for every date;
+   - "tlm": the forest of swissTLM3D (WMS ch.swisstopo.swisstlm3d-wald: Wald, Wald offen, Gebüschwald).
+   The habitat maps are COGs on the swissEO 10 m grid, inside the mask = value ≠ 0. */
+const MASK_BASE = "https://s3-topo-satromo-prod.s3.eu-central-1.amazonaws.com/data/MASKS/Vegetation/";
+const HABITAT = [   // version, used from, file name part, label
+  { v: "1-0", from: "0000-00-00", file: "habitatv1-0_2022_CLCplus_2021", label: "habitat map v1-0 (2022, CLC+ 2021)" },
+  { v: "1-1", from: "2024-07-12", file: "habitatv1-1_2024_CLCplus_2023", label: "habitat map v1-1 (2024, CLC+ 2023)" },
+  { v: "1-2", from: "2025-12-11", file: "habitatv1-2_2025_CLCplus_2023", label: "habitat map v1-2 (2025, CLC+ 2023)" }];
+const TLM_FOREST = "ch.swisstopo.swisstlm3d-wald";
+const TLM_CLASSES = { 12: "Wald (forest)", 13: "Wald offen (open forest)", 6: "Gebüschwald (scrub forest)" };
+const VEG_KIND = { forest: "Forest", vegetation: "All vegetation" };
+function vegParse(v) {
+  if (v === "tlm") return { kind: "tlm" };
+  const m = /^(forest|vegetation)(?:@(1-[012]))?$/.exec(v || "");
+  return m ? { kind: m[1], ver: m[2] || null } : null;
+}
+const vegOn = v => !!vegParse(v);
+const habitatOf = (ver, date) => ver ? HABITAT.find(h => h.v === ver) : HABITAT.filter(h => h.from <= date).pop();
+/* "Forest, habitat map v1-2 (2025, CLC+ 2023)"; short: "forest mask (habitat map v1-2)" for captions */
+function vegName(v, date, short) {
+  const p = vegParse(v);
+  if (!p) return "";
+  if (p.kind === "tlm") return short ? "swissTLM3D forest mask" : "Forest, swissTLM3D";
+  const h = habitatOf(p.ver, date || state.date);
+  return short ? VEG_KIND[p.kind].toLowerCase() + " mask (" + h.label.replace(/ \(.*/, "") + ")" : VEG_KIND[p.kind] + ", " + h.label;
+}
+const vegUrl = (p, date) => MASK_BASE + p.kind + "_mask_2056_" + habitatOf(p.ver, date).file + ".tif";
+
+/* swissTLM3D forest for a box: WMS GetMap in chunks of at most 4096 px; the layer is drawn opaque
+   (anti-aliased only at the edges), so inside = alpha ≥ 128. */
+async function readTlmMask(bbox, W, H, signal) {
+  const m = new Uint8Array(W * H), CH = 4096, rx = (bbox[2] - bbox[0]) / W, ry = (bbox[3] - bbox[1]) / H;
+  for (let y0 = 0; y0 < H; y0 += CH) for (let x0 = 0; x0 < W; x0 += CH) {
+    if (signal && signal.aborted) throw new DOMException("Aborted", "AbortError");
+    const w = Math.min(CH, W - x0), h = Math.min(CH, H - y0);
+    const b = [bbox[0] + x0 * rx, bbox[3] - (y0 + h) * ry, bbox[0] + (x0 + w) * rx, bbox[3] - y0 * ry];
+    const im = await loadImg("https://wms.geo.admin.ch/?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true" +
+      "&LAYERS=" + TLM_FOREST + "&STYLES=&CRS=EPSG%3A2056&BBOX=" + b.map(v => v.toFixed(2)).join(",") + "&WIDTH=" + w + "&HEIGHT=" + h);
+    const cv = makeCanvas(w, h), ctx = cv.getContext("2d", { willReadFrequently: true });
+    ctx.drawImage(im, 0, 0);
+    const d = ctx.getImageData(0, 0, w, h).data;
+    for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) m[(y0 + j) * W + x0 + i] = d[(j * w + i) * 4 + 3] >= 128 ? 1 : 0;
+  }
+  return m;
+}
+/* swissTLM3D forest class at a point (GetFeatureInfo; a 1 px request fails on wms.geo.admin.ch, so 101 px). */
+async function tlmClassAt(x, y) {
+  const r = await fetch("https://wms.geo.admin.ch/?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetFeatureInfo&LAYERS=" + TLM_FOREST +
+    "&QUERY_LAYERS=" + TLM_FOREST + "&STYLES=&CRS=EPSG%3A2056&BBOX=" + [x - 50.5, y - 50.5, x + 50.5, y + 50.5].join(",") +
+    "&WIDTH=101&HEIGHT=101&I=50&J=50&FEATURE_COUNT=1&INFO_FORMAT=application%2Fjson");
+  const f = (await r.json()).features || [];
+  return f.length ? +f[0].properties.objektart : null;
+}
+
+const vegWarned = new Set();
+/* Mask grid (1 = inside) of the mask `v` on `date` for a box, or null (with a one-time warning) when it cannot be read. */
+async function readVegMask(v, date, bbox, W, H, signal) {
+  const p = vegParse(v);
+  if (!p) return null;
+  try {
+    if (p.kind === "tlm") return await readTlmMask(bbox, W, H, signal);
+    const a = await readGrid(vegUrl(p, date), bbox, W, H, signal, 0), m = new Uint8Array(W * H);
+    if (a) for (let k = 0; k < a.length; k++) m[k] = a[k] !== 0 ? 1 : 0;   // outside the mask raster: not inside
+    return m;
+  } catch (e) {
+    if (e && e.name === "AbortError") throw e;
+    const name = vegName(v, date);
+    if (!vegWarned.has(name)) { vegWarned.add(name); setStatus("The mask " + name + " could not be loaded and is not applied."); }
+    return null;
+  }
+}
+
+/* The VHI season sums keep the forest mask of swissEO VHI v100 itself: the forest-10m COG of the most recent VHI item
+   (the VHI processor sets every pixel outside its mask to 255 and missing VHI inside it to 110, so inside = value ≠ 255). */
+let vhiRefReq = null;
+function vhiRef() {
+  if (!vhiRefReq) {
+    vhiRefReq = stacAll(COLL_VHI, addDays(todayStr, -60), todayStr)
       .then(fs => fs.length ? fs.map(f => f.id).sort().pop() : nearestVhiDay(todayStr))
       .then(id => { if (!id) throw new Error("no VHI item found"); return id; });
-    vegRefReq.catch(() => { vegRefReq = null; });
+    vhiRefReq.catch(() => { vhiRefReq = null; });
   }
-  return vegRefReq;
+  return vhiRefReq;
 }
-let vegWarned = false;
-/* Mask grid (1 = inside) for a box, or null (with a one-time warning) when the mask cannot be read.
-   `date` is kept for versioned masks (VHI v200); the v100 mask does not change with the date. */
-async function readVegMask(kind, date, bbox, W, H, signal) {
+async function readVhiForestMask(bbox, W, H, signal) {
   try {
-    const a = await readGrid(vhiUrl(await vegRef(), vegLayer(kind)), bbox, W, H, signal, 255);
+    const a = await readGrid(vhiUrl(await vhiRef(), LAYER.vhi), bbox, W, H, signal, 255);
     const m = new Uint8Array(a.length);
     for (let k = 0; k < a.length; k++) m[k] = a[k] !== 255 ? 1 : 0;
     return m;
   } catch (e) {
     if (e && e.name === "AbortError") throw e;
-    if (!vegWarned) { vegWarned = true; setStatus("The " + VEG_LABEL[kind].toLowerCase() + " mask (swissEO VHI v100) could not be loaded and is not applied."); }
+    if (!vegWarned.has("vhi")) { vegWarned.add("vhi"); setStatus("The forest mask of swissEO VHI v100 could not be loaded."); }
     return null;
   }
-}   // SCL cloud shadow, cloud medium / high probability, cirrus
+}
 const classesOf = (rec, s) =>
   rec.classify ? rec.classify.map(c => [c[2], c[1]]) :
   rec.modal && s && s.mode === "change" ? [
@@ -2128,7 +2201,7 @@ function objToSettings(rec, o) {
   if (o.cloudMask != null) s.cloud = bool(o.cloudMask);
   if (o.shadowMask != null) s.shadow = bool(o.shadowMask);
   if (o.terrainMask != null) s.terrain = bool(o.terrainMask);
-  if (rec.source === "s2" && (VEG_LABEL[o.vegetationMask] || o.vegetationMask === "off")) s.veg = o.vegetationMask;
+  if (rec.source === "s2" && (vegOn(o.vegetationMask) || o.vegetationMask === "off")) s.veg = o.vegetationMask;
   s.autoGain = rec.type === "rgb" && !rec.tci && bool(o.autoGain);
   if (rec.type === "rgb" && !rec.tci && o.look === "optimized") s.look = "optimized";
   return s;
@@ -2467,7 +2540,7 @@ async function renderScene(rec, s, id, bbox, W, H, signal) {
   const reads = all.map(b => readGrid(urlOf(b), bbox, W, H, signal, rec.cogUrl ? rec.cogFill : b === "terrain" ? 255 : 0));
   reads.push(maskable && (s.cloud || s.shadow) ? readGrid(assetUrl(id, "cloud"), bbox, W, H, signal, 0) : null);
   reads.push(maskable && s.terrain ? readGrid(assetUrl(id, "terrain"), bbox, W, H, signal, 255) : null);
-  reads.push(s2 && VEG_LABEL[s.veg] ? readVegMask(s.veg, id.slice(0, 10), bbox, W, H, signal) : null);
+  reads.push(s2 && vegOn(s.veg) ? readVegMask(s.veg, id.slice(0, 10), bbox, W, H, signal) : null);
   const [res, tci] = await Promise.all([Promise.all(reads),
     rec.tci ? readGridBands(assetUrl(id, "tci"), bbox, W, H, signal, 0, 3) : null]);
   const vm = res.pop(), tm = res.pop(), cm = res.pop(), a = rec.tci ? (tci || [null]) : res;
@@ -2676,7 +2749,7 @@ async function renderDiff2(cfg, bbox, W, H, signal) {
   const rx = (bbox[2] - bbox[0]) / W, ry = (bbox[3] - bbox[1]) / H, W2 = W + 2 * m, H2 = H + 2 * m;
   const bb = [bbox[0] - m * rx, bbox[1] - m * ry, bbox[2] + m * rx, bbox[3] + m * ry];
   const [A, B, vm] = await Promise.all([dateIndex(rec, s, cfg.scenes, bb, W2, H2, signal), dateIndex(rec, s, ref.scenes, bb, W2, H2, signal),
-    VEG_LABEL[s.veg] ? readVegMask(s.veg, cfg.date || state.date, bb, W2, H2, signal) : null]);
+    vegOn(s.veg) ? readVegMask(s.veg, cfg.date || state.date, bb, W2, H2, signal) : null]);
   const n2 = W2 * H2, dif = new Float32Array(n2);
   let any = false;
   const cg = cmaskOn(s) ? customMaskGrid(bb, W2, H2) : null;
@@ -2741,7 +2814,7 @@ async function vhiSeason(endDay, bbox, W, H, signal, onDay) {
     if (v.area === area && v.first === ids[0] && v.last <= last && (!base || v.last > base.last)) base = v;
   const n = W * H, def = base ? base.def.slice() : new Float32Array(n), ext = base ? base.ext.slice() : new Uint16Array(n),
         days = base ? base.days.slice() : new Uint16Array(n), todo = base ? ids.filter(id => id > base.last) : ids;
-  const fm = todo.length ? await readVegMask("forest", endDay, bbox, W, H, signal) : null;
+  const fm = todo.length ? await readVhiForestMask(bbox, W, H, signal) : null;
   let done = 0, failed = todo.length && !fm ? 1 : 0;                // without the mask the result is not cached
   await pool(todo, 6, async id => {
     const a = await readGrid(vhiUrl(id, LAYER.vhi), bbox, W, H, signal, 255)
@@ -3328,20 +3401,24 @@ function classList(box, list) {
   });
 }
 
-/* Segmented Off / Forest / All vegetation control. */
-function vegSeg(value, on) {
-  const g = el("div", "seg");
-  [["off", "Off"], ["forest", "Forest"], ["vegetation", "Vegetation"]].forEach(([v, t]) => {
-    const b = el("button", v === value ? "on" : "", t);
-    b.type = "button";
-    b.onclick = e => {
-      e.preventDefault();
-      g.querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b));
-      on(v);
-    };
-    g.append(b);
+/* Vegetation mask pull-down: off, the habitat map matching the date (as swissEO VHI), a fixed habitat map version,
+   or the swissTLM3D forest. */
+function vegSelect(value, on) {
+  const g = el("select", "vsel");
+  g.title = "Vegetation mask";
+  const opt = (parent, v, t) => { const o = el("option", null, t); o.value = v; parent.append(o); };
+  const grp = label => { const x = el("optgroup"); x.label = label; g.append(x); return x; };
+  opt(g, "off", "Off");
+  let x = grp("Habitat map matching the date (as swissEO VHI)");
+  opt(x, "forest", "Forest"); opt(x, "vegetation", "All vegetation");
+  HABITAT.slice().reverse().forEach(h => {
+    x = grp(h.label.charAt(0).toUpperCase() + h.label.slice(1));
+    opt(x, "forest@" + h.v, "Forest, v" + h.v); opt(x, "vegetation@" + h.v, "All vegetation, v" + h.v);
   });
-  g.value = () => (g.querySelector("button.on") || {}).textContent;
+  x = grp("swissTLM3D");
+  opt(x, "tlm", "Forest (Wald, Wald offen, Gebüschwald)");
+  g.value = vegOn(value) ? value : "off";
+  g.onchange = () => on(g.value);
   return g;
 }
 
@@ -3498,8 +3575,10 @@ function layerBody(rec) {
   }
   if (rec.source === "s2") {
     const l = el("div", "tog");
-    l.innerHTML = "<span>Vegetation mask<small>forest / vegetation mask of swissEO VHI v100</small></span>";
-    l.append(vegSeg(s.veg, v => { s.veg = v; onSettings(rec); }));
+    const small = () => vegOn(s.veg) ? vegName(s.veg) : "habitat maps of swissEO VHI or the swissTLM3D forest";
+    l.innerHTML = "<span>Vegetation mask<small></small></span>";
+    l.querySelector("small").textContent = small();
+    l.append(vegSelect(s.veg, v => { s.veg = v; l.querySelector("small").textContent = small(); onSettings(rec); }));
     body.append(l);
   }
   if (rec.type !== "wms") {                       // custom mask: the user's own polygons
@@ -4616,8 +4695,8 @@ async function sampleAoi(r, scenes, grid, o, signal) {
   let masked = 0, shadow = 0, outside = 0;
   const soft = q => q && q.catch(e => { if (e && e.name === "AbortError") throw e; return null; });
   const rd = (id, b) => soft(readGrid(assetUrl(id, b), bbox, W, H, signal, b === "terrain" ? 255 : 0));
-  if (VEG_LABEL[o.veg] && r.source === "s2" && scenes.length) {
-    const vm = await readVegMask(o.veg, scenes[0].slice(0, 10), bbox, W, H, signal);
+  if (vegOn(o.veg) && r.source === "s2" && scenes.length) {
+    const vm = await readVegMask(o.veg, o.vegDate || scenes[0].slice(0, 10), bbox, W, H, signal);
     if (vm) for (let k = 0; k < n; k++) if (mask[k] && vm[k] === 0) { done[k] = 1; outside++; }
   }
   if (customMask && (o.cmask === "in" || o.cmask === "out")) {          // the custom mask restricts the area
@@ -4818,7 +4897,7 @@ function openStats() {
   $("#stTerrRow").hidden = !s2 || r.type === "class" || r.type === "terrain";
   $("#stVegRow").hidden = !s2;
   stVeg = s2 ? S(rec).veg : "off";
-  $("#stVeg").replaceChildren(vegSeg(stVeg, v => { stVeg = v; runCurrentStats(); }));
+  $("#stVeg").replaceChildren(vegSelect(stVeg, v => { stVeg = v; runCurrentStats(); }));
   $("#stTerr").checked = S(rec).terrain;
   $("#stDate").textContent = state.date;
   const noTs = r.type === "class" || r.type === "fnclass" || rec.type === "diff2" || rec.type === "vhiseason";
@@ -4841,7 +4920,7 @@ $("#stCloud").onchange = $("#stScl").onchange = $("#stTerr").onchange = () => { 
 async function runCurrentStats() {
   const rec = stRec, r = statRec(rec), box = $("#stCur");
   const grid = aoiGrid(320);
-  $("#stMeta").textContent = (VEG_LABEL[stVeg] ? VEG_LABEL[stVeg] + " mask · " : "") +
+  $("#stMeta").textContent = (vegOn(stVeg) ? "Mask: " + vegName(stVeg) + " · " : "") +
     (cmaskOn(S(rec)) ? "Custom mask (" + (S(rec).cmask === "in" ? "inside" : "outside") + " the polygons) · " : "") + "Area " + areaLabel(geomArea(aoi)) + " · sampled on a " + grid.W + " × " + grid.H +
     " grid at " + grid.res + " m · " + grid.n + " cells inside the area of interest.";
   box.innerHTML = '<div class="hint">Reading the COGs over the area of interest…</div>';
@@ -4914,6 +4993,7 @@ async function runCurrentStats() {
 async function diffStats(rec, r, scenes, grid, opt, box) {
   const s = S(rec), ref = await resolveRef(s, state.date);
   if (!ref.scenes.length) { box.innerHTML = '<div class="hint">No reference acquisition within ±20 days of ' + ref.target + ".</div>"; return; }
+  opt = Object.assign({}, opt, { vegDate: state.date });   // one mask (that of the selected date) for both dates
   const [A, B] = await Promise.all([sampleAoi(r, scenes, grid, opt), sampleAoi(r, ref.scenes, grid, opt)]);
   if (stRec !== rec) return;
   const n = grid.W * grid.H, dif = new Float32Array(n).fill(NaN);
@@ -4946,10 +5026,10 @@ async function diffStats(rec, r, scenes, grid, opt, box) {
       }
       if (ones > zeros) filt++;
     }
-    const forest = VEG_LABEL[opt.veg] ? inArea : null;
+    const forest = vegOn(opt.veg) ? inArea : null;
     html += '<div class="sec" style="font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--blue);font-weight:700;margin:12px 0 6px">Change report (NDVI Analyst method)</div>' +
       '<table class="kv"><tr><th></th><th>Area</th><th>Share</th></tr>' +
-      "<tr><td>" + (forest != null ? VEG_LABEL[opt.veg] + " area in the AOI" : "AOI area (no vegetation mask)") + "</td><td>" + fmtHa(inArea) + "</td><td></td></tr>" +
+      "<tr><td>" + (forest != null ? (VEG_KIND[vegParse(opt.veg).kind] || "Forest") + " area in the AOI" : "AOI area (no vegetation mask)") + "</td><td>" + fmtHa(inArea) + "</td><td></td></tr>" +
       "<tr><td>Compared (valid on both dates)</td><td>" + fmtHa(st.n) + "</td><td>" + (100 * st.n / inArea).toFixed(1) + " %</td></tr>" +
       "<tr><td>Affected (ΔNDVI &lt; " + +thr.toFixed(3) + ")</td><td>" + fmtHa(raw) + "</td><td>" + (100 * raw / st.n).toFixed(1) + " %</td></tr>" +
       "<tr><td>Affected after edge-effect removal</td><td>" + fmtHa(filt) + "</td><td>" + (100 * filt / st.n).toFixed(1) + " %</td></tr></table>" +
@@ -5160,7 +5240,7 @@ $("#aoiSpec").onclick = () => {
   if (!aoi) return;
   $("#spMeta").textContent = "";
   spVeg = currentRec.source === "s2" ? S(currentRec).veg : "off";
-  $("#spVeg").replaceChildren(vegSeg(spVeg, v => { spVeg = v; runSpectral(); }));
+  $("#spVeg").replaceChildren(vegSelect(spVeg, v => { spVeg = v; runSpectral(); }));
   openModal("specModal");
   runSpectral();
 };
@@ -6205,11 +6285,15 @@ map.on("click", async e => {
     tr("SCL", scl == null ? "n/a" : scl + " · " + (P_SCL[scl] ? P_SCL[scl][0] : "?"));
     tr("Cloud mask", cld == null ? "n/a" : cld + " · " + (P_CLOUD[cld] ? P_CLOUD[cld][0] : "?"));
     tr("Terrain mask", TERRAIN_TXT(ter));
-    const ref = await vegRef().catch(() => null);
-    const [vf, vv] = ref ? await Promise.all(["forest", "vegetation"].map(kd =>
-      readPoint(vhiUrl(ref, vegLayer(kd)), p.x, p.y).catch(() => null))) : [null, null];
-    tr("Forest / vegetation mask", (vf == null ? "n/a" : vf !== 255 ? "forest" : "no forest") + " / " +
-                                   (vv == null ? "n/a" : vv !== 255 ? "vegetation" : "no vegetation"));
+    // habitat map of the date (as swissEO VHI), the layer's own mask if it is another one, and the swissTLM3D forest class
+    const hp = habitatOf(null, state.date), sp = vegParse(S(rec).veg);
+    const inMask = (kind, ver) => readPoint(vegUrl({ kind, ver }, state.date), p.x, p.y).catch(() => null);
+    const [vf, vv, own, tlm] = await Promise.all([inMask("forest", null), inMask("vegetation", null),
+      sp && sp.ver && sp.ver !== hp.v ? inMask(sp.kind, sp.ver) : null, tlmClassAt(p.x, p.y).catch(() => undefined)]);
+    tr("Forest / vegetation (" + hp.label.replace(/ \(.*/, "") + ")", (vf == null ? "n/a" : vf ? "forest" : "no forest") + " / " +
+                                   (vv == null ? "n/a" : vv ? "vegetation" : "no vegetation"));
+    if (own != null) tr(vegName(S(rec).veg), own ? "inside" : "outside");
+    tr("swissTLM3D forest", tlm === undefined ? "n/a" : tlm == null ? "no forest" : TLM_CLASSES[tlm] || "class " + tlm);
     $("#inspBody").innerHTML = "<table>" + rows + "</table>";
   } catch (err) {
     $("#inspBody").innerHTML = '<div class="hint">Read failed: ' + err.message + "</div>";
@@ -6366,7 +6450,7 @@ function drawCaption(ctx, W, H, desc) {
     sub = SOURCES[currentRec.source].name + " · " + (ids.length && currentRec.source !== "s2" ? ids[0].slice(0, 10) : state.date) +
           (currentRec.type === "diff2" && currentCfg && currentCfg.refInfo ? " vs. reference around " + currentCfg.refInfo.target : "") +
           (ids.length && currentRec.source === "s2" ? " · " + ids.map(timeOf).join(", ") : "") +
-          (currentRec.source === "s2" && VEG_LABEL[S(currentRec).veg] ? " · " + VEG_LABEL[S(currentRec).veg].toLowerCase() + " mask" : "");
+          (currentRec.source === "s2" && vegOn(S(currentRec).veg) ? " · " + vegName(S(currentRec).veg, state.date, true) : "");
   }
   sub += "  |  © swisstopo · contains modified Copernicus Sentinel data";
   ctx.font = "700 13px " + FONT;
@@ -7183,7 +7267,7 @@ async function tlFrame(it, area, W, H, o, signal) {
     ctx.font = "700 13px " + FONT; ctx.fillStyle = "#003F6B";
     ctx.fillText(rec.name + (rec.sub ? ": " + rec.sub : ""), 14, Hk - h + 21);
     ctx.font = "11px " + FONT; ctx.fillStyle = "#555";
-    ctx.fillText(SOURCES[rec.source].name + (rec.source === "s2" && VEG_LABEL[s.veg] ? " · " + VEG_LABEL[s.veg].toLowerCase() + " mask" : "") +
+    ctx.fillText(SOURCES[rec.source].name + (rec.source === "s2" && vegOn(s.veg) ? " · " + vegName(s.veg, state.date, true) : "") +
       "  |  © swisstopo · contains modified Copernicus Sentinel data", 14, Hk - h + 37);
   }
   ctx.restore();

@@ -31,7 +31,7 @@ the swisstopo WMS/WMTS services directly in the browser.
 | [swissEO NDVIdiff v100](https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-ndvidiff) | `forest-10m` COGs of the STAC collection `ch.swisstopo.swisseo_ndvi_diff_v100` | NDVI change of the current year compared to the previous year, forest perimeter, 10 m; one product for the end of July, August and September each year (since 2018) |
 | [swissEO NDVIz v100](https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-ndviz) | `forest-10m` COGs of the STAC collection `ch.swisstopo.swisseo_ndvi_z_v100` | NDVI anomaly as z-score, forest perimeter, 10 m; end of July, August and September (since 2017) |
 | swissEO NDVIdiff v200 **BETA** | 30 example COGs on `cms.geo.admin.ch/Topo/umweltbeobachtung/beispiele/NDVIDIFFV2/` (not in STAC; the item list is in the page) | Year-on-year NDVI change of two-month first-quartile cloud-free mosaics of S2-SR v200 (June/July, July/August, August/September, 2017–2026), forest, 10 m |
-| Vegetation masks | The `forest-10m` / `vegetation-10m` COGs of swissEO VHI v100 (STAC collection `ch.swisstopo.swisseo_vhi_v100`, most recent item): inside the mask = value ≠ 255 | Forest / all-vegetation mask for every S2-SR layer, statistics and exports |
+| Vegetation masks | Habitat map COGs v1-0 / v1-1 / v1-2 (forest, all vegetation) in `s3-topo-satromo-prod` (`data/MASKS/Vegetation/`, as used by the VHI processor), inside = value ≠ 0; the swissTLM3D forest (`wms.geo.admin.ch`, `ch.swisstopo.swisstlm3d-wald`) | Forest / all-vegetation mask for every S2-SR layer, statistics and exports |
 | Basemaps | `wmts.geo.admin.ch` (pixelkarte-farbe, swissimage, pixelkarte-grau) | Background maps *Map*, *SWISSIMAGE* and *Map Grey* on the native LV95 grid |
 | Place search | `api3.geo.admin.ch/rest/services/ech/SearchServer` with `type=locations`, as `searchLocation` in [web-mapviewer `search.api.js`](https://github.com/geoadmin/web-mapviewer/blob/3e5a2900/packages/mapviewer/src/api/search.api.js) | Municipalities, districts, cantons, place names and addresses |
 | WMS / WMTS | `wms.geo.admin.ch` (preset) and the external providers of map.geo.admin.ch ([`external-providers.json`](https://github.com/geoadmin/web-mapviewer/blob/3e5a2900/packages/mapviewer/src/modules/menu/components/advancedTools/ImportCatalogue/external-providers.json), read when the panel is opened), or any WMS / WMTS URL | Layers of other map services on the map and in the compare list |
@@ -41,19 +41,21 @@ is reprojected.
 
 ### Vegetation masks
 
-The vegetation mask option restricts every S2-SR layer, the AOI statistics, time series and spectral
-explorer, and the analytical and print exports to forest or to all vegetation. It is read from the
-`forest-10m` and `vegetation-10m` COGs of **swissEO VHI v100**: the VHI processor writes 255 (no data)
-outside its forest / vegetation mask and 110 where VHI is missing inside it, so *inside = value ≠ 255*.
-The v100 mask is the same on every date, so the most recent VHI item is used for all dates.
+The vegetation mask option (a pull-down) restricts every S2-SR layer, the AOI statistics, time series and
+spectral explorer, and the analytical and print exports to forest or to all vegetation:
 
-> **Needed soon:** the VHI v200 processor ([topo-satromo-v2](https://github.com/swisstopo/topo-satromo-v2))
-> uses versioned masks (`PRODUCT_VHI["vegetation_masks"]` = `s3://s3-topo-satromo-prod/data/MASKS/Vegetation/`,
-> habitat map v1-0 / v1-1 / v1-2 chosen by date in `step1_processor_vhi.py`). Those files are plain
-> 767 MB TIFFs (not cloud-optimised) in a bucket without CORS, so a web page cannot read them. To use
-> them, the masks have to be published as **COGs** (tiled, with overviews) at a CORS-enabled location,
-> e.g. with the VHI v200 STAC items. The browser then only needs the new URLs and the version-by-date
-> rule (`readVegMask` in `swisseo-browser.html` already receives the date).
+- **Forest / All vegetation (habitat map matching the date)**, the default choice: the versioned masks of the
+  VHI processor ([topo-satromo-v2](https://github.com/swisstopo/topo-satromo-v2), `PRODUCT_VHI["vegetation_masks"]`),
+  chosen by date as in `step1_processor_vhi.py`: habitat map v1-0 (2022, CLC+ 2021) before 2024-07-12, v1-1
+  (2024, CLC+ 2023) before 2025-12-11, v1-2 (2025, CLC+ 2023) since. They are COGs on the swissEO 10 m grid at
+  `https://s3-topo-satromo-prod.s3.eu-central-1.amazonaws.com/data/MASKS/Vegetation/{forest|vegetation}_mask_2056_habitatv1-…tif`
+  (CORS enabled), *inside = value ≠ 0*.
+- **A fixed version** (v1-0, v1-1 or v1-2, forest or all vegetation) for every date.
+- **swissTLM3D forest**: the WMS layer `ch.swisstopo.swisstlm3d-wald` (Wald, Wald offen, Gebüschwald), drawn
+  opaque, so *inside = alpha ≥ 128* of the GetMap image; the pixel inspector gives the class (GetFeatureInfo).
+
+The two-date layers use the mask of the selected date on both dates, so a new mask version never shows up as a
+change. The VHI season sums keep the forest mask of swissEO VHI v100 itself (see below).
 
 ### Scaling and no-data
 
@@ -214,8 +216,8 @@ The swissEO Browser therefore always uses the physical reflectance.
     extreme stress (in total, not consecutively). Only days with a VHI value count (110 and 255 are
     skipped): after long cloudy periods the VHI is missing once its 7-day window has passed, so the deficit
     can be underestimated; the pixel inspector and the statistics give the number of days with data. Only
-    pixels inside the forest mask of VHI v100 count (the mask of the most recent item, as for the vegetation
-    mask; non-forest stays transparent): the overviews of the daily forest COGs of 2026-04-26 to 2026-05-08
+    pixels inside the forest mask of VHI v100 count (the mask of the most recent item; non-forest stays
+    transparent): the overviews of the daily forest COGs of 2026-04-26 to 2026-05-08
     also hold values outside the forest (at 10 m their mask is the usual one), which would otherwise colour
     meadows and fields when zoomed out. The
     dashboard rates each region against its 2018–2025 climatology; per pixel this would need eight seasons
@@ -268,7 +270,8 @@ The swissEO Browser therefore always uses the physical reflectance.
     transition; the next scene fills them. The footprint comes from the TCI's internal mask at about 160 m;
     the edge zone is computed once per scene;
   - masks: clouds and cloud shadows (OmniCloudMask), terrain shadow (terrain mask 200), a vegetation
-    mask (Off / Forest / All vegetation, from swissEO VHI v100) and a **custom mask**: your own polygons
+    mask (pull-down: off, forest or all vegetation of the habitat map matching the date or of a fixed version, or
+    the swissTLM3D forest) and a **custom mask**: your own polygons
     (e.g. a forest map) loaded from a file or URL with the same import and limits as the area of interest;
     *Inside* keeps the data inside the polygons, *Outside* (inverted) the data outside. It works for every
     layer rendered from COGs (not the VHI WMS) and applies to the map, compare, AOI statistics, exports and
@@ -372,7 +375,8 @@ The swissEO Browser therefore always uses the physical reflectance.
 - **Loading indicator**: at the bottom left, above the attribution, the number of tiles still rendering and of
   requests in flight; after 6 s of continuous loading it says that the connection is slow.
 - **Pixel inspector**: the LV95 position, band values (DN and physical value), index value, SCL, cloud
-  mask, terrain mask and forest / vegetation mask at a clicked location; for the two-date layers the index
+  mask, terrain mask, forest / vegetation of the habitat map of the date (and of the layer's own mask) and the
+  swissTLM3D forest class at a clicked location; for the two-date layers the index
   on both sides and the difference; for the Forest Disturbance Classification the class; for VHI,
   NDVIdiff, NDVIdiff v200 BETA and NDVIz the product value; for the VHI season layers the cumulative
   deficit, the days with VHI below 10 and the days with a VHI value.
@@ -519,7 +523,7 @@ Parameter names follow the Copernicus Browser where an equivalent exists.
 | `redRange`, `greenRange`, `blueRange` | `[0,0.8]` | Advanced RGB effects |
 | `opacity` | `70` | Layer opacity in % |
 | `cloudMask`, `shadowMask`, `terrainMask` | `true` | Masks (written when they differ from the layer's default; the two-date layers mask clouds and shadows by default) |
-| `vegetationMask` | `forest` | Vegetation mask: `off`, `forest` or `vegetation` (S2-SR layers; from swissEO VHI v100; the NDVI difference to a reference date layer defaults to `forest`) |
+| `vegetationMask` | `forest` | Vegetation mask of the S2-SR layers: `off`, `forest` or `vegetation` (habitat map matching the date), `forest@1-0` … `vegetation@1-2` (fixed version) or `tlm` (swissTLM3D forest); the NDVI difference to a reference date layer and the Forest Disturbance Classification default to `forest` |
 | `basemap` | `swissimage` | Basemap (`pixelkarte` = *Map*, `swissimage`, `grey` = *Map Grey*, `none`); the former `labels` parameter is ignored |
 | `compareLayers`, `comparedOpacity`, `comparedClipping`, `compareMode` | | Compare list (base64url JSON, each entry with its LV95 view; WMS / WMTS entries as `{"l":"ext","x":{"u":service URL,"k":"WMS"/"WMTS","n":layer name,"t":title}}`), per-layer opacity and split range; `compareMode` is `split` / `opacity` when comparing and `off` otherwise (links without it open in compare mode) |
 | `panel` | `wms` | The WMS / WMTS panel is open |

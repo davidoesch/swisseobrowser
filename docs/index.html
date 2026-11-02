@@ -226,7 +226,7 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
   <p>Click the <b>Pixel inspector</b> button (the (i) with a mouse pointer, at the top of the map) to switch it on: it turns
     blue. Then click on the map. A box shows the
     values at that spot: the position, the reflectance of every band, the index value of the layer, the cloud and
-    terrain information and the forest / vegetation mask. Click the button again to switch it off.</p>
+    terrain information, the forest / vegetation mask and the swissTLM3D forest class. Click the button again to switch it off.</p>
   <figure><img src="img/pixel-inspector.jpg" alt="Pixel inspector showing band and NDVI values" width="1400" height="900">
     <figcaption><b>Fig. 5</b> The pixel inspector on a field: band values (stored number and reflectance) and the NDVI.</figcaption></figure>
 
@@ -290,7 +290,8 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
     <li><b>Description</b> and a <i>More info</i> link; the <span class="key">&lt;/&gt;</span> button shows the formula and the scaling used.</li>
     <li><b>Legend</b> with an adjustable colour scale (min / max) and <i>Reset colour scale</i>.</li>
     <li><b>Masks</b>: hide clouds and cloud shadows (cloud mask of the swissEO mosaic), terrain shadow, and everything
-      outside the forest or outside all vegetation (<i>Vegetation mask</i>). The <a href="#vis-mask">custom mask</a> uses your own polygons.</li>
+      outside the forest or outside all vegetation (<i>Vegetation mask</i>, a pull-down: the habitat map of swissEO VHI
+      matching the date, a fixed version of it, or the swissTLM3D forest). The <a href="#vis-mask">custom mask</a> uses your own polygons.</li>
     <li><b>Effects and advanced options</b>: gain, gamma, the red / green / blue ranges and the opacity. For the band
       composites also <i>Look</i> (standard stretch or the <i>True color optimized</i> tone curve of the Copernicus
       Browser) and <i>Adaptive gain</i>, which avoids saturated snow and clouds.</li>
@@ -372,7 +373,7 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
 
   <h3 id="tools-insp">Pixel inspector</h3>
   <p>Switch it on at the top of the map and click a spot. For the satellite layers it shows the band values (stored
-    number and reflectance), the index value, the scene classification, cloud and terrain mask and the vegetation mask;
+    number and reflectance), the index value, the scene classification, cloud and terrain mask, the vegetation mask and the swissTLM3D forest class;
     for the swissEO products the product value. See <a href="#t5">Fig. 5</a>.</p>
 
   <h3 id="tools-exp">Image download</h3>
