@@ -33,7 +33,6 @@ the swisstopo WMS/WMTS services directly in the browser.
 | swissEO NDVIdiff v200 **BETA** | 30 example COGs on `cms.geo.admin.ch/Topo/umweltbeobachtung/beispiele/NDVIDIFFV2/` (not in STAC; the item list is in the page) | Year-on-year NDVI change of two-month first-quartile cloud-free mosaics of S2-SR v200 (June/July, July/August, August/September, 2017–2026), forest, 10 m |
 | Vegetation masks | The `forest-10m` / `vegetation-10m` COGs of swissEO VHI v100 (STAC collection `ch.swisstopo.swisseo_vhi_v100`, most recent item): inside the mask = value ≠ 255 | Forest / all-vegetation mask for every S2-SR layer, statistics and exports |
 | Basemaps | `wmts.geo.admin.ch` (pixelkarte-farbe, swissimage, pixelkarte-grau) | Background maps *Map*, *SWISSIMAGE* and *Map Grey* on the native LV95 grid |
-| Label overlay | `wmts.asit-asso.ch` (`asitvd.fond_pourortho`, OpenStreetMap and Canton of Vaud data) | *Labels OSM*: roads and place names above the data |
 | Place search | `api3.geo.admin.ch/rest/services/ech/SearchServer` with `type=locations`, as `searchLocation` in [web-mapviewer `search.api.js`](https://github.com/geoadmin/web-mapviewer/blob/3e5a2900/packages/mapviewer/src/api/search.api.js) | Municipalities, districts, cantons, place names and addresses |
 | WMS / WMTS | `wms.geo.admin.ch` (preset) and the external providers of map.geo.admin.ch ([`external-providers.json`](https://github.com/geoadmin/web-mapviewer/blob/3e5a2900/packages/mapviewer/src/modules/menu/components/advancedTools/ImportCatalogue/external-providers.json), read when the panel is opened), or any WMS / WMTS URL | Layers of other map services on the map and in the compare list |
 
@@ -114,8 +113,8 @@ The swissEO Browser therefore always uses the physical reflectance.
   [Copernicus Browser documentation](https://documentation.dataspace.copernicus.eu/Applications/Browser.html) (Part B),
   with screenshots of the app in `docs/img/`. Deployed with the page.
 - **Basemap switcher** as in the Copernicus Browser: the layer button at the top right opens (on hover) *Basemaps* (*Map* =
-  pixelkarte-farbe, *SWISSIMAGE*, *Map Grey* = pixelkarte-grau, *None*) and *Map overlays* (*Labels OSM*, the ASIT VD
-  roads and place names, always drawn above the data).
+  pixelkarte-farbe, *SWISSIMAGE*, *Map Grey* = pixelkarte-grau, *None*). The ASIT VD label overlay was removed
+  ([#6](https://github.com/swisstopo/topo-swisseobrowser/issues/6)): swisstopo is not an ASIT member.
 - **Place search** ("Go to Place", left of the basemap switcher, the width of the Copernicus Browser search field): the
   location search of map.geo.admin.ch, from two characters, results as you type (arrow keys and Enter work). A result
   zooms to its extent (municipality, district, canton) or to its point at the zoom of the result (1:25,000 when it has
@@ -335,14 +334,14 @@ The swissEO Browser therefore always uses the physical reflectance.
   - *Spectral explorer*: mean surface reflectance of all 12 bands (± σ), with CSV download.
 - **Image download**: three tabs as in the Copernicus Browser:
   - *Basic*: the current view as PNG or JPG, with captions (datasource, date, scale bar) and an optional
-    description, map overlays, legend, crop to AOI and an optional AOI outline; works in compare mode.
+    description, legend, crop to AOI and an optional AOI outline; works in compare mode.
   - *Analytical*: any layers of the collection (visualised) and raw bands (B01–B12, B8A, AOT, SCL, cloud
     mask, terrain mask; VHI values) for the current view or the AOI, at LOW / MEDIUM / HIGH (40 / 20 /
     10 m) or a custom resolution, up to 2500 × 2500 px, as PNG, JPG or GeoTIFF (8-bit, 16-bit = stored DN,
     32-bit float = index or physical value) in CH1903+ / LV95, optionally with a dataMask band. Several
     files are zipped.
   - *High-res print*: the view re-rendered for a printed size (width / height in inches and DPI), with
-    the same captions, legend, overlay and AOI options, as PNG or JPG.
+    the same captions, legend and AOI options, as PNG or JPG.
 - **Timelapse**: as in the Copernicus Browser, for the current layer over the area of interest (data
   clipped to it, no outline drawn) or the current view:
   - time range, *Select 1 image per* orbit / day / week / month / year, month filter, Search;
@@ -359,7 +358,7 @@ The swissEO Browser therefore always uses the physical reflectance.
   - frames are kept as JPEG (about 0.05 MB at 320 px, 0.2 to 0.5 MB at 1024 px instead of 4 MB of pixels)
     and decoded a few at a time, so hundreds of frames fit into memory;
   - preview player with speed (fps), transition None / Fade with fade duration, delay last frame,
-    adaptive gain per frame for the band composites (snowy winter frames), legend, map overlays and captions (date label,
+    adaptive gain per frame for the band composites (snowy winter frames), legend and captions (date label,
     scale bar, source);
   - download as GIF or as video (MP4 or WebM, depending on the browser), default 1024 px (up to 2048).
     For long series a video is much smaller than a GIF (a GIF takes roughly 0.4 byte per pixel and frame);
@@ -384,7 +383,7 @@ The swissEO Browser therefore always uses the physical reflectance.
 - **Permalink**: the URL is updated on every change (configuration, view, date, cloud filter, layer and
   whether it is shown, open layer menu,
   legend range, masks incl. the custom mask mode, look and effects, reference date, compare list including WMS / WMTS
-  layers, the open WMS / WMTS service and layer, basemap and label overlay, AOI); *Copy link* at the top left of the map
+  layers, the open WMS / WMTS service and layer, basemap, AOI); *Copy link* at the top left of the map
   copies it. Areas and custom masks loaded from a URL are shared as that URL;
   areas imported from a file only when they are small, masks from a file never.
 - **Feedback and issues** (Info tab, end of the *not for operational use* notice), as in
@@ -521,7 +520,7 @@ Parameter names follow the Copernicus Browser where an equivalent exists.
 | `opacity` | `70` | Layer opacity in % |
 | `cloudMask`, `shadowMask`, `terrainMask` | `true` | Masks (written when they differ from the layer's default; the two-date layers mask clouds and shadows by default) |
 | `vegetationMask` | `forest` | Vegetation mask: `off`, `forest` or `vegetation` (S2-SR layers; from swissEO VHI v100; the NDVI Analyst defaults to `forest`) |
-| `basemap`, `labels` | `swissimage`, `true` | Basemap (`pixelkarte` = *Map*, `swissimage`, `grey` = *Map Grey*, `none`) and the *Labels OSM* overlay |
+| `basemap` | `swissimage` | Basemap (`pixelkarte` = *Map*, `swissimage`, `grey` = *Map Grey*, `none`); the former `labels` parameter is ignored |
 | `compareLayers`, `comparedOpacity`, `comparedClipping`, `compareMode` | | Compare list (base64url JSON, each entry with its LV95 view; WMS / WMTS entries as `{"l":"ext","x":{"u":service URL,"k":"WMS"/"WMTS","n":layer name,"t":title}}`), per-layer opacity and split range; `compareMode` is `split` / `opacity` when comparing and `off` otherwise (links without it open in compare mode) |
 | `panel` | `wms` | The WMS / WMTS panel is open |
 | `wmsUrl`, `wmsLayer`, `wmsOpacity` | `https://wms.geo.admin.ch/?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetCapabilities`, `ch.bafu.bundesinventare-bln`, `70` | Service of the WMS / WMTS panel (default: the swisstopo WMS), the layer shown from it and its opacity in % |
@@ -564,8 +563,7 @@ Example:
 
 - Data © [swisstopo](https://www.swisstopo.admin.ch),
   [open government data](https://www.swisstopo.admin.ch/ogd-conditions). swissEO S2-SR and swissEO VHI
-  contain modified Copernicus Sentinel data. Label overlay © [ASIT VD](https://www.asit-asso.ch),
-  © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors. Layers of other WMS / WMTS services © their providers.
+  contain modified Copernicus Sentinel data. Layers of other WMS / WMTS services © their providers.
 - User-interface workflow modelled on the [Copernicus Browser](https://browser.dataspace.copernicus.eu/)
   by the Copernicus Data Space Ecosystem ([eu-cdse/copernicus-browser](https://github.com/eu-cdse/copernicus-browser):
   themes, layer descriptions, preview thumbnails, layout, basemap switcher, WMS / WMTS panel and icons). This project is not affiliated with or endorsed by the

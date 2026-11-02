@@ -226,7 +226,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 #mapwrap{flex:1;position:relative;min-width:0}
 #map{position:absolute;inset:0;background:#e9ecef}
 .leaflet-container{font:inherit}
-/* basemap switcher: the Leaflet layers control, as in the Copernicus Browser (title, Basemaps, Map overlays) */
+/* basemap switcher: the Leaflet layers control, as in the Copernicus Browser (title, Basemaps) */
 .leaflet-control-layers{border:1px solid var(--border)!important;border-radius:4px!important;box-shadow:var(--shadow)!important}
 /* the Copernicus Browser icon (src/Map/layers.svg) instead of the Leaflet one, also on high-DPI screens */
 .leaflet-control-layers-toggle,.leaflet-retina .leaflet-control-layers-toggle{width:36px!important;height:36px!important;
@@ -235,8 +235,8 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 .leaflet-control-layers-expanded{padding:8px 12px 10px 10px;color:var(--text);font-size:12.5px;min-width:170px}
 .leaflet-control-layers-list::before{content:"Layers";display:flex;justify-content:center;font-size:15px;font-weight:700;color:var(--blue);margin-bottom:6px}
 .leaflet-control-layers-base::before{content:"Basemaps";display:block;font-weight:700;font-size:13px;margin-bottom:2px}
-.leaflet-control-layers-overlays::before{content:"Map overlays";display:block;font-weight:700;font-size:13px;margin-bottom:2px}
-.leaflet-control-layers-base>label,.leaflet-control-layers-overlays>label{padding-left:5px;margin:2px 0;cursor:pointer}
+.leaflet-control-layers-overlays,.leaflet-control-layers-separator{display:none}
+.leaflet-control-layers-base>label{padding-left:5px;margin:2px 0;cursor:pointer}
 .leaflet-control-layers input{accent-color:var(--blue)}
 /* bottom right: zoom, then coordinates and scale on one line (Copernicus Browser LeafletControls) */
 .leaflet-bottom.leaflet-right .leaflet-control-zoom{border:0!important;box-shadow:var(--shadow)}
@@ -458,6 +458,8 @@ textarea.exdesc{height:46px;margin:4px 0 2px 24px;width:calc(100% - 24px);font-f
 .fb-pop a{display:block;padding:7px 12px;font-size:12.5px;color:var(--text);text-decoration:none;white-space:nowrap;cursor:pointer}
 .fb-pop a:hover{background:var(--hover);color:var(--blue)}
 ul.links{margin:0;padding-left:16px;font-size:12px;line-height:1.6}
+/* swisstopo legal links at the bottom of the Info tab */
+.legal{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:10px;padding-top:8px;border-top:1px solid var(--border);font-size:11.5px}
 table.kv{width:100%;border-collapse:collapse;font-size:11.5px}
 table.kv td,table.kv th{padding:3px 6px 3px 0;border-bottom:1px solid #0000000d;text-align:left;vertical-align:top}
 table.kv th{color:var(--blue);font-weight:700}
@@ -661,9 +663,6 @@ table.kv td:first-child{color:var(--muted)}
             <p><b>Basemaps:</b> the layer button at the top right of the map (as in the Copernicus Browser) switches between
               <i>Map</i>, <i>SWISSIMAGE</i>, <i>Map Grey</i> (<code>wmts.geo.admin.ch</code>: pixelkarte-farbe, swissimage,
               pixelkarte-grau, on the native LV95 tile grid) and <i>None</i>.</p>
-            <p><b>Map overlay:</b> <i>Labels OSM</i> is <code>wmts.asit-asso.ch</code> <code>asitvd.fond_pourortho</code> (roads and
-              place names from OpenStreetMap and Canton of Vaud data), published on the identical LV95 grid. It sits in its own pane
-              above the data layers.</p>
             <p><b>Map layout:</b> at the top left the date and acquisitions on the map, <i>Copy link</i> and the pixel inspector;
               at the top right the place search, the layer button and the tools; at the bottom right the zoom buttons, the mouse
               position (LV95 easting and northing) and the scale bar; the attribution at the bottom left. The chevron in the
@@ -774,8 +773,13 @@ table.kv td:first-child{color:var(--muted)}
         <div class="card"><h4>Terms</h4>
           <div style="color:var(--muted);font-size:11.5px">© swisstopo,
             <a href="https://www.swisstopo.admin.ch/ogd-conditions" target="_blank">open government data</a>.
-            The swissEO products contain modified Copernicus Sentinel data. Label overlay © ASIT VD, © OpenStreetMap contributors.
-            Layers of other WMS / WMTS services: © their providers. Not for operational use.</div></div>
+            The swissEO products contain modified Copernicus Sentinel data.
+            Layers of other WMS / WMTS services: © their providers. Not for operational use.</div>
+          <div class="legal">
+            <a href="https://www.swisstopo.admin.ch/en/impressum-federal-office-of-topography" target="_blank" rel="noopener">Impressum</a>
+            <a href="https://www.swisstopo.admin.ch/en/legal-framework" target="_blank" rel="noopener">Legal framework</a>
+            <a href="https://www.swisstopo.admin.ch/en/terms-and-conditions" target="_blank" rel="noopener">Terms and conditions</a>
+            <a href="https://www.swisstopo.admin.ch/en/swisstopo-netiquette-rules" target="_blank" rel="noopener">Netiquette</a></div></div>
       </div>
     </aside>
 
@@ -838,7 +842,6 @@ table.kv td:first-child{color:var(--muted)}
         <div data-ep="basic">
           <label class="chk" title="Exported image will include datasource and date, scale bar and branding."><input type="checkbox" id="exCapB" checked> Show captions</label>
           <textarea class="exdesc" id="exDescB" placeholder="Description: a short text added to the caption"></textarea>
-          <label class="chk" title="Place labels, streets and boundaries (ASIT VD overlay)."><input type="checkbox" id="exOvB"> Add map overlays</label>
           <label class="chk"><input type="checkbox" id="exLegB" checked> Show legend</label>
           <label class="chk aoi-only"><input type="checkbox" id="exCropB"> Crop to AOI</label>
           <label class="chk aoi-only"><input type="checkbox" id="exLineB"> Draw AOI on image</label>
@@ -879,7 +882,6 @@ table.kv td:first-child{color:var(--muted)}
         <div data-ep="print" hidden>
           <label class="chk"><input type="checkbox" id="exCapP" checked> Show captions</label>
           <textarea class="exdesc" id="exDescP" placeholder="Description: a short text added to the caption"></textarea>
-          <label class="chk"><input type="checkbox" id="exOvP"> Add map overlays</label>
           <label class="chk"><input type="checkbox" id="exLegP" checked> Show legend</label>
           <label class="chk aoi-only"><input type="checkbox" id="exCropP"> Crop to AOI</label>
           <label class="chk aoi-only"><input type="checkbox" id="exLineP"> Draw AOI on image</label>
@@ -1036,7 +1038,6 @@ table.kv td:first-child{color:var(--muted)}
               <label class="chk"><input type="checkbox" id="tlDelay" checked> Delay last frame</label>
               <label class="chk" id="tlAutoRow" title="Per frame, lowers the gain when the area is bright (snow, clouds) so it does not saturate"><input type="checkbox" id="tlAuto"> Adaptive gain (bright scenes)</label>
               <label class="chk"><input type="checkbox" id="tlLeg"> Show legend</label>
-              <label class="chk"><input type="checkbox" id="tlOv"> Add map overlays</label>
               <label class="chk"><input type="checkbox" id="tlCap" checked> Show captions</label>
             </div>
             <div class="brow"><button class="btn sec" id="tlPreview">Preview</button><button class="btn" id="tlDl">Download</button></div>
@@ -1162,7 +1163,6 @@ map.fitBounds(CH_BOUNDS);
    2. Basemaps: swisstopo WMTS, native LV95
    ============================================================ */
 const ATTR = '&copy; <a href="https://www.swisstopo.admin.ch">swisstopo</a>';
-const ATTR_VD = '&copy; <a href="https://www.asit-asso.ch">ASIT VD</a>, &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
 /* The basemaps get their own pane below the data layers, so the layer switcher can add them in any order. */
 map.createPane("basePane");
@@ -1185,25 +1185,13 @@ const BASEMAPS = {
 const BASE_NAMES = { pixelkarte: "Map", swissimage: "SWISSIMAGE", grey: "Map Grey", none: "None" };
 let baseLayer = null, basemap = "pixelkarte";
 
-/* ASIT VD reference overlay (OpenStreetMap and Canton of Vaud data), on the very same LV95 tile grid as swisstopo
-   (WMTS row/col path order {z}/{y}/{x}). Its own pane keeps it above the data layers. */
-map.createPane("refOverlay");
-map.getPane("refOverlay").style.zIndex = 550;
-map.getPane("refOverlay").style.pointerEvents = "none";
-
-const asitLayer = L.tileLayer(
-  "https://wmts.asit-asso.ch/wmts/1.0.0/asitvd.fond_pourortho/default/default/0/2056/{z}/{y}/{x}.png",
-  { pane: "refOverlay", attribution: ATTR_VD, minZoom: 8, maxZoom: 27,
-    bounds: CH_BOUNDS, crossOrigin: "anonymous" }
-);
-
 /* Basemap switcher: the Leaflet layers control at the top right, as in the Copernicus Browser
    (opens on hover; "None" is an empty group). */
 const noneLayer = L.layerGroup();
 const baseOf = name => BASEMAPS[name] || noneLayer;
 const layerCtl = L.control.layers(
   Object.fromEntries(Object.keys(BASEMAPS).map(k => [BASE_NAMES[k], baseOf(k)])),
-  { "Labels OSM": asitLayer }, { position: "topright", collapsed: true }).addTo(map);
+  {}, { position: "topright", collapsed: true }).addTo(map);
 function setBasemap(name) {
   if (!(name in BASEMAPS)) name = "pixelkarte";
   basemap = name;
@@ -1212,17 +1200,11 @@ function setBasemap(name) {
   if (!map.hasLayer(baseOf(name))) baseOf(name).addTo(map);
   writeUrlSoon();
 }
-function setLabels(on) {
-  if (on && !map.hasLayer(asitLayer)) asitLayer.addTo(map);
-  if (!on && map.hasLayer(asitLayer)) map.removeLayer(asitLayer);
-  writeUrlSoon();
-}
 map.on("baselayerchange", e => {
   basemap = Object.keys(BASEMAPS).find(k => baseOf(k) === e.layer) || "pixelkarte";
   baseLayer = BASEMAPS[basemap];
   writeUrlSoon();
 });
-map.on("overlayadd overlayremove", () => writeUrlSoon());
 
 /* ============================================================
    3. swissEO asset addressing and scaling
@@ -5890,7 +5872,6 @@ function writeUrl() {
   Object.entries(settingsToObj(currentRec, S(currentRec)))
     .forEach(([k, v]) => p.set(k, Array.isArray(v) ? JSON.stringify(v) : String(v)));
   if (basemap !== "pixelkarte") p.set("basemap", basemap);
-  if (map.hasLayer(asitLayer)) p.set("labels", "true");
   if (compare.length) {
     p.set("compareLayers", b64e(compare.map(it => {
       const rec = LAYER[it.layerId], x = rec.ext;
@@ -5937,7 +5918,6 @@ function readUrl() {
   layerOff = q.get("showLayer") === "false";
 
   setBasemap(q.get("basemap") || "pixelkarte");
-  setLabels(q.get("labels") === "true" || q.get("labels") === "1");
 
   if (q.has("compareLayers")) {
     try {
@@ -6022,7 +6002,9 @@ async function showSceneInfo(rec, ids) {
 }
 
 /* ---- Feedback and issues: every message carries the permalink of the current view ---- */
-const FEEDBACK_TO = ["david.oesch@swisstopo.ch", "joan.sturm@swisstopo.ch"];
+/* One address in "to", the other in "cc": a list in "to" needs a separator (comma or semicolon) that not every
+   mail client accepts (issue #1). */
+const FEEDBACK_TO = "david.oesch@swisstopo.ch", FEEDBACK_CC = "joan.sturm@swisstopo.ch";
 const REPO = "https://github.com/swisstopo/topo-swisseobrowser";
 const PUBLIC_URL = "https://swisstopo.github.io/topo-swisseobrowser/";
 /* The link to the current view; a local copy (file, localhost) links to the same view on the public website. */
@@ -6043,11 +6025,11 @@ function viewSummary() {
 function feedbackLinks() {
   const link = viewLink(), sum = viewSummary(), subj = "Feedback swissEO Browser";
   const body = "Link to my view: " + link + "\nOn the map: " + sum + "\n\nMy feedback:\n";
-  const e = encodeURIComponent, to = FEEDBACK_TO.join(",");
+  const e = encodeURIComponent, to = e(FEEDBACK_TO), cc = e(FEEDBACK_CC);
   const href = {
-    app: "mailto:" + to + "?subject=" + e(subj) + "&body=" + e(body),
-    gmail: "https://mail.google.com/mail/?view=cm&fs=1&to=" + e(to) + "&su=" + e(subj) + "&body=" + e(body),
-    outlook: "https://outlook.office.com/mail/deeplink/compose?to=" + e(FEEDBACK_TO.join(";")) + "&subject=" + e(subj) + "&body=" + e(body)
+    app: "mailto:" + FEEDBACK_TO + "?cc=" + FEEDBACK_CC + "&subject=" + e(subj) + "&body=" + e(body),
+    gmail: "https://mail.google.com/mail/?view=cm&fs=1&to=" + to + "&cc=" + cc + "&su=" + e(subj) + "&body=" + e(body),
+    outlook: "https://outlook.office.com/mail/deeplink/compose?to=" + to + "&cc=" + cc + "&subject=" + e(subj) + "&body=" + e(body)
   };
   $$("#fbMail a").forEach(a => { a.href = href[a.dataset.mail]; });
   // The issue text is written here and passed as title + body, the URL parameters GitHub has always filled in
@@ -6343,7 +6325,7 @@ function drawLegendBox(ctx, rec, s, x, y, title) {
 
 const capHeight = desc => desc ? 62 : 46;
 
-function drawCaption(ctx, W, H, desc, overlay) {
+function drawCaption(ctx, W, H, desc) {
   const h = capHeight(desc);
   ctx.save();
   ctx.fillStyle = "rgba(255,255,255,.93)";
@@ -6364,7 +6346,7 @@ function drawCaption(ctx, W, H, desc, overlay) {
           (ids.length && currentRec.source === "s2" ? " · " + ids.map(timeOf).join(", ") : "") +
           (currentRec.source === "s2" && VEG_LABEL[S(currentRec).veg] ? " · " + VEG_LABEL[S(currentRec).veg].toLowerCase() + " mask" : "");
   }
-  sub += "  |  © swisstopo · contains modified Copernicus Sentinel data" + (overlay ? " · overlay © ASIT VD, © OpenStreetMap contributors" : "");
+  sub += "  |  © swisstopo · contains modified Copernicus Sentinel data";
   ctx.font = "700 13px " + FONT;
   ctx.fillStyle = "#003F6B";
   ctx.fillText(title, 14, H - h + 21);
@@ -6396,7 +6378,7 @@ function decorate(cv, o, mpp, k) {
   }
   if (o.caption) {
     drawScaleBar(ctx, W, H, mpp * k, capHeight(o.desc));
-    drawCaption(ctx, W, H, o.desc, o.overlay);
+    drawCaption(ctx, W, H, o.desc);
   }
   ctx.restore();
 }
@@ -6413,7 +6395,7 @@ async function buildExportCanvas(o) {
   const rings = aoi ? polysOf(aoi).flatMap(p => p.map(r => r.map(c => map.latLngToContainerPoint([c[1], c[0]])))) : [];
   const clipAoi = !!(o.crop && rings.length);
 
-  // Same paint order as the map: basemap, product layer(s), then the always-on-top overlay.
+  // Same paint order as the map: basemap, then the product layer(s).
   drawTileLayer(ctx, baseLayer, pb, z);
   ctx.save();
   if (clipAoi) { pathRings(ctx, rings); ctx.clip("evenodd"); }
@@ -6432,10 +6414,6 @@ async function buildExportCanvas(o) {
     }
   } else { drawTileLayer(ctx, current, pb, z); drawTileLayer(ctx, xp.preview, pb, z); }
   ctx.restore();
-  if (o.overlay) {
-    if (map.hasLayer(asitLayer)) drawTileLayer(ctx, asitLayer, pb, z);
-    else ctx.drawImage(await renderWmts(asitLayer, viewBox(), W, H), 0, 0);
-  }
   if (rings.length && o.aoiLine) strokeAoi(ctx, rings, 1);
 
   let out = cv;
@@ -6780,7 +6758,7 @@ async function runPrint(signal, prog) {
   if (!g.ok) throw new Error(g.msg);
   const { bbox, W, H, k } = g;
   const o = { caption: $("#exCapP").checked, desc: $("#exCapP").checked ? $("#exDescP").value.trim() : "",
-              overlay: $("#exOvP").checked, legend: $("#exLegP").checked,
+              legend: $("#exLegP").checked,
               crop: $("#exCropP").checked && !!aoi, aoiLine: $("#exLineP").checked && !!aoi };
   const cv = makeCanvas(W, H), ctx = cv.getContext("2d");
   ctx.fillStyle = "#e9ecef"; ctx.fillRect(0, 0, W, H);
@@ -6808,7 +6786,6 @@ async function runPrint(signal, prog) {
     ctx.restore();
   }
   ctx.restore();
-  if (o.overlay) { prog("Loading the map overlay…"); ctx.drawImage(await renderWmts(asitLayer, bbox, W, H, signal), 0, 0); }
   if (rings.length && o.aoiLine) strokeAoi(ctx, rings, k);
   decorate(cv, o, g.mpp, k);
   prog("Encoding…");
@@ -6857,7 +6834,6 @@ function exShow(tab) {
 function openExport() {
   $("#expMsg").classList.remove("on");
   $("#exProg").textContent = "";
-  $("#exOvB").checked = $("#exOvP").checked = map.hasLayer(asitLayer);
   $("#exHin").value = (+$("#exWin").value * printAspect()).toFixed(1);
   exLists();
   exShow(exTab);
@@ -6883,7 +6859,7 @@ $("#exGo").onclick = async () => {
     let note = "";
     if (exTab === "basic") {
       const o = { caption: $("#exCapB").checked, desc: $("#exCapB").checked ? $("#exDescB").value.trim() : "",
-                  overlay: $("#exOvB").checked, legend: $("#exLegB").checked,
+                  legend: $("#exLegB").checked,
                   crop: !!aoi && $("#exCropB").checked, aoiLine: !!aoi && $("#exLineB").checked };
       const cv = await buildExportCanvas(o);
       const parts = ["swissEO", compareMode ? "compare_" + compare.map(it => it.layerId).join("-") : currentRec.id + "_" + state.date];
@@ -7172,7 +7148,6 @@ async function tlFrame(it, area, W, H, o, signal) {
   ctx.globalAlpha = s.opacity / 100;
   ctx.drawImage(lc, 0, 0);
   ctx.restore();
-  if (tl.overlay) ctx.drawImage(tl.overlay, 0, 0);
   tlDrawLabel(ctx, it.label, k);
   ctx.save(); ctx.scale(k, k);
   if (o.legend) drawLegendBox(ctx, rec, s, 16, 16, rec.name);
@@ -7187,7 +7162,7 @@ async function tlFrame(it, area, W, H, o, signal) {
     ctx.fillText(rec.name + (rec.sub ? ": " + rec.sub : ""), 14, Hk - h + 21);
     ctx.font = "11px " + FONT; ctx.fillStyle = "#555";
     ctx.fillText(SOURCES[rec.source].name + (rec.source === "s2" && VEG_LABEL[s.veg] ? " · " + VEG_LABEL[s.veg].toLowerCase() + " mask" : "") +
-      "  |  © swisstopo · contains modified Copernicus Sentinel data" + (o.overlay ? " · overlay © ASIT VD, © OpenStreetMap contributors" : ""), 14, Hk - h + 37);
+      "  |  © swisstopo · contains modified Copernicus Sentinel data", 14, Hk - h + 37);
   }
   ctx.restore();
   return cv;
@@ -7202,12 +7177,11 @@ async function tlBuild() {
   if (!use.length) { $("#tlProg").textContent = "No images to use. Search first, or widen the cloud / coverage limits."; return false; }
   const many = use.length > TL_WARN_FRAMES ? " (" + use.length + " frames: this takes a while)" : "";
   const area = tlArea(), [W, H] = tlSize();
-  const o = { legend: $("#tlLeg").checked, overlay: $("#tlOv").checked, caption: $("#tlCap").checked, autoGain: $("#tlAuto").checked };
+  const o = { legend: $("#tlLeg").checked, caption: $("#tlCap").checked, autoGain: $("#tlAuto").checked };
   $("#tlPreview").disabled = $("#tlDl").disabled = true;
   try {
     $("#tlProg").textContent = "Loading the basemap…";
     tl.base = baseLayer ? await renderWmts(baseLayer, area.bbox, W, H, ctrl.signal) : null;
-    tl.overlay = o.overlay ? await renderWmts(asitLayer, area.bbox, W, H, ctrl.signal) : null;
     tlSetFrames([]);
     for (let i = 0; i < use.length; i++) {
       if (ctrl.signal.aborted) return false;
@@ -7357,7 +7331,7 @@ async function tlVideo(prog) {
 }
 $("#tlDl").onclick = async () => {
   const area = tlArea(), [W, H] = tlSize(), use = tl.items.filter(it => it.selected && tlApplicable(it));
-  const o = { legend: $("#tlLeg").checked, overlay: $("#tlOv").checked, caption: $("#tlCap").checked, autoGain: $("#tlAuto").checked };
+  const o = { legend: $("#tlLeg").checked, caption: $("#tlCap").checked, autoGain: $("#tlAuto").checked };
   const key = JSON.stringify([use.map(u => u.label), W, H, o, currentRec.id, settingsToObj(currentRec, S(currentRec)), area.bbox]);
   if (!tl.frames.length || key !== tl.key) { if (!(await tlBuild())) return; }
   tlStop();
@@ -7382,7 +7356,6 @@ function openTimelapse() {
   if (!$("#tlTo").value) { $("#tlTo").value = state.date; $("#tlFrom").value = addDays(state.date, -182); }
   const sz = tlDefaultSize();
   $("#tlW").value = sz[0]; $("#tlH").value = sz[1];
-  $("#tlOv").checked = map.hasLayer(asitLayer);
   $("#tlAutoRow").hidden = rec.type !== "rgb" || !!rec.tci;
   $("#tlAuto").checked = rec.type === "rgb" && !rec.tci && S(rec).autoGain;
   $("#tlCc").disabled = rec.source !== "s2";
