@@ -734,7 +734,7 @@ table.kv td:first-child{color:var(--muted)}
               nearest to the selected date is shown, also in compare (each entry gives the date of its product), timelapse and export. <b>NDVIdiff v200 BETA</b> (beta data, example
               COGs on cms.geo.admin.ch, not in STAC): the NDVI change of two-month first-quartile cloud-free mosaics (June/July, July/August,
               August/September) against the same window one year earlier.</p>
-            <p><b>Two-date layers:</b> <i>NDDI change</i> and the <i>NDVI Analyst</i> compare the selected date with a reference:
+            <p><b>Two-date layers:</b> <i>NDDI change</i> and the <i>NDVI difference to a reference date</i> compare the selected date with a reference:
               the acquisitions within ±20 days of the same day one year earlier (or of a chosen date), clearest first, per pixel the
               first clear one.</p>
             <p><b>Compare:</b> each entry shows the date of the data it actually shows: the nearest NDVIdiff, NDVIz or NDVIdiff v200
@@ -755,7 +755,7 @@ table.kv td:first-child{color:var(--muted)}
             <li><a href="https://github.com/geoadmin/web-mapviewer" target="_blank" rel="noopener">geoadmin/web-mapviewer</a>
               (map.geo.admin.ch): location search, Confederation logo and the list of external WMS / WMTS providers</li>
             <li><a href="https://github.com/RaffiBienz/ndvi_analyst" target="_blank" rel="noopener">RaffiBienz/ndvi_analyst</a>:
-              NDVI Analyst of the Canton of Aargau (method of the NDVI Analyst layer)</li>
+              NDVI Analyst of the Canton of Aargau (method of the NDVI difference to a reference date layer)</li>
             <li><a href="https://github.com/Open-EO/openeo-community-examples/blob/main/python/50_thematic-notebooks/drought-nddi/drought-nddi.ipynb" target="_blank" rel="noopener">Open-EO/openeo-community-examples</a>:
               NDDI drought notebook</li>
             <li><a href="https://github.com/sentinel-hub/custom-scripts" target="_blank" rel="noopener">sentinel-hub/custom-scripts</a>: index definitions and visualisations</li>
@@ -1836,7 +1836,7 @@ const LAYERS = [
     formula:"NDDI(date) − NDDI(reference), each NDDI clipped to −1…1\nreference = per pixel the first clear one of the acquisitions within ±20 days of the same day one year earlier (or of the chosen reference date), clearest first",
     fn:nddi },
 
-  { id:"analyst", group:"Indices", name:"NDVI Analyst", type:"diff2", source:"s2", bands:["b08","b04"], fn:nd,
+  { id:"analyst", group:"Indices", name:"NDVI difference to a reference date", type:"diff2", source:"s2", bands:["b08","b04"], fn:nd,
     ramp:R_NDVIDIFF, min:-0.3, max:0.3, lim:[-1, 1], modal:true, unit:"ΔNDVI",
     def:{ cloud:true, shadow:true, veg:"forest", thr:-0.08, mode:"diff" }, icon:"tree",
     sw:"linear-gradient(135deg,#b71c1c,#f5f5f5,#004d40)", fg:"#1a1206",
@@ -1894,7 +1894,7 @@ const COP_META = {
     cop: "# VHI days in extreme stress\n\nThe number of days in extreme stress of the [Waldtrockenheit dashboard](https://waldtrockenheit-dashboard.vercel.app/vhi.html), computed **per pixel**: the days from 1 April to the selected day (at most 31 October) on which the daily swissEO VHI forest map is below 10 (*extremely stressed*). As in the dashboard the days are counted in total, not consecutively, because a counter of consecutive days would reset at every short cool or wet spell without the forest actually recovering. Classes as in the dashboard: 0, 1 to 5, 6 to 15, 16 to 30 and more than 30 days.\n\nDays without a VHI value do not count (see *VHI cumulative deficit*).\n\nMore info [here](https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-vhi)." },
   fdc: { more: "https://custom-scripts.sentinel-hub.com/sentinel-2/forest_disturbance_classification/",
     cop: "# Forest Disturbance Classification\n\nA LightGBM classification of forest disturbances by Jonas Viehweger and Martin Puhm (Joanneum Research, EvoLand project), published as a Sentinel Hub custom script. From a single date it assigns every pixel to *bark beetle* (brown), *clear cut* (grey), *salvage logged* (grey too, low confidence), *wildfire* (dark brown) or *windthrow* (blue); *healthy* forest is not drawn. It was trained on samples from Germany, Sweden and Spain (macro F1 0.83), works best on recent, large disturbances and is only valid on forest, so the forest mask is on by default. Expect classification errors and validate the results.\n\n**Input scaling:** the trees split on Sentinel Hub L2A digital numbers in the convention DN = 10000 × reflectance (data before processing baseline 04.00, e.g. the script's 2019 example). swissEO stores DN = (ρ + 0.1) × 10000, so the script receives DN − 1000, clamped at 0. The Copernicus Browser feeds recent scenes without removing the offset (see the README on harmonizeValues), so its result can differ there. The 150 trees are loaded unchanged from the script on first use.\n\nMore info [here](https://custom-scripts.sentinel-hub.com/sentinel-2/forest_disturbance_classification/)." },
-  analyst: { cop: "# NDVI Analyst (Canton of Aargau)\n\nPort of the NDVI Analyst by Raffael Bienz (Canton of Aargau): the NDVI difference between two dates (later minus earlier), using swissEO S2-SR reflectance with negative values set to 0, masked to forest. Changes are pixels with an NDVI drop below the threshold (default −0.08); a 3 × 3 majority filter removes edge effects. *Detected change* shows the binary result. The statistics of an area of interest report the forest area and the affected area in ha and %, with and without edge-effect removal, like the original script.\n\nMore info [here](https://github.com/RaffiBienz/ndvi_analyst)." }
+  analyst: { cop: "# NDVI difference to a reference date\n\nMethod of the NDVI Analyst by Raffael Bienz (Canton of Aargau): the NDVI difference between two dates (later minus earlier), using swissEO S2-SR reflectance with negative values set to 0, masked to forest. Changes are pixels with an NDVI drop below the threshold (default −0.08); a 3 × 3 majority filter removes edge effects. *Detected change* shows the binary result. The statistics of an area of interest report the forest area and the affected area in ha and %, with and without edge-effect removal, like the original script.\n\nMore info [here](https://github.com/RaffiBienz/ndvi_analyst)." }
 };
 Object.keys(COP_META).forEach(id => Object.assign(LAYER[id], COP_META[id]));
 ["vhi", "vhiveg"].forEach(id => Object.assign(LAYER[id], {      // VHI: WMS for display, COG for statistics
@@ -1911,7 +1911,7 @@ const CONFIGS = {
   AGRICULTURE: { name: "Agriculture", groups: [
     ["Layers", ["true", "nir", "ndvi", "evi", "barren", "mstress", "ndmi", "agri", "savi"]]] },
   DROUGHT: { name: "Drought", groups: [
-    ["Layers", ["true", "ndvi", "ndmi", "vhi", "vhiveg", "ndvidiff", "ndvidiff2", "ndviz", "nddi", "nddichg", "analyst"]]] },
+    ["Layers", ["true", "ndvi", "evi", "ndmi", "vhi", "vhiveg", "ndvidiff", "ndvidiff2", "ndviz", "nddi", "nddichg", "analyst"]]] },
   DROUGHT2026: { name: "Drought 2026", groups: [
     ["Layers", ["true", "ndmi", "ndwi", "mstress", "ndvi", "swir", "urban", "hon"]]],
     highlights: [
@@ -1956,7 +1956,7 @@ const CONFIGS = {
         text: "By late July a brown-yellow belt stretched across much of Switzerland, above all the Mittelland and the Jura, where last year’s meadows and fields have visibly dried out. The 2026 image is from 24 July, when two cloud-free orbits covered the country; a narrow strip in the west lies between them. (Source: watson.ch, 10 August 2026)" }] }
 };
 CONFIGS.FOREST = { name: "Forest", groups: [
-  ["Layers", ["true", "ndvi", "vhi", "vhidef", "vhiext", "ndvidiff", "ndvidiff2", "ndviz", "analyst", "nbr", "ndmi", "fdc"]]] };
+  ["Layers", ["true", "ndvi", "evi", "vhi", "vhidef", "vhiext", "ndvidiff", "ndvidiff2", "ndviz", "analyst", "nbr", "ndmi", "fdc"]]] };
 const cfgLayers = id => CONFIGS[id].groups.flatMap(g => g[1]);
 
 /* Verification status of the layers: the checklist "Layer verification" in README.md (checked = verified).
@@ -2322,7 +2322,7 @@ async function resolveScenes(rec, date, cc) {
            .map(f => f.id).sort((a, b) => b.localeCompare(a));
 }
 
-/* Reference of the two-date layers (NDDI change, NDVI Analyst): the S2-SR acquisitions within ±20 days of
+/* Reference of the two-date layers (NDDI change, NDVI difference to a reference date): the S2-SR acquisitions within ±20 days of
    the reference date (by default the same day one year earlier), clearest first; a chosen reference date
    itself goes first. Up to six days are used as a per-pixel composite: each pixel takes the first
    acquisition that covers it and is not masked, so orbit gaps and clouds of the best day are filled. */
@@ -2653,7 +2653,7 @@ async function dateIndex(rec, s, scenes, bbox, W, H, signal) {
   return out;
 }
 
-/* Two-date layers: value(date) − value(reference); the NDVI Analyst can show the detected change
+/* Two-date layers: value(date) − value(reference); the NDVI difference layer can show the detected change
    (ΔNDVI < threshold, 3 × 3 majority filter, so the tile is read with a one-pixel margin). */
 async function renderDiff2(cfg, bbox, W, H, signal) {
   const rec = cfg.rec, s = cfg.s;
@@ -4899,7 +4899,7 @@ async function runCurrentStats() {
 }
 
 /* Two-date layers over the AOI: the index on the date and on the reference, their difference, and for the
-   NDVI Analyst the report of the original script (forest area, affected area with and without edge removal). */
+   NDVI difference layer the report of the NDVI Analyst script (forest area, affected area with and without edge removal). */
 async function diffStats(rec, r, scenes, grid, opt, box) {
   const s = S(rec), ref = await resolveRef(s, state.date);
   if (!ref.scenes.length) { box.innerHTML = '<div class="hint">No reference acquisition within ±20 days of ' + ref.target + ".</div>"; return; }
@@ -4936,7 +4936,7 @@ async function diffStats(rec, r, scenes, grid, opt, box) {
       if (ones > zeros) filt++;
     }
     const forest = VEG_LABEL[opt.veg] ? inArea : null;
-    html += '<div class="sec" style="font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--blue);font-weight:700;margin:12px 0 6px">NDVI Analyst report</div>' +
+    html += '<div class="sec" style="font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--blue);font-weight:700;margin:12px 0 6px">Change report (NDVI Analyst method)</div>' +
       '<table class="kv"><tr><th></th><th>Area</th><th>Share</th></tr>' +
       "<tr><td>" + (forest != null ? VEG_LABEL[opt.veg] + " area in the AOI" : "AOI area (no vegetation mask)") + "</td><td>" + fmtHa(inArea) + "</td><td></td></tr>" +
       "<tr><td>Compared (valid on both dates)</td><td>" + fmtHa(st.n) + "</td><td>" + (100 * st.n / inArea).toFixed(1) + " %</td></tr>" +

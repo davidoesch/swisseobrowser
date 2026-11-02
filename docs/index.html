@@ -267,9 +267,9 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
     <tr><th>Configuration</th><th>Layers</th></tr>
     <tr><td>Default</td><td>composites (true color, false color, urban, SWIR, agriculture, geology), indices (NDVI, NDWI, moisture index, NDSI, NBR, AOT), swissEO VHI forest and vegetation, swissEO NDVIdiff, scene classification, cloud mask, terrain</td></tr>
     <tr><td>Agriculture</td><td>true color, false color, NDVI, EVI, Barren Soil, Moisture Stress, moisture index, agriculture, SAVI</td></tr>
-    <tr><td>Drought</td><td>true color, NDVI, moisture index, swissEO VHI, swissEO NDVIdiff and NDVIz, NDDI and NDDI change, NDVI Analyst</td></tr>
+    <tr><td>Drought</td><td>true color, NDVI, EVI, moisture index, swissEO VHI, swissEO NDVIdiff and NDVIz, NDDI and NDDI change, NDVI difference to a reference date</td></tr>
     <tr><td>Drought 2026</td><td>true color, moisture index, NDWI, Moisture Stress, NDVI, SWIR, urban, Highlight Optimized Natural Color, plus the <a href="#vis-hl">highlights</a></td></tr>
-    <tr><td>Forest</td><td>true color, NDVI, swissEO VHI forest, VHI cumulative deficit, VHI days in extreme stress, swissEO NDVIdiff and NDVIz, NDVI Analyst, NBR, moisture index, Forest Disturbance Classification</td></tr>
+    <tr><td>Forest</td><td>true color, NDVI, EVI, swissEO VHI forest, VHI cumulative deficit, VHI days in extreme stress, swissEO NDVIdiff and NDVIz, NDVI difference to a reference date, NBR, moisture index, Forest Disturbance Classification</td></tr>
   </table>
   <p>The true color is the image delivered with each swissEO mosaic. All other layers are computed from the bands in
     your browser, or read from the swissEO products (VHI, NDVIdiff, NDVIz). When several satellite passes cover the
@@ -362,8 +362,8 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
       over your area, not over the whole scene; you can also exclude clouds with the scene classification and restrict
       the area to forest or vegetation. The chart and the values can be downloaded as CSV.</li>
   </ul>
-  <p>Some layers report differently: the two-date layers (NDDI change, NDVI Analyst) give the difference and, for the
-    NDVI Analyst, its forest change report; the VHI season layers give the season curve.</p>
+  <p>Some layers report differently: the two-date layers (NDDI change, NDVI difference to a reference date) give the difference and, for the
+    NDVI difference, its forest change report (method of the NDVI Analyst of the Canton of Aargau); the VHI season layers give the season curve.</p>
 
   <h3 id="tools-spec">Spectral explorer</h3>
   <p>The mean surface reflectance of all twelve Sentinel-2 bands over the area, with ± one standard deviation, as a

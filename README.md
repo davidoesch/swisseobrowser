@@ -137,12 +137,12 @@ The swissEO Browser therefore always uses the physical reflectance.
   - *Agriculture*: as the Copernicus Browser Agriculture theme, with the TCI as true color and without
     custom scripts: true color, false color, NDVI, EVI, Barren Soil, Moisture Stress, moisture index,
     agriculture, SAVI (colour steps and scripts of the Copernicus layers);
-  - *Drought*: true color (TCI), NDVI, moisture index, swissEO VHI forest / vegetation, swissEO NDVIdiff,
-    **swissEO NDVIdiff v200 BETA**, swissEO NDVIz, NDDI, NDDI change vs. the previous year and the NDVI Analyst;
+  - *Drought*: true color (TCI), NDVI, EVI, moisture index, swissEO VHI forest / vegetation, swissEO NDVIdiff,
+    **swissEO NDVIdiff v200 BETA**, swissEO NDVIz, NDDI, NDDI change vs. the previous year and the NDVI difference to a reference date;
   - *Drought 2026*: like the Copernicus Browser *Drought and Floods* theme, with true color, moisture index,
     NDWI, Moisture Stress, NDVI, SWIR, urban and Highlight Optimized Natural Color, plus **highlights**;
-  - *Forest*: true color (TCI), NDVI, swissEO VHI forest, **VHI cumulative deficit**, **VHI days in extreme
-    stress**, swissEO NDVIdiff, swissEO NDVIdiff v200 BETA, swissEO NDVIz, NDVI Analyst, Normalized Burn
+  - *Forest*: true color (TCI), NDVI, EVI, swissEO VHI forest, **VHI cumulative deficit**, **VHI days in extreme
+    stress**, swissEO NDVIdiff, swissEO NDVIdiff v200 BETA, swissEO NDVIz, NDVI difference to a reference date, Normalized Burn
     Ratio, moisture index and the **Forest Disturbance Classification**.
 - **Highlights** (*Drought 2026*): story cards as in the Copernicus Browser (live thumbnail, title,
   dates, chevron). Clicking a card opens it on the map (the place at a fixed resolution and the TCI of the
@@ -241,7 +241,7 @@ The swissEO Browser therefore always uses the physical reflectance.
     baseline 04.00, e.g. the script's 2019 example), so the browser passes `max(0, DN − 1000)` of the swissEO
     bands, which equals 10000 × ρ. The port was checked against the original script (run in QuickJS): the same
     class for all 3000 test vectors. A 256 px tile takes about 0.2 s with the forest mask.
-  - *NDVI Analyst*: port of [RaffiBienz/ndvi_analyst](https://github.com/RaffiBienz/ndvi_analyst) (Canton of Aargau):
+  - *NDVI difference to a reference date* (formerly *NDVI Analyst*): port of [RaffiBienz/ndvi_analyst](https://github.com/RaffiBienz/ndvi_analyst) (Canton of Aargau):
     ΔNDVI = NDVI(date) − NDVI(reference) (negative reflectance set to 0), forest mask by default, change =
     ΔNDVI below a threshold (default −0.08) followed by a 3 × 3 majority filter against edge effects.
     *Display*: the difference, or the detected change. The AOI statistics add the report of the original
@@ -329,8 +329,8 @@ The swissEO Browser therefore always uses the physical reflectance.
     which catches clouds OmniCloudMask misses, and the area can be restricted to forest or to all
     vegetation (the share of valid pixels then refers to the masked area); a custom mask that is switched
     on for the layer restricts the area in the same way. VHI, NDVIdiff and NDVIz statistics are read from
-    their COGs; the two-date layers report the difference (and the NDVI Analyst
-    report) instead of a time series, the VHI season layers the season curve.
+    their COGs; the two-date layers report the difference (and the change
+    report of the NDVI Analyst method) instead of a time series, the VHI season layers the season curve.
   - *Spectral explorer*: mean surface reflectance of all 12 bands (± σ), with CSV download.
 - **Image download**: three tabs as in the Copernicus Browser:
   - *Basic*: the current view as PNG or JPG, with captions (datasource, date, scale bar) and an optional
@@ -437,9 +437,9 @@ the copy next to the page when it is served from the repository, otherwise (e.g.
 - [x] `terrain`: Terrain / solar incidence *(Default)*
 - [x] `vhi`: swissEO VHI forest *(Default, Drought, Forest)*
 - [x] `vhiveg`: swissEO VHI vegetation *(Default, Drought)*
-- [ ] `vhidef`: VHI cumulative deficit *(Forest)*
-- [ ] `vhiext`: VHI days in extreme stress *(Forest)*
-- [ ] `evi`: EVI *(Agriculture)*
+- [x] `vhidef`: VHI cumulative deficit *(Forest)*, checked by FOEN
+- [x] `vhiext`: VHI days in extreme stress *(Forest)*, checked by FOEN
+- [ ] `evi`: EVI *(Agriculture, Drought, Forest)*
 - [ ] `savi`: SAVI *(Agriculture)*
 - [ ] `barren`: Barren Soil *(Agriculture)*
 - [ ] `mstress`: Moisture Stress *(Agriculture, Drought 2026)*
@@ -449,7 +449,7 @@ the copy next to the page when it is served from the repository, otherwise (e.g.
 - [x] `ndviz`: swissEO NDVIz *(Drought, Forest)*
 - [ ] `nddi`: NDDI *(Drought)*
 - [ ] `nddichg`: NDDI change vs. previous year *(Drought)*
-- [ ] `analyst`: NDVI Analyst *(Drought, Forest)*
+- [ ] `analyst`: NDVI difference to a reference date *(Drought, Forest)*
 - [ ] `fdc`: Forest Disturbance Classification *(Forest)*
 <!-- verification:end -->
 
@@ -509,9 +509,9 @@ Parameter names follow the Copernicus Browser where an equivalent exists.
 | `themeId` | `DROUGHT` | Configuration: `DEFAULT`, `AGRICULTURE`, `DROUGHT`, `DROUGHT2026`, `FOREST` (when missing or not containing the layer, the first configuration with the layer is used) |
 | `layerId` | `ndvi` | `true`, `nir`, `urban`, `swir`, `agri`, `geo`, `barren`, `hon`, `ndvi`, `ndwi`, `ndmi`, `ndsi`, `nbr`, `aot`, `evi`, `savi`, `mstress`, `nddi`, `nddichg`, `analyst`, `fdc`, `scl`, `cloud`, `terrain` (S2-SR); `vhi`, `vhiveg` (VHI); `vhidef`, `vhiext` (VHI season sums); `ndvidiff`, `ndvidiff2` (v200 BETA), `ndviz` |
 | `valueRange` | `[0,0.9]` | Colour-scale min/max of index and continuous layers |
-| `threshold` | `0.5` | NDSI snow threshold (default 0.42; above it snow is shown in blue, otherwise true colour, as in the Copernicus Browser); NDVI Analyst change threshold (default −0.08) |
+| `threshold` | `0.5` | NDSI snow threshold (default 0.42; above it snow is shown in blue, otherwise true colour, as in the Copernicus Browser); NDVI difference to a reference date change threshold (default −0.08) |
 | `refDate` | `2025-07-01` | Reference date of the two-date layers (default: the same day one year earlier) |
-| `displayMode` | `change` | NDVI Analyst display: `diff` (default) or `change` |
+| `displayMode` | `change` | NDVI difference to a reference date display: `diff` (default) or `change` |
 | `ndwi` | `green` | NDWI of the NDDI layers: `swir` (default, Gu et al. 2007) or `green` (openEO notebook) |
 | `gain`, `gamma` | `1.2` | Effects for the composites (1 = default) |
 | `autoGain` | `true` | Adaptive gain for the composites |
@@ -519,7 +519,7 @@ Parameter names follow the Copernicus Browser where an equivalent exists.
 | `redRange`, `greenRange`, `blueRange` | `[0,0.8]` | Advanced RGB effects |
 | `opacity` | `70` | Layer opacity in % |
 | `cloudMask`, `shadowMask`, `terrainMask` | `true` | Masks (written when they differ from the layer's default; the two-date layers mask clouds and shadows by default) |
-| `vegetationMask` | `forest` | Vegetation mask: `off`, `forest` or `vegetation` (S2-SR layers; from swissEO VHI v100; the NDVI Analyst defaults to `forest`) |
+| `vegetationMask` | `forest` | Vegetation mask: `off`, `forest` or `vegetation` (S2-SR layers; from swissEO VHI v100; the NDVI difference to a reference date layer defaults to `forest`) |
 | `basemap` | `swissimage` | Basemap (`pixelkarte` = *Map*, `swissimage`, `grey` = *Map Grey*, `none`); the former `labels` parameter is ignored |
 | `compareLayers`, `comparedOpacity`, `comparedClipping`, `compareMode` | | Compare list (base64url JSON, each entry with its LV95 view; WMS / WMTS entries as `{"l":"ext","x":{"u":service URL,"k":"WMS"/"WMTS","n":layer name,"t":title}}`), per-layer opacity and split range; `compareMode` is `split` / `opacity` when comparing and `off` otherwise (links without it open in compare mode) |
 | `panel` | `wms` | The WMS / WMTS panel is open |
@@ -546,7 +546,7 @@ Example:
   notebook's green NDWI the NDDI saturates (see above); the default SWIR NDWI does not.
 - The Forest Disturbance Classification is a single-date model trained outside Switzerland; expect
   misclassifications, use it on forest only and validate the results.
-- The NDVI Analyst works on the swissEO S2-SR mosaics instead of the original script's own Sentinel-2
+- The NDVI difference to a reference date layer (NDVI Analyst method) works on the swissEO S2-SR mosaics instead of the original script's own Sentinel-2
   processing; AOI reports use a grid of at least 10 m (coarser for large areas, which the report states).
 - Statistics, time series, analytical downloads and high-res prints read the COGs in the browser; large
   areas, long date ranges and large prints take a while. Imports and custom masks have size limits (see
