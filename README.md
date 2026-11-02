@@ -248,6 +248,13 @@ The swissEO Browser therefore always uses the physical reflectance.
     ΔNDVI below a threshold (default −0.08) followed by a 3 × 3 majority filter against edge effects.
     *Display*: the difference, or the detected change. The AOI statistics add the report of the original
     script: forest area, compared area and affected area in ha and %, with and without edge-effect removal.
+    Both dates take, per pixel, the first clear scene (as the map). For a large AOI the report first uses a coarser
+    grid (up to 320 cells across, read from the COG overviews) and warns that its shares can differ strongly from a
+    10 m analysis; *Compute at 10 m* then processes the AOI at the full 10 m resolution in chunks of 1024 × 1024
+    cells (exact areas and shares; checked against a rasterio computation). See
+    [#5](https://github.com/swisstopo/topo-swisseobrowser/issues/5): for the Canton of Aargau the 176 m grid gave
+    13.7 % (13 Aug 2026) and 7.4 % (12 Sep 2026) after edge removal (VHI v100 forest mask), 10 m gives 11.1 % and
+    11.7 % (habitat map v1-2 forest mask; 11.9 % and 12.3 % with the VHI v100 mask in an independent rasterio run).
   - Reference of the two-date layers: the acquisitions within ±20 days of the same day one year earlier
     (or of a chosen reference date, which goes first), clearest first; up to six days form a per-pixel
     composite, each pixel taking the first acquisition that covers it without clouds, so orbit gaps and
@@ -551,7 +558,8 @@ Example:
 - The Forest Disturbance Classification is a single-date model trained outside Switzerland; expect
   misclassifications, use it on forest only and validate the results.
 - The NDVI difference to a reference date layer (NDVI Analyst method) works on the swissEO S2-SR mosaics instead of the original script's own Sentinel-2
-  processing; AOI reports use a grid of at least 10 m (coarser for large areas, which the report states).
+  processing; AOI reports use a grid of at least 10 m (coarser for large areas, which the report states); its
+  change report can be computed at 10 m for any AOI size.
 - Statistics, time series, analytical downloads and high-res prints read the COGs in the browser; large
   areas, long date ranges and large prints take a while. Imports and custom masks have size limits (see
   *Limits of the browser*); areas and masks from files are not shared through links.

@@ -746,7 +746,9 @@ table.kv td:first-child{color:var(--muted)}
               August/September) against the same window one year earlier.</p>
             <p><b>Two-date layers:</b> <i>NDDI change</i> and the <i>NDVI difference to a reference date</i> compare the selected date with a reference:
               the acquisitions within ±20 days of the same day one year earlier (or of a chosen date), clearest first, per pixel the
-              first clear one.</p>
+              first clear one (on the map and in the statistics). For a large area of interest the change report is first computed
+              on a coarser grid (up to 320 cells across, from the COG overviews); <i>Compute at 10 m</i> processes the area at full
+              resolution in chunks of 1024 × 1024 cells.</p>
             <p><b>Compare:</b> each entry shows the date of the data it actually shows: the nearest NDVIdiff, NDVIz or NDVIdiff v200
               BETA product, the VHI day (the nearest one if the chosen day has none) or the S2-SR date.</p>
             <p><b>Permalink:</b> the address bar is rewritten on every change (view, date, cloud filter, layer, legend range, masks,
@@ -4656,18 +4658,19 @@ function statRec(rec) {
 const SPEC_BANDS = [["b01", 443], ["b02", 490], ["b03", 560], ["b04", 665], ["b05", 705], ["b06", 740],
                     ["b07", 783], ["b08", 842], ["b8a", 865], ["b09", 945], ["b11", 1610], ["b12", 2190]];
 
-function aoiGrid(maxCells) {
-  const polys = polysOf(aoi).map(p => p.map(r => r.map(c => proj4("EPSG:4326", "EPSG:2056", c))));
+const aoiPolys = () => polysOf(aoi).map(p => p.map(r => r.map(c => proj4("EPSG:4326", "EPSG:2056", c))));
+function polysBox(polys) {
   let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
   polys.forEach(p => p[0].forEach(([x, y]) => {
     x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y);
   }));
-  const res = Math.max(10, Math.ceil(Math.max(x1 - x0, y1 - y0) / maxCells));
-  const W = Math.max(1, Math.ceil((x1 - x0) / res)), H = Math.max(1, Math.ceil((y1 - y0) / res));
-  const bbox = [x0, y1 - H * res, x0 + W * res, y1];
+  return [x0, y0, x1, y1];
+}
+/* Cells (W × H of `res` m from the top left of `bbox`) whose centre lies inside the polygons. */
+function rasterPolys(polys, bbox, W, H, res) {
   const cv = document.createElement("canvas");
   cv.width = W; cv.height = H;
-  const ctx = cv.getContext("2d");
+  const ctx = cv.getContext("2d", { willReadFrequently: true });
   ctx.beginPath();
   polys.forEach(p => p.forEach(r => {
     r.forEach(([x, y], i) => { const px = (x - bbox[0]) / res, py = (bbox[3] - y) / res; if (i) ctx.lineTo(px, py); else ctx.moveTo(px, py); });
@@ -4675,15 +4678,26 @@ function aoiGrid(maxCells) {
   }));
   ctx.fill("evenodd");
   const a = ctx.getImageData(0, 0, W, H).data, mask = new Uint8Array(W * H);
+  for (let i = 0; i < W * H; i++) if (a[i * 4 + 3] >= 128) mask[i] = 1;
+  return mask;
+}
+function aoiGrid(maxCells) {
+  const polys = aoiPolys(), [x0, y0, x1, y1] = polysBox(polys);
+  const res = Math.max(10, Math.ceil(Math.max(x1 - x0, y1 - y0) / maxCells));
+  const W = Math.max(1, Math.ceil((x1 - x0) / res)), H = Math.max(1, Math.ceil((y1 - y0) / res));
+  const bbox = [x0, y1 - H * res, x0 + W * res, y1];
+  const mask = rasterPolys(polys, bbox, W, H, res);
   let n = 0;
-  for (let i = 0; i < W * H; i++) if (a[i * 4 + 3] >= 128) { mask[i] = 1; n++; }
+  for (let i = 0; i < W * H; i++) n += mask[i];
   if (!n) { mask[Math.floor(H / 2) * W + Math.floor(W / 2)] = 1; n = 1; }
   return { bbox, W, H, res, mask, n };
 }
 
 /* Values of a layer inside the AOI for one date (all scenes of the day, first with data wins).
    Reads are staged so small AOIs stay cheap over long time series: one band first (does this
-   orbit reach the AOI at all?), then the masks (is anything left unmasked?), then the rest. */
+   orbit reach the AOI at all?), then the masks (is anything left unmasked?), then the rest.
+   o.firstClear: a cell masked in one scene is taken from the next scene (as the map does for the two-date
+   layers) instead of staying masked. The result's isOut marks the cells outside the vegetation / custom mask. */
 async function sampleAoi(r, scenes, grid, o, signal) {
   const { bbox, W, H, mask } = grid, n = W * H;
   const bands = r.type === "spectral" ? r.bands : (r.bands || [r.band]);
@@ -4691,17 +4705,17 @@ async function sampleAoi(r, scenes, grid, o, signal) {
   const vals = Array.from({ length: nb }, () => new Float32Array(n).fill(NaN));
   const cls = r.type === "class" || r.type === "fnclass" ? new Int16Array(n).fill(-1) : null;
   const T = r.type === "fnclass" ? await fdcModel() : null;
-  const done = new Uint8Array(n), cov = new Uint8Array(n);
+  const done = new Uint8Array(n), cov = new Uint8Array(n), isOut = new Uint8Array(n), wasMasked = o.firstClear ? new Uint8Array(n) : null;
   let masked = 0, shadow = 0, outside = 0;
   const soft = q => q && q.catch(e => { if (e && e.name === "AbortError") throw e; return null; });
   const rd = (id, b) => soft(readGrid(assetUrl(id, b), bbox, W, H, signal, b === "terrain" ? 255 : 0));
   if (vegOn(o.veg) && r.source === "s2" && scenes.length) {
     const vm = await readVegMask(o.veg, o.vegDate || scenes[0].slice(0, 10), bbox, W, H, signal);
-    if (vm) for (let k = 0; k < n; k++) if (mask[k] && vm[k] === 0) { done[k] = 1; outside++; }
+    if (vm) for (let k = 0; k < n; k++) if (mask[k] && vm[k] === 0) { done[k] = 1; isOut[k] = 1; outside++; }
   }
   if (customMask && (o.cmask === "in" || o.cmask === "out")) {          // the custom mask restricts the area
     const g = customMaskGrid(bbox, W, H);
-    for (let k = 0; k < n; k++) if (mask[k] && !done[k] && cmaskOut(o.cmask, g, k)) { done[k] = 1; outside++; }
+    for (let k = 0; k < n; k++) if (mask[k] && !done[k] && cmaskOut(o.cmask, g, k)) { done[k] = 1; isOut[k] = 1; outside++; }
   }
   if (r.type === "vhiseason") {                                         // season sums over the daily VHI maps
     const ss = scenes.length ? await vhiSeason(scenes[0].slice(0, 10), bbox, W, H, signal) : null;
@@ -4709,7 +4723,7 @@ async function sampleAoi(r, scenes, grid, o, signal) {
       if (!mask[k] || done[k] || !ss.days[k]) continue;
       cov[k] = 1; vals[0][k] = r.metric === "def" ? ss.def[k] : ss.ext[k]; done[k] = 1;
     }
-    return { vals, cls, masked, shadow, covered: cov.reduce((t, v) => t + v, 0), total: Math.max(1, grid.n - outside), outside };
+    return { vals, cls, masked, shadow, covered: cov.reduce((t, v) => t + v, 0), total: Math.max(1, grid.n - outside), outside, isOut };
   }
   for (const id of scenes) {
     let open = 0;
@@ -4752,7 +4766,8 @@ async function sampleAoi(r, scenes, grid, o, signal) {
       if (!has[k]) continue;
       if ((cm && (o.cloudCodes ? o.cloudCodes[cm[k]] : cm[k] >= 1 && cm[k] <= 3)) || (tm && tm[k] === 200) ||
           (sm && SCL_CLOUD[sm[k]])) {
-        masked++; done[k] = 1; has[k] = 0;
+        if (wasMasked) wasMasked[k] = 1; else { masked++; done[k] = 1; }
+        has[k] = 0;
       } else left++;
     }
     if (!left) continue;
@@ -4784,7 +4799,8 @@ async function sampleAoi(r, scenes, grid, o, signal) {
       done[k] = 1;
     }
   }
-  return { vals, cls, masked, shadow, covered: cov.reduce((t, v) => t + v, 0), total: Math.max(1, grid.n - outside), outside };
+  if (wasMasked) for (let k = 0; k < n; k++) if (wasMasked[k] && !done[k]) masked++;
+  return { vals, cls, masked, shadow, covered: cov.reduce((t, v) => t + v, 0), total: Math.max(1, grid.n - outside), outside, isOut };
 }
 
 function summarize(arr) {
@@ -4913,7 +4929,7 @@ function openStats() {
   runCurrentStats();
   if (!noTs) runSeries();
 }
-$("#statModal").onclose = () => { if (stAbort) stAbort.abort(); };
+$("#statModal").onclose = () => { if (stAbort) stAbort.abort(); if (st10Abort) st10Abort.abort(); };
 $("#aoiStats").onclick = openStats;
 $("#stCloud").onchange = $("#stScl").onchange = $("#stTerr").onchange = () => { runCurrentStats(); };
 
@@ -4993,14 +5009,14 @@ async function runCurrentStats() {
 async function diffStats(rec, r, scenes, grid, opt, box) {
   const s = S(rec), ref = await resolveRef(s, state.date);
   if (!ref.scenes.length) { box.innerHTML = '<div class="hint">No reference acquisition within ±20 days of ' + ref.target + ".</div>"; return; }
-  opt = Object.assign({}, opt, { vegDate: state.date });   // one mask (that of the selected date) for both dates
+  // one mask (that of the selected date) for both dates; per cell the first clear scene, as on the map
+  opt = Object.assign({}, opt, { vegDate: state.date, firstClear: true });
   const [A, B] = await Promise.all([sampleAoi(r, scenes, grid, opt), sampleAoi(r, ref.scenes, grid, opt)]);
   if (stRec !== rec) return;
   const n = grid.W * grid.H, dif = new Float32Array(n).fill(NaN);
   for (let k = 0; k < n; k++) if (grid.mask[k]) dif[k] = A.vals[0][k] - B.vals[0][k];
-  const st = summarize(dif), ha = c => c * grid.res * grid.res / 1e4;
-  const fmtHa = c => ha(c).toFixed(ha(c) < 10 ? 2 : 1) + " ha";
-  let html = '<div class="hint" style="margin:0 0 8px">' + state.date + " vs. the reference around " + ref.target + " (" + refLabel(ref) +
+  const st = summarize(dif);
+  let html ='<div class="hint" style="margin:0 0 8px">' + state.date + " vs. the reference around " + ref.target + " (" + refLabel(ref) +
     ", per cell the first clear one) · cells valid on both sides are compared (clouds and shadows masked as chosen above).</div>";
   if (!st) { box.innerHTML = html + '<div class="hint">No pixels valid on both dates.</div>'; return; }
   const inArea = Math.max(1, grid.n - A.outside);
@@ -5026,19 +5042,97 @@ async function diffStats(rec, r, scenes, grid, opt, box) {
       }
       if (ones > zeros) filt++;
     }
-    const forest = vegOn(opt.veg) ? inArea : null;
-    html += '<div class="sec" style="font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--blue);font-weight:700;margin:12px 0 6px">Change report (NDVI Analyst method)</div>' +
-      '<table class="kv"><tr><th></th><th>Area</th><th>Share</th></tr>' +
-      "<tr><td>" + (forest != null ? (VEG_KIND[vegParse(opt.veg).kind] || "Forest") + " area in the AOI" : "AOI area (no vegetation mask)") + "</td><td>" + fmtHa(inArea) + "</td><td></td></tr>" +
-      "<tr><td>Compared (valid on both dates)</td><td>" + fmtHa(st.n) + "</td><td>" + (100 * st.n / inArea).toFixed(1) + " %</td></tr>" +
-      "<tr><td>Affected (ΔNDVI &lt; " + +thr.toFixed(3) + ")</td><td>" + fmtHa(raw) + "</td><td>" + (100 * raw / st.n).toFixed(1) + " %</td></tr>" +
-      "<tr><td>Affected after edge-effect removal</td><td>" + fmtHa(filt) + "</td><td>" + (100 * filt / st.n).toFixed(1) + " %</td></tr></table>" +
-      '<div class="hint">Shares refer to the compared area. Grid ' + grid.res + " m" + (grid.res > 10 ? " (coarser than 10 m because of the AOI size; draw a smaller AOI for the full resolution)" : "") + ".</div>";
+    html += changeTable("Change report (NDVI Analyst method)" + (grid.res > 10 ? ", " + grid.res + " m grid" : ""),
+                        opt, inArea, st.n, raw, filt, grid.res, thr);
+    if (grid.res > 10) html += '<div class="warnbox" style="margin:8px 0">The area is large, so this report uses a ' + grid.res +
+      " m grid read from the overviews of the COGs: a cell mixes forest with its surroundings and the 3 × 3 edge filter covers " +
+      3 * grid.res + " m instead of 30 m. The shares can differ strongly from a 10 m analysis.<br>" +
+      '<button class="btn" id="st10Go" style="margin-top:6px">Compute at 10 m</button> <span id="st10Prog" class="hint"></span></div>' +
+      '<div id="st10Out"></div>';
   }
   const d0 = r.domain[0], k2 = (r.domain[1] - d0) / ((s.max - s.min) || 1e-9);
   html += histChart(st.sorted, s.min, s.max, v => { const c = r.ramp(d0 + (v - s.min) * k2); return c ? rgbCss(c) : "#999"; },
                     unitOf(r) + " (legend range)");
   box.innerHTML = html;
+  const go = $("#st10Go");
+  if (go) go.onclick = async () => {
+    go.disabled = true;
+    if (st10Abort) st10Abort.abort();
+    const ctrl = st10Abort = new AbortController();
+    try {
+      const t = await diffReport10(rec, r, scenes, ref, opt, ctrl.signal, p => { $("#st10Prog").textContent = p; });
+      if (!t || stRec !== rec) return;
+      $("#st10Prog").textContent = "";
+      $("#st10Out").innerHTML = changeTable("Change report (NDVI Analyst method), 10 m", opt, t.inArea, t.n, t.raw, t.filt, 10, s.thr) +
+        '<div class="stgrid"><div>Mean ' + unitOf(r) + "<b>" + fmtNum(t.mean) + "</b></div><div>Std. dev.<b>" + fmtNum(t.sd) + "</b></div>" +
+        "<div>Median<b>" + fmtNum(t.median) + "</b></div><div>P10 / P90<b>" + fmtNum(t.p10) + " / " + fmtNum(t.p90) + "</b></div></div>" +
+        '<div class="hint">' + fmtInt(t.W * t.H) + " cells of 10 m processed in " + t.chunks + " chunks; median and percentiles to ±0.001.</div>";
+    } catch (e) {
+      if (!(e && e.name === "AbortError")) $("#st10Prog").textContent = "Failed: " + (e.message || e);
+    } finally { go.disabled = false; }
+  };
+}
+
+/* The table of the NDVI Analyst report: area of the mask in the AOI, compared area and affected area (raw and after the
+   3 × 3 majority filter), cell counts on a grid of `res` m. */
+function changeTable(title, opt, inArea, n, raw, filt, res, thr) {
+  const ha = c => c * res * res / 1e4, fmtHa = c => ha(c).toFixed(ha(c) < 10 ? 2 : 1) + " ha", pc = (a, b) => (100 * a / Math.max(1, b)).toFixed(1) + " %";
+  return '<div class="sec" style="font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--blue);font-weight:700;margin:12px 0 6px">' + title + "</div>" +
+    '<table class="kv"><tr><th></th><th>Area</th><th>Share</th></tr>' +
+    "<tr><td>" + (vegOn(opt.veg) ? (VEG_KIND[vegParse(opt.veg).kind] || "Forest") + " area in the AOI" : "AOI area (no vegetation mask)") + "</td><td>" + fmtHa(inArea) + "</td><td></td></tr>" +
+    "<tr><td>Compared (valid on both dates)</td><td>" + fmtHa(n) + "</td><td>" + pc(n, inArea) + "</td></tr>" +
+    "<tr><td>Affected (ΔNDVI &lt; " + +thr.toFixed(3) + ")</td><td>" + fmtHa(raw) + "</td><td>" + pc(raw, n) + "</td></tr>" +
+    "<tr><td>Affected after edge-effect removal</td><td>" + fmtHa(filt) + "</td><td>" + pc(filt, n) + "</td></tr></table>" +
+    '<div class="hint">Shares refer to the compared area. Grid ' + res + " m.</div>";
+}
+
+/* The report at the full 10 m resolution for an AOI whose statistics grid is coarser: the AOI is processed in chunks of
+   1024 × 1024 cells on the 10 m grid of the COGs, each read with a one-cell margin for the 3 × 3 majority filter.
+   Areas, shares, mean and standard deviation are exact; median and percentiles come from a histogram in steps of 0.001. */
+let st10Abort = null;
+async function diffReport10(rec, r, scenes, ref, opt, signal, prog) {
+  const thr = S(rec).thr, polys = aoiPolys(), [x0, y0, x1, y1] = polysBox(polys);
+  const X0 = Math.floor(x0 / 10) * 10, Y1 = Math.ceil(y1 / 10) * 10;
+  const W = Math.ceil((x1 - X0) / 10), H = Math.ceil((Y1 - y0) / 10), C = 1024, chunks = [];
+  for (let cy = 0; cy < H; cy += C) for (let cx = 0; cx < W; cx += C) chunks.push([cx, cy, Math.min(C, W - cx), Math.min(C, H - cy)]);
+  const NB = 4000, hist = new Float64Array(NB);                     // ΔNDVI from −2 to 2 in steps of 0.001
+  let inArea = 0, n = 0, raw = 0, filt = 0, sum = 0, sq = 0, done = 0;
+  prog("10 m: 0 / " + chunks.length + " chunks…");
+  await pool(chunks, 2, async ([cx, cy, w, h]) => {
+    if (signal.aborted) return;
+    const w2 = w + 2, h2 = h + 2, bbox = [X0 + (cx - 1) * 10, Y1 - (cy + h + 1) * 10, X0 + (cx + w + 1) * 10, Y1 - (cy - 1) * 10];
+    const mask = rasterPolys(polys, bbox, w2, h2, 10);
+    let cnt = 0;
+    for (let k = 0; k < mask.length; k++) cnt += mask[k];
+    if (cnt) {
+      const grid = { bbox, W: w2, H: h2, res: 10, mask, n: cnt };
+      const [A, B] = await Promise.all([sampleAoi(r, scenes, grid, opt, signal), sampleAoi(r, ref.scenes, grid, opt, signal)]);
+      const bin = new Int8Array(w2 * h2).fill(-1), dif = new Float32Array(w2 * h2);
+      for (let k = 0; k < bin.length; k++) if (mask[k]) { const d = A.vals[0][k] - B.vals[0][k]; dif[k] = d; if (d === d) bin[k] = d < thr ? 1 : 0; }
+      for (let y = 1; y <= h; y++) for (let x = 1; x <= w; x++) {
+        const k = y * w2 + x;
+        if (!mask[k]) continue;
+        if (!A.isOut[k]) inArea++;
+        if (bin[k] < 0) continue;
+        const d = dif[k];
+        n++; sum += d; sq += d * d; hist[clamp(Math.floor((d + 2) * 1000), 0, NB - 1)]++;
+        if (bin[k] === 1) raw++;
+        let ones = 0, zeros = 0;
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+          const v = bin[k + dy * w2 + dx];
+          if (v === 1) ones++; else if (v === 0) zeros++;
+        }
+        if (ones > zeros) filt++;
+      }
+    }
+    done++;
+    if (!signal.aborted) prog("10 m: " + done + " / " + chunks.length + " chunks…");
+  });
+  if (signal.aborted) return null;
+  const q = p => { let c = 0; const t = p * (n - 1); for (let i = 0; i < NB; i++) { c += hist[i]; if (c > t) return (i + 0.5) / 1000 - 2; } return 2; };
+  const mean = sum / Math.max(1, n);
+  return { inArea, n, raw, filt, mean, sd: Math.sqrt(Math.max(0, sq / Math.max(1, n) - mean * mean)),
+           median: q(0.5), p10: q(0.1), p90: q(0.9), W, H, chunks: chunks.length };
 }
 
 /* Season statistics over the AOI: the per-pixel sums with their histogram, and the season curve, i.e. the AOI mean
