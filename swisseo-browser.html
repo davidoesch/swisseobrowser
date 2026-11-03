@@ -770,7 +770,8 @@ table.kv td:first-child{color:var(--muted)}
               selected date (statistics, histogram) and over a date range (time series, CSV); swissEO VHI statistics come from the
               <code>forest-10m</code> / <code>vegetation-10m</code> COGs. A large area is sampled on a coarser grid (up to 320 cells
               across, from the COG overviews); <i>Compute at 10 m</i> then processes the selected date at full resolution in chunks of
-              1024 × 1024 cells, for every layer, with a CSV download of the result. The <i>spectral explorer</i> plots mean reflectance of
+              1024 × 1024 cells, for every layer, with a CSV download of the result; the time series can use the 10 m grid too
+              (<i>Grid</i>). The <i>spectral explorer</i> plots mean reflectance of
               all 12 bands. The image download can be clipped to the area.</p>
             <p><b>Configurations:</b> as the themes of the Copernicus Browser, a configuration lists the layers for a task:
               <i>Default</i>, <i>Agriculture</i>, <i>Drought</i>, <i>Drought 2026</i> with highlights, and <i>Forest</i>. Each layer keeps its own
@@ -1096,6 +1097,8 @@ table.kv td:first-child{color:var(--muted)}
           <button class="btn sm" id="stRun">Compute</button>
           <button class="btn sec sm" id="stStop">Stop</button>
           <button class="btn sec sm" id="stCsv">Download CSV</button>
+          <label id="stResRow" title="The grid of the time series: the coarse grid is fast; 10 m reads every date at full resolution, in chunks">Grid
+            <select id="stTsRes"><option value="coarse"></option><option value="10">10 m (full resolution, slower)</option></select></label>
           <label style="margin-left:auto">Min. valid pixels
             <select id="stMinValid"><option value="0">0 %</option><option value="10" selected>10 %</option>
               <option value="25">25 %</option><option value="50">50 %</option><option value="75">75 %</option></select></label>
@@ -2843,9 +2846,20 @@ async function lnfAt(x, y) {
 const vegWarned = new Set();
 const vegWarn = (key, msg) => { if (!vegWarned.has(key)) { vegWarned.add(key); setStatus(msg); } };
 /* Mask grid (1 = inside) of the mask `v` on `date` for a box, or null (with a one-time warning) when it cannot be read. */
+const vegCache = new Map();          // the last 24 mask grids: a time series reads the same grids for every date
 async function readVegMask(v, date, bbox, W, H, signal) {
   const p = vegParse(v);
   if (!p) return null;
+  const key = (p.kind === "forest" || p.kind === "vegetation" ? vegUrl(p, date) : vegStr(p)) + "|" + bbox.join(",") + "|" + W + "x" + H;
+  if (vegCache.has(key)) { const m = vegCache.get(key); vegCache.delete(key); vegCache.set(key, m); return m; }
+  const m = await readVegMaskGrid(p, v, date, bbox, W, H, signal);
+  if (m) {
+    vegCache.set(key, m);
+    while (vegCache.size > 24) vegCache.delete(vegCache.keys().next().value);
+  }
+  return m;
+}
+async function readVegMaskGrid(p, v, date, bbox, W, H, signal) {
   try {
     if (p.kind === "tlm") return await readTlmMask(p, bbox, W, H, signal);
     if (p.kind === "lfi") return await readLfiMask(p, bbox, W, H, signal);
@@ -5828,6 +5842,10 @@ function openStats() {
   $("#stTo").value = state.date;
   $("#stFrom").value = SOURCES[r.source].sparse ? SOURCES[r.source].firstYear + "-01-01" : addDays(state.date, r.source === "vhi" ? -60 : -120);
   stSeries = [];
+  const tg = aoiGrid(140);
+  $("#stTsRes").options[0].textContent = tg.res + " m (fast)";
+  $("#stTsRes").value = "coarse";
+  $("#stResRow").hidden = tg.res <= 10;
   openModal("statModal");
   runCurrentStats();
   if (!noTs) runSeries();
@@ -5947,11 +5965,11 @@ async function stats10(r, scenes, opt, signal, prog) {
   const cls = r.type === "class" || r.type === "fnclass", nb = r.type === "rgb" ? r.bands.length : 1;
   const [lo, hi] = histRange(r), NB = 4000, k1 = NB / (hi - lo), hist = new Float64Array(NB), counts = {};
   const acc = Array.from({ length: nb }, () => ({ n: 0, sum: 0, sq: 0, min: Infinity, max: -Infinity }));
-  let total = 0, masked = 0, shadow = 0;
+  let total = 0, masked = 0, shadow = 0, covered = 0;
   opt = Object.assign({}, opt, { noCache: true });
   const run = await eachChunk10(0, signal, prog, async grid => {
     const res = await sampleAoi(r, scenes, grid, opt, signal), mask = grid.mask;
-    total += grid.n - res.outside; masked += res.masked; shadow += res.shadow;
+    total += grid.n - res.outside; masked += res.masked; shadow += res.shadow; covered += res.covered;
     for (let k = 0; k < mask.length; k++) {
       if (!mask[k]) continue;
       if (cls) { const c = res.cls[k]; if (c >= 0) counts[c] = (counts[c] || 0) + 1; continue; }
@@ -5979,7 +5997,7 @@ async function stats10(r, scenes, opt, signal, prog) {
     const mean = a.sum / a.n, o = { n: a.n, mean, sd: Math.sqrt(Math.max(0, a.sq / a.n - mean * mean)), min: a.min, max: a.max };
     return b || nb > 1 ? o : Object.assign(o, { median: q(0.5), p10: q(0.1), p90: q(0.9) });   // composites: band means only
   });
-  return Object.assign({ bands, total, masked, shadow, bins: fineBins(hist, lo, k1), step: nb > 1 ? 0 : (hi - lo) / NB }, run);
+  return Object.assign({ bands, total, masked, shadow, covered, bins: fineBins(hist, lo, k1), step: nb > 1 ? 0 : (hi - lo) / NB }, run);
 }
 const note10 = t => '<div class="hint">' + fmtInt(t.cells) + " cells of 10 m in the area of interest, processed in " + t.chunks + " chunk" + (t.chunks > 1 ? "s" : "") +
   (t.step ? "; median and percentiles to ±" + +(t.step / 2).toPrecision(2) : "") + ".</div>";
@@ -6270,10 +6288,13 @@ function seriesSummary(total, stopped) {
   const withValid = stSeries.filter(p => p.st).length;
   const notCov = stSeries.filter(p => p.covered === 0).length;
   const allMasked = stSeries.filter(p => !p.st && p.covered > 0).length;
-  return (stopped ? "Stopped after " + stSeries.length + " of " + total : stSeries.length) + " dates: " +
+  return (stopped ? "Stopped after " + stSeries.length + " of " + total : stSeries.length) + " dates on a " + stSeriesRes + " m grid: " +
     withValid + " with valid pixels, " + allMasked + " fully masked, " + notCov +
-    " not reached by that day's orbit. Dates below the minimum share of valid pixels are hidden; hover a point for details.";
+    " not reached by that day's orbit. Dates below the minimum share of valid pixels are hidden; hover a point for details." +
+    (stSeriesRes > 10 ? " A cell of " + stSeriesRes + " m mixes what lies in it, and the masks are applied at that size: choose the 10 m grid " +
+     "for full resolution." : "");
 }
+let stSeriesRes = 10;
 
 async function runSeries() {
   if (stAbort) stAbort.abort();
@@ -6294,19 +6315,28 @@ async function runSeries() {
     const todo = dates.slice().sort((a, b) => (a.cloud == null ? 101 : a.cloud) - (b.cloud == null ? 101 : b.cloud) ||
                                               a.date.localeCompare(b.date));
     total = todo.length;
-    const grid = aoiGrid(140);
+    // the coarse grid (fast) or, when chosen, every date at 10 m in chunks (stats10)
+    const ten = $("#stTsRes").value === "10" && !$("#stResRow").hidden, grid = aoiGrid(140);
+    stSeriesRes = ten ? 10 : grid.res;
     const opt = { maskClouds: $("#stCloud").checked, maskScl: $("#stScl").checked, maskTerrain: $("#stTerr").checked, veg: stVeg,
                   cmask: cmaskOn(S(rec)) ? S(rec).cmask : "off" };
     let redraw = null;
-    await pool(todo, 4, async d => {
+    await pool(todo, ten ? 2 : 4, async d => {
       if (ctrl.signal.aborted) return;
-      const res = await sampleAoi(r, d.scenes, grid, opt, ctrl.signal);
-      const st = res.vals.map(summarize);
-      stSeries.push({ date: d.date, st: st[0] ? st : null, valid: st[0] ? 100 * st[0].n / res.total : 0,
-                      masked: 100 * res.masked / res.total, covered: 100 * res.covered / res.total, cloud: d.cloud });
+      let st, tot, masked, covered;
+      if (ten) {
+        const t = await stats10(r, d.scenes, opt, ctrl.signal, () => {});
+        if (!t) return;
+        st = t.bands; tot = Math.max(1, t.total); masked = t.masked; covered = t.covered;
+      } else {
+        const res = await sampleAoi(r, d.scenes, grid, opt, ctrl.signal);
+        st = res.vals.map(summarize); tot = res.total; masked = res.masked; covered = res.covered;
+      }
+      stSeries.push({ date: d.date, st: st[0] ? st : null, valid: st[0] ? 100 * st[0].n / tot : 0,
+                      masked: 100 * masked / tot, covered: 100 * covered / tot, cloud: d.cloud });
       const withValid = stSeries.filter(p => p.st).length;
       $("#stProg").textContent = "Reading " + stSeries.length + " / " + total + " dates" +
-        (r.source === "s2" ? ", least cloudy first" : "") + " (" + grid.res + " m grid) · " + withValid +
+        (r.source === "s2" ? ", least cloudy first" : "") + " (" + stSeriesRes + " m grid) · " + withValid +
         " with valid pixels so far. Stop keeps what has been read.";
       clearTimeout(redraw);
       redraw = setTimeout(drawSeries, 250);
@@ -6320,16 +6350,17 @@ async function runSeries() {
   }
 }
 $("#stRun").onclick = runSeries;
+$("#stTsRes").onchange = runSeries;
 $("#stMinValid").onchange = drawSeries;
 $("#stStop").onclick = () => { if (stAbort) stAbort.abort(); };
 $("#stCsv").onclick = () => {
   const r = statRec(stRec);
-  const head = ["date", "scene_cloud_pct", "covered_pct", "valid_pct", "masked_pct"];
+  const head = ["date", "grid_m", "scene_cloud_pct", "covered_pct", "valid_pct", "masked_pct"];
   const rows = r.type === "rgb"
     ? [head.concat(r.bands.flatMap(b => [b + "_mean", b + "_sd"]))]
     : [head.concat(["mean", "sd", "median", "min", "max", "p10", "p90"])];
   stSeries.slice().sort((a, b) => a.date.localeCompare(b.date)).forEach(p => {
-    const base = [p.date, p.cloud == null ? "" : p.cloud.toFixed(2), p.covered.toFixed(2), p.valid.toFixed(2), p.masked.toFixed(2)];
+    const base = [p.date, stSeriesRes, p.cloud == null ? "" : p.cloud.toFixed(2), p.covered.toFixed(2), p.valid.toFixed(2), p.masked.toFixed(2)];
     if (!p.st) rows.push(base);
     else if (r.type === "rgb") rows.push(base.concat(p.st.flatMap(s => s ? [s.mean.toFixed(5), s.sd.toFixed(5)] : ["", ""])));
     else { const s = p.st[0]; rows.push(base.concat([s.mean, s.sd, s.median, s.min, s.max, s.p10, s.p90].map(v => v.toFixed(5)))); }

@@ -431,7 +431,11 @@ The swissEO Browser therefore always uses the physical reflectance.
     difference the change report). Counts, mean, standard deviation, minimum and maximum are exact; median and
     percentiles come from a histogram of 4000 bins over the layer's value range (e.g. ±0.00025 for an index). An NDVI
     run over a 12 × 6 km AOI matched an independent rasterio computation (720,000 cells; mean, σ, minimum and
-    maximum equal, median and percentiles within ±0.00025). The time series stays on the coarse grid.
+    maximum equal, median and percentiles within ±0.00025). The time series has its own **Grid** choice: its coarse
+    grid (up to 140 cells across, e.g. 200 m for a 28 km wide AOI; fast) or **10 m**, which reads every date at full
+    resolution in the same chunks (two dates at a time; Stop keeps the dates read). The summary and the CSV (column
+    `grid_m`) give the grid, and on a coarse grid the summary points to the 10 m option. The vegetation mask grids
+    are kept (the last 24), so a series reads each mask once instead of once per date.
   - *Spectral explorer*: mean surface reflectance of all 12 bands (± σ), with CSV download.
 - **Image download**: three tabs as in the Copernicus Browser:
   - *Basic*: the current view as PNG or JPG, with captions (datasource, date, scale bar) and an optional
@@ -668,7 +672,8 @@ Example:
 - The NDVI difference to a reference date layer (NDVI Analyst method) works on the swissEO S2-SR mosaics instead of the original script's own Sentinel-2
   processing.
 - AOI statistics use a grid of at least 10 m (coarser for large areas, which the dialog states); the statistics of
-  the selected date can be computed at 10 m for any layer and AOI size (*Compute at 10 m*), the time series not.
+  the selected date and the time series can be computed at 10 m for any layer and AOI size (*Compute at 10 m*, *Grid
+  10 m*), which takes longer (a 10 m time series of a large AOI several minutes).
 - Statistics, time series, analytical downloads and high-res prints read the COGs in the browser; large
   areas, long date ranges and large prints take a while. Imports and custom masks have size limits (see
   *Limits of the browser*); areas and masks from files are not shared through links.
