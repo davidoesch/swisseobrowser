@@ -706,13 +706,14 @@ table.kv td:first-child{color:var(--muted)}
               The basic image download can include them; the high-res print and the timelapse, which are drawn away from the
               map, are without labels.</p>
             <p><b>3D terrain:</b> the <i>3D</i> button drapes the map over swissALTIRegio, swisstopo's 10 m height model
-              (one COG on <code>data.geo.admin.ch</code>), turned into terrain in the browser. Tilt and turn the map with the
+              (one COG on <code>data.geo.admin.ch</code>, <a href="https://www.geocat.ch/datahub/dataset/f7f058e9-288b-4c55-8f4e-6360880dbb59"
+              target="_blank" rel="noopener">metadata on geocat.ch</a>), turned into terrain in the browser. Tilt and turn the map with the
               right mouse button or Ctrl + drag; the compass resets it; <i>2D</i> returns to the flat map. In 3D the compare
               list uses the opacity effect, and three more tools appear: <i>3D settings</i> (gear: the height model,
-              swissALTIRegio or the swissSURFACE3D surface model at 10 m on the swissEO bucket; sky; sun shading and its
+              swissALTIRegio or the swissSURFACE3D surface model at 10 m on the swissEO bucket; sun shading and its
               parameters; vertical terrain scaling), <i>Sun shading</i> (light bulb: a hillshade lit from the sun at the map
-              centre) and <i>Sun time</i> (sun: date and time of that sun). Shadows cast by mountains, a lens flare and
-              anaglyph stereo of the Copernicus Browser are not available in MapLibre.</p>
+              centre) and <i>Sun time</i> (sun: date and time of that sun). A sky, shadows cast by mountains, a lens flare
+              and anaglyph stereo of the Copernicus Browser are not available in MapLibre.</p>
             <p><b>Map layout:</b> at the top left the date and acquisitions on the map, the <i>Copy link</i> (chain) and
               <i>Pixel inspector</i> ((i) with a pointer) buttons;
               at the top right the place search, the layer button and the help (<i>i</i>), below it the area of interest and
@@ -753,8 +754,11 @@ table.kv td:first-child{color:var(--muted)}
               date (v1-0 before 2024-07-12, v1-1 before 2025-12-11, v1-2 since). Or the swissTLM3D forest
               (WMS <code>ch.swisstopo.swisstlm3d-wald</code>, any of Wald, Wald offen, Gebüschwald); broadleaf or conifer forest
               of the Waldmischungsgrad LFI (BAFU / WSL, share of broadleaf trees above or at most a threshold, 76 % by
-              default); or Nutzungsflächen main categories (geodienste.ch WMS <code>lwb_nutzungsflaechen_v3_0_0</code>, read
-              at 20 m by the legend colours; the coverage depends on the canton). The two-date layers use the mask of the
+              default; <a href="https://www.geocat.ch/geonetwork/srv/ger/catalog.search#/metadata/b07a4589-159b-4c3a-b1e7-dbdad11f7e62"
+              target="_blank" rel="noopener">metadata</a>); or Nutzungsflächen main categories (geodienste.ch WMS
+              <code>lwb_nutzungsflaechen_v3_0_0</code>, read at 20 m by the legend colours; the coverage depends on the canton;
+              <a href="https://www.geocat.ch/datahub/dataset/ae183bc4-5c91-467e-89bc-85f390340efb" target="_blank"
+              rel="noopener">metadata</a>). The two-date layers use the mask of the
               selected date on both dates.</p>
             <p><b>VHI:</b> <code>wms.geo.admin.ch</code> layers <code>ch.swisstopo.swisseo_vhi_v100</code> and
               <code>…_vegetation</code> with the <code>item=</code> day selector. Titles and abstracts come from the WMS GetCapabilities document.</p>
@@ -835,8 +839,12 @@ table.kv td:first-child{color:var(--muted)}
         <div class="card"><h4>Terms</h4>
           <div style="color:var(--muted);font-size:11.5px">© swisstopo,
             <a href="https://www.swisstopo.admin.ch/ogd-conditions" target="_blank">open government data</a>.
-            The swissEO products contain modified Copernicus Sentinel data. 3D terrain: swissALTIRegio, swissSURFACE3D
-            © swisstopo. Labels © swisstopo. Waldmischungsgrad LFI © BAFU / WSL. Nutzungsflächen © the cantons, geodienste.ch.
+            The swissEO products contain modified Copernicus Sentinel data. 3D terrain:
+            <a href="https://www.geocat.ch/datahub/dataset/f7f058e9-288b-4c55-8f4e-6360880dbb59" target="_blank" rel="noopener">swissALTIRegio</a>,
+            swissSURFACE3D © swisstopo. Labels © swisstopo.
+            <a href="https://www.geocat.ch/geonetwork/srv/ger/catalog.search#/metadata/b07a4589-159b-4c3a-b1e7-dbdad11f7e62" target="_blank" rel="noopener">Waldmischungsgrad LFI</a>
+            © BAFU / WSL. <a href="https://www.geocat.ch/datahub/dataset/ae183bc4-5c91-467e-89bc-85f390340efb" target="_blank" rel="noopener">Nutzungsflächen</a>
+            © the cantons, geodienste.ch.
             Layers of other WMS / WMTS services: © their providers. Not for operational use.</div>
           <div class="legal">
             <a href="https://www.swisstopo.admin.ch/en/impressum-federal-office-of-topography" target="_blank" rel="noopener">Impressum</a>
@@ -904,7 +912,6 @@ table.kv td:first-child{color:var(--muted)}
         <div class="exgrid">
           <span>Height model</span><select id="t3dDem"></select>
         </div>
-        <label class="chk"><input type="checkbox" id="t3dSky"> Sky / atmosphere</label>
         <label class="chk"><input type="checkbox" id="t3dShade"> Sun shading of the terrain (light bulb button)</label>
         <div class="exgrid" id="t3dHsBox" style="margin:6px 0 0 24px">
           <span>Shading method</span>
@@ -919,8 +926,11 @@ table.kv td:first-child{color:var(--muted)}
           <span>Vertical terrain scaling</span><span class="rng"><input type="range" id="t3dExag" min="0.5" max="3" step="0.1"><b id="t3dExagV"></b></span>
         </div>
         <div class="hint" style="margin-top:8px">The shading lights the height model from the sun's direction and height at the
-          map centre (see <i>Sun time</i>). Shadows cast by mountains, a lens flare and anaglyph stereo are not available in
-          this map library.</div>
+          map centre (see <i>Sun time</i>). A sky, shadows cast by mountains, a lens flare and anaglyph stereo are not
+          available in this map library.<br>Sources: <a href="https://www.geocat.ch/datahub/dataset/f7f058e9-288b-4c55-8f4e-6360880dbb59"
+          target="_blank" rel="noopener">swissALTIRegio</a> (metadata on geocat.ch),
+          <a href="https://www.swisstopo.admin.ch/en/height-model-swisssurface3d" target="_blank" rel="noopener">swissSURFACE3D</a>
+          (resampled to 10 m by swissEO).</div>
         <div class="brow"><button class="btn" data-close>Close</button><button class="btn" id="t3dReset">Reset values</button></div>
       </div></div>
       <div class="modal float" id="sunModal"><div class="box narrow">
@@ -1547,23 +1557,17 @@ const DEMS = {
             return terrarium(d, N);
           } } };
 let demLayer = null, terrainOn = false, navCtl = null;
-/* 3D settings (the gear in 3D): height model, sky, sun shading and its parameters, vertical scaling; and the sun time.
+/* 3D settings (the gear in 3D): height model, sun shading and its parameters, vertical scaling; and the sun time.
    The sun shading is a hillshade of the height model lit from the sun's direction and height at the map centre.
-   Cast shadows, a lens flare and anaglyph stereo, as in the Copernicus Browser's 3D view, are not part of MapLibre. */
-const T3D_DEFAULT = { dem: "alti", sky: true, shade: true, method: "combined", hsExag: 0.4, shadow: "#000000",
+   A sky / atmosphere (not drawn by MapLibre here), cast shadows, a lens flare and anaglyph stereo, as in the
+   Copernicus Browser's 3D view, are not available. */
+const T3D_DEFAULT = { dem: "alti", shade: true, method: "combined", hsExag: 0.4, shadow: "#000000",
                       highlight: "#ffffff", accent: "#000000", exag: 1 };
 /* the shading lies over the satellite image, so its colours are partly transparent */
 const rgba = (hex, a) => "rgba(" + [1, 3, 5].map(i => parseInt(hex.substr(i, 2), 16)).join(",") + "," + a + ")";
 const t3d = Object.assign({}, T3D_DEFAULT);
 let sunTime = null;                                            // null: the current time
 const sunDate = () => sunTime || new Date();
-/* a light sky and haze towards the horizon when the map is tilted far; darker and warmer with a low sun */
-const SKY = { "sky-color": "#a9cbe8", "horizon-color": "#e9eff4", "fog-color": "#e9eff4", "sky-horizon-blend": 0.6,
-              "horizon-fog-blend": 0.6, "fog-ground-blend": 0.85, "atmosphere-blend": 0 };
-const SKY_DUSK = { "sky-color": "#56719a", "horizon-color": "#f0b27a", "fog-color": "#d8b89a" };
-const SKY_NIGHT = { "sky-color": "#0b1a33", "horizon-color": "#1d2b44", "fog-color": "#26324a" };
-const mixHex = (a, b, t) => "#" + [1, 3, 5].map(i => Math.round(parseInt(a.substr(i, 2), 16) * (1 - t) +
-  parseInt(b.substr(i, 2), 16) * t).toString(16).padStart(2, "0")).join("");
 /* Sun position (NOAA low-precision formulas, about 0.1°): azimuth from north clockwise and altitude, in degrees. */
 function sunPos(date, lat, lng) {
   const R = Math.PI / 180, d = date.getTime() / 864e5 - 10957.5;            // days since 2000-01-01 12:00 UTC
@@ -1575,19 +1579,10 @@ function sunPos(date, lat, lng) {
   const az = Math.atan2(-Math.sin(ha), Math.tan(dec) * Math.cos(la) - Math.sin(la) * Math.cos(ha));
   return { az: (az / R + 360) % 360, alt: alt / R };
 }
-function skyFor(alt) {
-  if (!t3d.sky) return {};
-  const s = Object.assign({}, SKY), t = clamp((10 - alt) / 16, 0, 1), n = clamp((-2 - alt) / 8, 0, 1);
-  ["sky-color", "horizon-color", "fog-color"].forEach(k => {
-    s[k] = mixHex(mixHex(SKY[k], SKY_DUSK[k], t), SKY_NIGHT[k], n);
-  });
-  return s;
-}
-/* sky and sun shading as set, for the sun at the map centre; called on changes and after the map moved */
+/* the sun shading as set, for the sun at the map centre; called on changes and after the map moved */
 function apply3D() {
   if (!terrainOn) return;
   const c = map.getCenter(), sun = sunPos(sunDate(), c.lat, c.lng);
-  map.setSky(skyFor(sun.alt));
   const paint = { "hillshade-method": t3d.method, "hillshade-illumination-anchor": "map",
                   "hillshade-illumination-direction": +sun.az.toFixed(1),
                   "hillshade-illumination-altitude": +clamp(sun.alt, 1, 90).toFixed(1),
@@ -1642,7 +1637,6 @@ function setTerrain3D(on, cam) {
   } else {
     map.jumpTo({ pitch: 0, bearing: 0 });
     map.setTerrain(null);
-    map.setSky({});
     ["hs", "ground"].forEach(id => { if (map.getLayer(id)) map.removeLayer(id); });
     map.setMaxPitch(0);
     map.dragRotate.disable(); map.touchPitch.disable(); map.touchZoomRotate.disableRotation(); map.keyboard.disableRotation();
@@ -1672,7 +1666,6 @@ map.on("moveend", () => { if (terrainOn && t3d.shade) apply3D(); });   // the su
 $("#btn3dSet").innerHTML = UI.gear; $("#btnShade").innerHTML = UI.bulb; $("#btnSun").innerHTML = UI.sun;
 function t3dForm() {
   $("#t3dDem").value = t3d.dem;
-  $("#t3dSky").checked = t3d.sky;
   $("#t3dShade").checked = t3d.shade;
   $("#t3dMethod").value = t3d.method;
   $("#t3dHs").value = t3d.hsExag; $("#t3dHsV").textContent = Math.round(t3d.hsExag * 100) + " %";
@@ -1684,7 +1677,6 @@ $("#t3dDem").innerHTML = Object.entries(DEMS).map(([k, d]) => '<option value="' 
 $("#btn3dSet").onclick = () => { t3dForm(); $("#t3dModal").classList.toggle("on"); $("#sunModal").classList.remove("on"); };
 $("#btnShade").onclick = () => { t3d.shade = !t3d.shade; t3dForm(); apply3D(); };
 $("#t3dDem").onchange = e => setDem(e.target.value);
-$("#t3dSky").onchange = e => { t3d.sky = e.target.checked; apply3D(); };
 $("#t3dShade").onchange = e => { t3d.shade = e.target.checked; t3dForm(); apply3D(); };
 $("#t3dMethod").onchange = e => { t3d.method = e.target.value; apply3D(); };
 $("#t3dHs").oninput = e => { t3d.hsExag = +e.target.value; t3dForm(); apply3D(); };
@@ -2670,6 +2662,9 @@ const TLM_KEYS = ["12", "13", "6"];
 const TLM_RGB = { 12: [26, 110, 17], 13: [146, 181, 134], 6: [149, 201, 89] };   // fill colours of the WMS
 const LFI = "https://data.geo.admin.ch/ch.bafu.landesforstinventar-waldmischungsgrad/landesforstinventar-waldmischungsgrad/landesforstinventar-waldmischungsgrad_2056.tif";
 const LFI_T = 76;
+/* metadata of the sources (geocat.ch), linked from the mask options */
+const META_LFI = "https://www.geocat.ch/geonetwork/srv/ger/catalog.search#/metadata/b07a4589-159b-4c3a-b1e7-dbdad11f7e62";
+const META_LNF = "https://www.geocat.ch/datahub/dataset/ae183bc4-5c91-467e-89bc-85f390340efb";
 const LFI_TYPE = { broad: "Broadleaf forest (Laubwald)", conif: "Conifer forest (Nadelwald)" };
 /* Nutzungsflächen: the WMS layer of the main categories; its fill colour gives the category. The service draws it only
    up to 1:100 000 (about 25 m per pixel), so it is read at 20 m or finer and a coarser grid takes the majority. */
@@ -4179,6 +4174,12 @@ function vegSelect(value, on) {
     chosen = now;
     set(make(now));
   }, rgbs && rgbs[n]));
+  const source = (url, name) => {
+    const s = el("small", null, "Source: "), a = el("a", null, name);
+    a.href = url; a.target = "_blank"; a.rel = "noopener";
+    s.append(a, " (metadata on geocat.ch)");
+    return s;
+  };
   function extras() {
     ex.replaceChildren();
     if (!p) return;
@@ -4186,7 +4187,8 @@ function vegSelect(value, on) {
                                                c => ({ kind: "tlm", classes: c })));
     else if (p.kind === "lnf") {
       ex.append(...classes(LNF.map(q => q.k), LNF.map(q => q.name), p.groups, LNF_RGBS, c => ({ kind: "lnf", groups: c })));
-      ex.append(el("small", null, "Read at 20 m: shown from about 1:100 000. Cantons that do not publish their data stay empty."));
+      ex.append(el("small", null, "Read at 20 m: shown from about 1:100 000. Cantons that do not publish their data stay empty."),
+                source(META_LNF, "Nutzungsflächen, geodienste.ch"));
     } else if (p.kind === "lfi") {
       const l = el("label", "vrange"), r = el("input"), out = el("b");
       r.type = "range"; r.min = 0; r.max = 100; r.step = 1; r.value = p.t;
@@ -4195,7 +4197,8 @@ function vegSelect(value, on) {
       r.oninput = txt;
       r.onchange = () => set({ kind: "lfi", type: p.type, t: +r.value });
       l.append(el("span", null, "Broadleaf share "), out, r);
-      ex.append(l, el("small", null, "Broadleaf forest: share of broadleaf trees above the threshold; conifer forest: at or below it."));
+      ex.append(l, el("small", null, "Broadleaf forest: share of broadleaf trees above the threshold; conifer forest: at or below it."),
+                source(META_LFI, "Waldmischungsgrad LFI, BAFU / WSL"));
     }
     ex.hidden = !ex.childElementCount;
   }

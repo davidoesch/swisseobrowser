@@ -109,21 +109,25 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
   <a href="#t2">2. Go to a place</a>
   <a href="#t3">3. Choose a date</a>
   <a href="#t4">4. Choose a layer</a>
-  <a href="#t5">5. Read the value of a pixel</a>
-  <a href="#t6">6. Area of interest and statistics</a>
-  <a href="#t7">7. Download an image</a>
-  <a href="#t8">8. Share your view</a>
+  <a href="#t5">5. Keep only forest or farmland</a>
+  <a href="#t6">6. Read the value of a pixel</a>
+  <a href="#t7">7. Area of interest and statistics</a>
+  <a href="#t8">8. Look at it in 3D</a>
+  <a href="#t9">9. Download an image</a>
+  <a href="#t10">10. Share your view</a>
   <b>Part B: All functions</b>
   <a href="#vis">1. Visualization</a>
   <a class="sub" href="#vis-layers">Layers and configurations</a>
   <a class="sub" href="#vis-date">Date and cloud filter</a>
-  <a class="sub" href="#vis-menu">Layer menu: legend, masks, effects</a>
+  <a class="sub" href="#vis-menu">Modifying a visualization</a>
+  <a class="sub" href="#vis-masks">Masks</a>
+  <a class="sub" href="#vis-veg">Vegetation masks</a>
   <a class="sub" href="#vis-mask">Custom masks</a>
   <a class="sub" href="#vis-compare">Comparing visualizations</a>
   <a class="sub" href="#vis-hl">Highlights</a>
   <a class="sub" href="#vis-wms">WMS / WMTS services</a>
   <a class="sub" href="#vis-base">Basemaps and labels</a>
-  <a class="sub" href="#vis-3d">3D terrain</a>
+  <a class="sub" href="#vis-3d">3D visualization</a>
   <a href="#tools">2. Tools</a>
   <a class="sub" href="#tools-search">Place search</a>
   <a class="sub" href="#tools-aoi">Area of interest</a>
@@ -133,7 +137,7 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
   <a class="sub" href="#tools-exp">Image download</a>
   <a class="sub" href="#tools-tl">Timelapse</a>
   <a href="#share">3. Sharing and feedback</a>
-  <a href="#data">4. Data, coordinates and limits</a>
+  <a href="#data">4. Data, sources and limits</a>
 </nav>
 
 <main>
@@ -142,7 +146,8 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
   <p class="lead">The swissEO Browser is a web viewer for the <b>swissEO</b> satellite products of swisstopo: the
     Sentinel-2 surface reflectance mosaics (swissEO S2-SR) and the products derived from them, such as the Vegetation
     Health Index (VHI) and the NDVI change maps. You can look at the images, compare dates, compute vegetation and water
-    indices, get statistics and time series for your own areas, and download images and data.</p>
+    indices, restrict them to forest or farmland, get statistics and time series for your own areas, look at them on the
+    terrain in 3D, and download images and data.</p>
   <p>Its user interface copies the <a href="https://browser.dataspace.copernicus.eu/" target="_blank" rel="noopener">Copernicus Browser</a>
     of the European Copernicus Data Space Ecosystem, so if you know that one, you will feel at home. The difference
     is under the hood: the swissEO Browser is a single web page without a server of its own and without a login.
@@ -155,9 +160,11 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
     swisstopo products and services directly.<br>Please note that AI (Claude Code with the Opus 5.5 model, medium effort)
     was used extensively to prepare this website, adapting it from the Copernicus Browser. The indices were edited and
     tested manually in QGIS or with rasterio and GDAL.</div>
-  <p>This help has two parts. <a href="#t1">Part A</a> is a short tutorial for your first visit: it takes about ten
-    minutes. <a href="#vis">Part B</a> describes every function in the order of the Copernicus Browser documentation.
-    You can open this page at any time with the <span class="key">i</span> button at the top right of the map.</p>
+  <p>This help has two parts. <a href="#t1">Part A</a> is a short tutorial for your first visit: it takes about
+    fifteen minutes. <a href="#vis">Part B</a> describes every function in the order of the
+    <a href="https://documentation.dataspace.copernicus.eu/Applications/Browser.html" target="_blank" rel="noopener">Copernicus Browser documentation</a>.
+    You can open this page at any time with the <span class="key">i</span> button at the top right of the map. The data
+    and their sources are listed in <a href="#data">section 4</a>.</p>
 </div>
 
 <!-- ======================= PART A ======================= -->
@@ -179,13 +186,12 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
     <li><span class="n">3</span><span><b>Layers</b>: click one to show it on the map</span></li>
     <li><span class="n">4</span><span><b>Date on the map</b>, <i>Copy link</i> (chain icon) and the <i>Pixel inspector</i> ((i) with a pointer)</span></li>
     <li><span class="n">5</span><span><b>Go to Place</b>: search a town, address or mountain</span></li>
-    <li><span class="n">6</span><span>The <b>basemap</b> button and <b>Help</b> (the <span class="key">i</span>, this page)</span></li>
-    <li><span class="n">7</span><span><b>Tools</b>: area of interest, image download, timelapse, 3D terrain</span></li>
+    <li><span class="n">6</span><span>The <b>basemap</b> button (layers icon) and <b>Help</b> (the <span class="key">i</span>, this page)</span></li>
+    <li><span class="n">7</span><span><b>Tools</b>: area of interest, image download, timelapse and <span class="key">3D</span></span></li>
     <li><span class="n">8</span><span><b>Zoom</b>, mouse position in Swiss coordinates (LV95) and scale bar</span></li>
   </ul>
   <div class="tip"><b>Tip:</b> move the map by dragging it, zoom with the mouse wheel or the <span class="key">+</span>
-    <span class="key">−</span> buttons. The chevron <span class="key">‹</span> next to <i>EN</i> hides the menu to give the map more room.
-    The <span class="key">3D</span> button shows the map on the terrain (see <a href="#vis-3d">3D terrain</a>).</div>
+    <span class="key">−</span> buttons. The chevron <span class="key">‹</span> next to <i>EN</i> hides the menu to give the map more room.</div>
 
   <h2 id="t2"><span class="n">2</span>Go to a place</h2>
   <p>Click into <b>Go to Place</b> at the top right of the map and type at least two letters of a place name, an
@@ -220,21 +226,39 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
       the legend and the settings.</li>
   </ol>
   <figure><img src="img/layer-menu.jpg" alt="The NDVI layer with its menu open: description, legend and masks" width="1400" height="900">
-    <figcaption><b>Fig. 4</b> NDVI in the Seeland on 13 August 2026, with the layer menu open (legend, colour scale and masks).</figcaption></figure>
+    <figcaption><b>Fig. 4</b> NDVI in the Seeland on 13 August 2026, with the layer menu open (description, legend and colour scale).</figcaption></figure>
   <div class="tip"><b>What does BETA mean?</b> A red <span class="beta" style="margin:0">BETA</span> behind a layer name
     means that this layer has not yet been checked in depth. Its values may be wrong. Layers without the label have been
     verified.</div>
 
-  <h2 id="t5"><span class="n">5</span>Read the value of a pixel</h2>
+  <h2 id="t5"><span class="n">5</span>Keep only forest or farmland</h2>
+  <p>Often only part of the landscape matters: the forest for a drought assessment, the fields for a harvest. The
+    <b>vegetation mask</b> hides everything else.</p>
+  <ol class="steps">
+    <li>In the layer menu, scroll down to <b>Masks</b>. The pull-down <i>Vegetation mask</i> says <i>Off</i>.</li>
+    <li>Choose a mask, for example <i>Land use (categories below)</i> under <i>Nutzungsflächen</i>: the agricultural land
+      use of the cantons.</li>
+    <li>Tick the categories you want to keep, for example arable land, permanent meadows and permanent pastures. The
+      map now shows the layer only there.</li>
+  </ol>
+  <figure><img src="img/mask-lnf.jpg" alt="NDVI restricted to arable land, meadows and pastures, with the category check boxes" width="1400" height="900">
+    <figcaption><b>Fig. 5</b> NDVI near Kerzers, 13 August 2026, restricted by the Nutzungsflächen mask to arable land,
+    permanent meadows and permanent pastures. Each category has the colour of the cantonal map service.</figcaption></figure>
+  <p>The other masks keep forest (the habitat maps of swissEO VHI or the swissTLM3D forest), broadleaf or conifer forest
+    (Waldmischungsgrad LFI) or all vegetation. They are described, with their sources, in
+    <a href="#vis-veg">Vegetation masks</a>. Masks also apply to statistics, downloads and the timelapse.</p>
+
+  <h2 id="t6"><span class="n">6</span>Read the value of a pixel</h2>
   <p>Click the <b>Pixel inspector</b> button (the (i) with a mouse pointer, at the top of the map) to switch it on: it turns
     blue. Then click on the map. A box shows the
     values at that spot: the position, the reflectance of every band, the index value of the layer, the cloud and
     terrain information, the forest / vegetation mask, the swissTLM3D forest class, the broadleaf share of the
     Waldmischungsgrad LFI and the Nutzungsflächen category. Click the button again to switch it off.</p>
   <figure><img src="img/pixel-inspector.jpg" alt="Pixel inspector showing band and NDVI values" width="1400" height="900">
-    <figcaption><b>Fig. 5</b> The pixel inspector on a field: band values (stored number and reflectance) and the NDVI.</figcaption></figure>
+    <figcaption><b>Fig. 6</b> The pixel inspector on a field: band values (stored number and reflectance), the NDVI and
+    the masks at this spot.</figcaption></figure>
 
-  <h2 id="t6"><span class="n">6</span>Draw an area and get statistics</h2>
+  <h2 id="t7"><span class="n">7</span>Draw an area and get statistics</h2>
   <ol class="steps">
     <li>Click the pentagon button (<b>area of interest</b>) at the top right of the map, below the <span class="key">i</span>.</li>
     <li>Choose the rectangle or the polygon and draw on the map (a polygon ends with a double click or a click on its
@@ -244,25 +268,40 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
   <p>You get the mean, median and other statistics with a histogram for the selected date, and a <b>time series</b>:
     the values of the area over a date range, which you can download as CSV.</p>
   <figure><img src="img/statistics.jpg" alt="Statistics and NDVI time series for a group of fields" width="1400" height="900">
-    <figcaption><b>Fig. 6</b> Statistics and NDVI time series of a group of fields in the Seeland.</figcaption></figure>
+    <figcaption><b>Fig. 7</b> Statistics and NDVI time series of a group of fields in the Seeland.</figcaption></figure>
 
-  <h2 id="t7"><span class="n">7</span>Download an image</h2>
+  <h2 id="t8"><span class="n">8</span>Look at it in 3D</h2>
+  <p>The <span class="key">3D</span> button, the last of the tools, lays the map and the satellite layer on the terrain.</p>
+  <ol class="steps">
+    <li>Click <span class="key">3D</span>: the map tilts. The button now says <span class="key">2D</span>, which brings back the flat map.</li>
+    <li>Drag with the <b>right mouse button</b> (or hold <span class="key">Ctrl</span> and drag) to tilt and turn the
+      view; on a touch screen use two fingers. The compass above the zoom buttons turns it back to north.</li>
+    <li>Three more buttons appear above the tools: the <b>3D settings</b> (gear), the <b>sun shading</b> (light bulb)
+      and the <b>sun time</b> (sun). With the sun time you can light the mountains as in the morning or the evening.</li>
+  </ol>
+  <figure><img src="img/terrain-3d.jpg" alt="The Great Aletsch Glacier in 3D with the true color image and labels" width="1400" height="900">
+    <figcaption><b>Fig. 8</b> The Great Aletsch Glacier in 3D: true color of 13 August 2026 on swissALTIRegio, looking
+    north over Bettmeralp towards the Jungfrau and Lake Brienz, with the labels switched on.</figcaption></figure>
+
+  <h2 id="t9"><span class="n">9</span>Download an image</h2>
   <p>The picture button opens <b>Image download</b>. <i>Basic</i> saves what you see as PNG or JPG, with date, scale bar
-    and legend if you like. <i>Analytical</i> gives you GeoTIFF files with the actual values for GIS software such as QGIS.
-    <i>High-res print</i> renders the view for printing.</p>
+    and legend if you like (also a 3D view). <i>Analytical</i> gives you GeoTIFF files with the actual values for GIS
+    software such as QGIS. <i>High-res print</i> renders the view for printing.</p>
 
-  <h2 id="t8"><span class="n">8</span>Share your view</h2>
-  <p>The address in your browser always describes exactly what you see: place, date, layer and settings. Click
-    the <b>Copy link</b> button (the chain icon at the top of the map) and paste the link into an e-mail or chat. Whoever opens it sees the same map.</p>
+  <h2 id="t10"><span class="n">10</span>Share your view</h2>
+  <p>The address in your browser always describes exactly what you see: place, date, layer, masks and settings, also the
+    3D view. Click the <b>Copy link</b> button (the chain icon at the top of the map) and paste the link into an e-mail
+    or chat. Whoever opens it sees the same map.</p>
   <div class="tip"><b>Well done!</b> You know the essentials now. Part B describes all the other functions: comparing
-    two dates, masks, timelapses, external map services and more.</div>
+    two dates, all masks, the 3D tools, timelapses, external map services and more.</div>
 </div>
 
 <!-- ======================= PART B ======================= -->
 <div class="card">
   <h1>Part B: All functions</h1>
-  <p>The sections follow the <a href="https://documentation.dataspace.copernicus.eu/Applications/Browser.html" target="_blank" rel="noopener">Copernicus Browser documentation</a>.
-    Only the functions that the swissEO Browser has are described; see <a href="#data">section 4</a> for what is not included.</p>
+  <p>The sections follow the <a href="https://documentation.dataspace.copernicus.eu/Applications/Browser.html" target="_blank" rel="noopener">Copernicus Browser documentation</a>:
+    visualization (including 3D), tools, sharing. Only the functions that the swissEO Browser has are described; see
+    <a href="#data">section 4</a> for what is not included.</p>
 
   <h2 id="vis"><span class="n">1</span>Visualization</h2>
 
@@ -280,7 +319,7 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
     your browser, or read from the swissEO products (VHI, NDVIdiff, NDVIz). When several satellite passes cover the
     same day, they are joined into one mosaic, the most recent on top.</p>
   <figure><img src="img/forest-vhi.jpg" alt="VHI cumulative deficit above La Neuveville" width="1400" height="900">
-    <figcaption><b>Fig. 7</b> Configuration <i>Forest</i>: the VHI cumulative deficit from 1 April to 13 August 2026 above La Neuveville, with its description.</figcaption></figure>
+    <figcaption><b>Fig. 9</b> Configuration <i>Forest</i>: the VHI cumulative deficit from 1 April to 13 August 2026 above La Neuveville, with its description.</figcaption></figure>
 
   <h3 id="vis-date">Date and cloud filter</h3>
   <p>A link without a date opens on the latest day with data. The arrows and the calendar only offer days whose
@@ -288,35 +327,89 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
     hides days whose mosaic is cloudier than the chosen percentage. For the swissEO products with only a few dates per
     year (NDVIdiff, NDVIz) the product nearest to the selected date is shown, and the text below the date says which one.</p>
 
-  <h3 id="vis-menu">Layer menu: legend, masks, effects</h3>
+  <h3 id="vis-menu">Modifying a visualization</h3>
   <p>The chevron on the active layer opens its menu:</p>
   <ul>
     <li><b>Description</b> and a <i>More info</i> link; the <span class="key">&lt;/&gt;</span> button shows the formula and the scaling used.</li>
     <li><b>Legend</b> with an adjustable colour scale (min / max) and <i>Reset colour scale</i>.</li>
-    <li><b>Masks</b>: hide clouds and cloud shadows (cloud mask of the swissEO mosaic), terrain shadow, and everything
-      outside a <i>Vegetation mask</i>. Its pull-down shows <i>Off</i> ("Choose one") and, in this order: the three habitat
-      maps of swissEO VHI, named by the period in which swissEO VHI uses them (<i>Habitat Map onward 2025-12-11</i>,
-      <i>2024-07-12 to 2025-12-11</i>, <i>before 2024-07-12</i>), the <i>Habitat Map as used in swissEO VHI100</i> (the one of
-      the selected date, forest or all vegetation), the <b>swissTLM3D</b> forest with check boxes for Wald, Wald offen and
-      Gebüschwald, <b>broadleaf</b> or <b>conifer forest</b> of the Waldmischungsgrad LFI (a slider sets the share of broadleaf
-      trees that separates them, 76 % by default) and the <b>Nutzungsflächen</b> (agricultural land use of the cantons) with
-      check boxes for its 13 main categories. The Nutzungsflächen are read at 20 m, so they show from about 1:100 000,
-      and not every canton publishes all its data. The <a href="#vis-mask">custom mask</a> uses your own polygons.</li>
-    <li><b>Effects and advanced options</b>: gain, gamma, the red / green / blue ranges and the opacity. For the band
+    <li><b>Masks</b>: see the next two sections.</li>
+    <li><b>Show effects and advanced options</b>: gain, gamma, the red / green / blue ranges and the opacity. For the band
       composites also <i>Look</i> (standard stretch or the <i>True color optimized</i> tone curve of the Copernicus
-      Browser) and <i>Adaptive gain</i>, which avoids saturated snow and clouds.</li>
+      Browser) and <i>Adaptive gain</i>, which avoids saturated snow and clouds. <i>Reset effects</i> undoes all changes.</li>
   </ul>
   <figure><img src="img/effects.jpg" alt="Effects and advanced options of the true color layer" width="420" height="900" style="max-width:420px">
-    <figcaption><b>Fig. 8</b> Effects and advanced options.</figcaption></figure>
+    <figcaption><b>Fig. 10</b> Effects and advanced options.</figcaption></figure>
+
+  <h3 id="vis-masks">Masks</h3>
+  <p>Every Sentinel-2 layer has these masks in its menu; they hide pixels on the map and leave them out of statistics,
+    downloads and the timelapse:</p>
+  <ul>
+    <li><b>Clouds</b> and <b>Cloud shadows</b>: the cloud mask delivered with each swissEO mosaic (thick and thin cloud,
+      cloud shadow);</li>
+    <li><b>Terrain shadow</b>: the slopes in the shadow of the terrain at the time of the acquisition;</li>
+    <li><b>Vegetation mask</b>: keeps forest, all vegetation, broadleaf or conifer forest, or chosen categories of the
+      agricultural land use (next section);</li>
+    <li><b>Custom mask</b>: your own polygons (see <a href="#vis-mask">Custom masks</a>).</li>
+  </ul>
+
+  <h3 id="vis-veg">Vegetation masks</h3>
+  <p>The pull-down <i>Vegetation mask</i> shows <i>Off</i> ("Choose one") by default. Its entries, in this order:</p>
+  <table>
+    <tr><th>Entry</th><th>What it keeps</th><th>Source</th></tr>
+    <tr><td>Habitat Map onward 2025-12-11<br>Habitat Map 2024-07-12 to 2025-12-11<br>Habitat Map before 2024-07-12</td>
+      <td>Forest or all vegetation of one of the three habitat maps of swissEO VHI (v1-2, v1-1, v1-0), named by the period
+      in which swissEO VHI uses it, for every date</td>
+      <td>swissEO habitat maps (based on CLC+), as used by the
+      <a href="https://github.com/swisstopo/topo-satromo-v2" target="_blank" rel="noopener">swissEO VHI processor</a></td></tr>
+    <tr><td>Habitat Map as used in swissEO VHI100</td>
+      <td>Forest or all vegetation of the habitat map that swissEO VHI uses on the selected date (v1-0 before 2024-07-12,
+      v1-1 before 2025-12-11, v1-2 since)</td>
+      <td>as above</td></tr>
+    <tr><td>swissTLM3D: Forest</td>
+      <td>The forest of the swissTLM3D landscape model, with check boxes for <i>Wald</i> (forest), <i>Wald offen</i>
+      (open forest) and <i>Gebüschwald</i> (scrub forest), in any combination</td>
+      <td><a href="https://www.swisstopo.admin.ch/en/landscape-model-swisstlm3d" target="_blank" rel="noopener">swissTLM3D</a>,
+      swisstopo (map service layer <code>ch.swisstopo.swisstlm3d-wald</code>)</td></tr>
+    <tr><td>Waldmischungsgrad LFI: Broadleaf forest (Laubwald), Conifer forest (Nadelwald)</td>
+      <td>Forest whose share of broadleaf trees is above (broadleaf) or at most (conifer) a threshold. A slider sets the
+      threshold, <b>76 %</b> by default.</td>
+      <td><a href="https://www.geocat.ch/geonetwork/srv/ger/catalog.search#/metadata/b07a4589-159b-4c3a-b1e7-dbdad11f7e62" target="_blank" rel="noopener">Waldmischungsgrad
+      of the Swiss National Forest Inventory LFI</a>, BAFU / WSL, 10 m (metadata on geocat.ch)</td></tr>
+    <tr><td>Nutzungsflächen (geodienste.ch): Land use</td>
+      <td>The agricultural land use of the cantons, with check boxes for its 13 main categories: Ackerfläche (arable land),
+      Dauerwiesen (permanent meadows), Dauerweiden (permanent pastures), Reben (vineyards), Obstanlagen (orchards), Übrige
+      Dauerkulturen (other permanent crops), Geschützter Anbau (protected cultivation), Streueflächen (litter meadows),
+      Hecken-, Feld- und Ufergehölze (hedges and copses), Übrige Fläche innerhalb der LN (other farmland),
+      Sömmerungsfläche (summer grazing), Vegetation nicht LN (other vegetation), Wald (forest)</td>
+      <td><a href="https://www.geocat.ch/datahub/dataset/ae183bc4-5c91-467e-89bc-85f390340efb" target="_blank" rel="noopener">Nutzungsflächen</a>
+      of the cantons, map service of geodienste.ch (metadata on geocat.ch)</td></tr>
+  </table>
+  <figure><img src="img/mask-lfi.jpg" alt="NDVI of the Sihlwald restricted to broadleaf forest, with the threshold slider" width="1400" height="900">
+    <figcaption><b>Fig. 11</b> NDVI of the Sihlwald and the Albis on 13 August 2026, restricted to broadleaf forest of
+    the Waldmischungsgrad LFI (share of broadleaf trees above 76 %). Below the slider: the source and its metadata.</figcaption></figure>
+  <p>Good to know:</p>
+  <ul>
+    <li>Below the pull-down, the menu shows the mask in use and its options: the check boxes, the slider and a link to the
+      metadata of the source.</li>
+    <li>The <b>Nutzungsflächen</b> are read from the map service at 20 m, so they show from about 1:100 000 (zoom in
+      further when the map stays empty). Not every canton publishes all its data, so some areas stay empty.</li>
+    <li>The two-date layers (NDDI change, NDVI difference to a reference date) use the mask of the selected date on both
+      dates, so a new version of a habitat map never shows up as a change.</li>
+    <li>The mask also applies to the <a href="#tools-stats">statistics</a> (where you can choose another one), the
+      <a href="#tools-spec">spectral explorer</a>, the downloads and the timelapse; the change report gives the masked
+      area in hectares.</li>
+    <li>The <a href="#tools-insp">pixel inspector</a> shows at every spot the habitat map, the swissTLM3D forest class,
+      the broadleaf share and the Nutzungsflächen category, whichever mask is chosen.</li>
+  </ul>
 
   <h3 id="vis-mask">Custom masks: your own geometries</h3>
   <p>You can restrict any layer to your own polygons, for example a forest map, the parcels of a farm or a nature
     reserve. In the layer menu, under <i>Custom mask</i>, load a file (GeoJSON, KML/KMZ, GPX, WKT or a zipped Shapefile)
     or a URL. Then choose <b>Inside</b> (show the data only inside the polygons) or <b>Outside</b> (only outside). The mask
-    applies to the map, compare, statistics, exports and the timelapse. A mask loaded from a URL is part of copied links;
-    a mask from a file stays on your computer.</p>
+    applies to the map, compare, statistics, exports and the timelapse, and can be combined with a vegetation mask. A
+    mask loaded from a URL is part of copied links; a mask from a file stays on your computer.</p>
   <figure><img src="img/custom-mask.jpg" alt="NDVI shown only inside two custom polygons" width="1400" height="900">
-    <figcaption><b>Fig. 9</b> A custom mask with two polygons: the NDVI is shown only inside them.</figcaption></figure>
+    <figcaption><b>Fig. 12</b> A custom mask with two polygons: the NDVI is shown only inside them.</figcaption></figure>
 
   <h3 id="vis-compare">Comparing visualizations</h3>
   <p>Click <b>Add to Compare</b> under the active layer to put it, with its date and settings, into the compare list.
@@ -324,13 +417,13 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
     icon next to the configuration). Two effects are available: <b>Split</b>, with a handle on the map that you drag to
     swipe between the layers, and <b>Opacity</b>. Entries can be reordered, removed or zoomed to.</p>
   <figure><img src="img/compare.jpg" alt="Compare view with two dates of the Great Aletsch Glacier" width="1400" height="900">
-    <figcaption><b>Fig. 10</b> Compare view: the Great Aletsch Glacier on 18 August 2019 (left of the handle) and 13 August 2026 (right).</figcaption></figure>
+    <figcaption><b>Fig. 13</b> Compare view: the Great Aletsch Glacier on 18 August 2019 (left of the handle) and 13 August 2026 (right).</figcaption></figure>
 
   <h3 id="vis-hl">Highlights</h3>
   <p>The configuration <i>Drought 2026</i> has <b>highlights</b>: short stories with a before and after comparison.
     Click a card to open the place with the two dates side by side; the chevron on the card shows the text and its source.</p>
   <figure><img src="img/highlights.jpg" alt="Highlight cards and the opened Aletsch highlight" width="1400" height="900">
-    <figcaption><b>Fig. 11</b> Highlights in the configuration Drought 2026.</figcaption></figure>
+    <figcaption><b>Fig. 14</b> Highlights in the configuration Drought 2026.</figcaption></figure>
 
   <h3 id="vis-wms">WMS / WMTS services</h3>
   <p>The third icon next to the configuration opens <b>WMS / WMTS</b>: layers of other map services on top of the
@@ -338,40 +431,65 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
     map.geo.admin.ch, and <span class="key">+</span> adds any other WMS or WMTS address. Search the layers, click one to
     show it, and use <i>Add to Compare</i> to compare it with a satellite layer.</p>
   <figure><img src="img/wms.jpg" alt="WMS / WMTS panel with a federal inventory layer on the map" width="1400" height="900">
-    <figcaption><b>Fig. 12</b> The swisstopo WMS: the Federal Inventory of Landscapes and Natural Monuments (ILNM, in German BLN) on the national map.</figcaption></figure>
+    <figcaption><b>Fig. 15</b> The swisstopo WMS: the Federal Inventory of Landscapes and Natural Monuments (ILNM, in German BLN) on the national map.</figcaption></figure>
 
-  <h3 id="vis-base">Basemaps</h3>
-  <p>Hover the layer button at the top right of the map (left of the <span class="key">i</span>) to choose the
-    <b>basemap</b>: <i>Map</i> (swisstopo national map), <i>SWISSIMAGE</i> (aerial photo), <i>Map Grey</i> or <i>None</i>.
-    <i>Labels</i> writes the names of places, roads, peaks and lakes from swisstopo's base map above the satellite data,
-    as sharp text at every scale (in 3D upright and facing you). The names stop at the border of Switzerland and
-    Liechtenstein.</p>
+  <h3 id="vis-base">Basemaps and labels</h3>
+  <p>Hover the layers button at the top right of the map (left of the <span class="key">i</span>), as in the Copernicus
+    Browser, to choose the <b>basemap</b>: <i>Map</i> (swisstopo national map), <i>SWISSIMAGE</i> (aerial photo),
+    <i>Map Grey</i> or <i>None</i>. Under <i>Map overlays</i>, <b>Labels</b> writes the names of places, roads, peaks and
+    lakes from swisstopo's base map above the satellite data, as sharp text at every scale (in 3D upright and facing you).
+    The names stop at the border of Switzerland and Liechtenstein.</p>
 
-  <h3 id="vis-3d">3D terrain</h3>
-  <p>The <span class="key">3D</span> button below the film button lays the map, the satellite layer, the labels and the
-    area of interest on the terrain of <b>swissALTIRegio</b>, swisstopo's 10 m height model of Switzerland and its
-    border regions. Drag with the right mouse button (or hold <span class="key">Ctrl</span> and drag) to tilt and turn
-    the map; on a touch screen use two fingers. The compass above the zoom buttons turns the map back to north and flat;
-    the <span class="key">2D</span> button (the former <span class="key">3D</span>) returns to the flat map.</p>
-  <p>In 3D three more buttons appear above the image download, as in the Copernicus Browser:</p>
+  <h3 id="vis-3d">3D visualization</h3>
+  <p>The 3D view lays the map, the satellite layer, the labels and the area of interest on the terrain, as the 3D view
+    of the Copernicus Browser does.</p>
+  <h3 style="font-size:15px">Opening and navigating</h3>
   <ul>
-    <li><b>3D settings</b> (gear): the <i>Height model</i>, swissALTIRegio (the bare terrain) or the swissSURFACE3D surface
-      model at 10 m (with buildings and trees); <i>Sky / atmosphere</i>; <i>Sun shading</i> with the shading method, strength
-      and colours; <i>Vertical terrain scaling</i> from 50 to 300 %; <i>Reset values</i>.</li>
-    <li><b>Sun shading</b> (light bulb): switches the shading of the terrain by the sun on and off.</li>
-    <li><b>Sun time</b> (sun): the date and time (UTC) of the sun that lights the terrain, with sliders; <i>Current
-      time</i> goes back to now. A low sun gives long shading and a warmer, darker sky.</li>
+    <li>Select a layer, then click the <span class="key">3D</span> button below the tools. The map tilts; the button now
+      says <span class="key">2D</span> and returns to the flat map.</li>
+    <li>Drag with the <b>right mouse button</b>, or hold <span class="key">Ctrl</span> and drag, to tilt and turn the
+      view; on a touch screen use two fingers. Move and zoom as usual. The compass above the zoom buttons turns the map
+      back to north and flat.</li>
+    <li>A first 3D view takes a few seconds: the heights are read from the height model and turned into terrain in your
+      browser.</li>
   </ul>
-  <p>Shadows cast by mountains, a lens flare and anaglyph stereo, which the Copernicus Browser offers in 3D, are not
-    available here.</p>
-  <figure><img src="img/terrain-3d.jpg" alt="The Great Aletsch Glacier in 3D with the true color image" width="1400" height="900">
-    <figcaption><b>Fig. 13</b> The Great Aletsch Glacier in 3D: true color of 13 August 2026 on swissALTIRegio, looking
-    north-east towards Lake Brienz, with the label overlay.</figcaption></figure>
-  <p>A first 3D view takes a few seconds, as the heights are read from swisstopo's data and turned into terrain in your
-    browser. The split comparison needs the flat map, so in 3D the compare list uses the <i>Opacity</i> effect; the
-    highlights open in 2D. Statistics, downloads and the timelapse of the view use the area around the centre of the
-    view; the <i>Basic</i> image download saves the view as you see it, without scale bar. Links keep the 3D view with
-    its tilt and direction, the height model and the vertical scaling.</p>
+  <p>In 3D three buttons appear above the image download, as in the Copernicus Browser:</p>
+  <h3 style="font-size:15px">3D settings (gear)</h3>
+  <ul>
+    <li><b>Height model</b>: <i>swissALTIRegio</i>, swisstopo's 10 m model of the bare terrain of Switzerland and its
+      border regions (the default), or <i>swissSURFACE3D 10 m</i>, the surface with buildings and trees, resampled to
+      10 m by swissEO (beyond Switzerland and in its gaps the heights of swissALTIRegio).</li>
+    <li><b>Sun shading of the terrain</b> and its parameters: the <i>shading method</i> (combined, standard, basic,
+      Igor, multidirectional), the <i>shading strength</i> and the <i>shadow</i>, <i>highlight</i> and <i>accent
+      colours</i>. The colours are partly transparent, so the satellite image stays visible.</li>
+    <li><b>Vertical terrain scaling</b> from 50 to 300 %: values above 100 % make the relief steeper.</li>
+    <li><b>Reset values</b> returns all settings except the height model to their defaults.</li>
+  </ul>
+  <figure><img src="img/3d-settings.jpg" alt="The 3D settings dialog next to the 3D view of the Aletsch Glacier" width="1400" height="900">
+    <figcaption><b>Fig. 16</b> The 3D settings: height model, sun shading with its parameters, vertical terrain scaling,
+    and the sources of the height models.</figcaption></figure>
+  <h3 style="font-size:15px">Sun shading (light bulb) and sun time (sun)</h3>
+  <ul>
+    <li>The <b>light bulb</b> switches the sun shading on and off. The terrain is lit from the direction and height of
+      the sun at the centre of the map, so the shading follows the map when you move it.</li>
+    <li>The <b>sun</b> opens <b>Sun time</b>: the date and the time (UTC) of that sun, with sliders and fields. The dialog
+      shows the local time of your computer and the position of the sun (direction and height above the horizon).
+      <i>Current time</i> goes back to now; the shading then follows the clock.</li>
+  </ul>
+  <figure><img src="img/sun-time.jpg" alt="The sun time dialog with an evening sun over the Aletsch Glacier" width="1400" height="900">
+    <figcaption><b>Fig. 17</b> Sun time 13 August 2026, 16:45 UTC: the sun stands in the west, 19° above the horizon,
+    and lights the slopes facing it.</figcaption></figure>
+  <h3 style="font-size:15px">What works in 3D</h3>
+  <ul>
+    <li>The <b>Basic</b> image download saves the 3D view as you see it (PNG or JPG, without scale bar, as a tilted view
+      has no single scale).</li>
+    <li>The split comparison needs the flat map, so in 3D the compare list uses the <i>Opacity</i> effect; the highlights
+      open in 2D.</li>
+    <li>Statistics, the analytical download, the print and the timelapse use the area around the centre of the view.</li>
+    <li>Links keep the 3D view with its tilt and direction, the height model and the vertical scaling.</li>
+  </ul>
+  <p>Not available, compared with the Copernicus Browser: a sky and atmosphere, shadows cast by mountains, a lens flare,
+    anaglyph stereo and a 3D timelapse.</p>
 
   <h2 id="tools"><span class="n">2</span>Tools</h2>
   <p>The tools are the buttons at the top right of the map, below the <span class="key">i</span>.</p>
@@ -390,8 +508,8 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
     <li>a URL to such a file (also API or WFS addresses that return GeoJSON); the server must allow access from other websites (CORS);</li>
     <li>a pasted geometry, an MGRS or GEOREF grid cell, or a bounding box in WGS84, LV95 or LV03 coordinates.</li>
   </ul>
-  <figure><img src="img/import.jpg" alt="Import dialog for an area of interest" width="500" height="475" style="max-width:500px">
-    <figcaption><b>Fig. 14</b> Importing an area of interest.</figcaption></figure>
+  <figure><img src="img/import.jpg" alt="Import dialog for an area of interest" width="460" height="444" style="max-width:460px">
+    <figcaption><b>Fig. 18</b> Importing an area of interest.</figcaption></figure>
   <p>The toolbar of the area copies the geometry, shows the area, centres the map, opens the <a href="#tools-stats">statistics</a>
     and the <a href="#tools-spec">spectral explorer</a>, and downloads the area as GeoJSON. Small areas are part of
     copied links; large areas from a file are not (the toolbar then shows <i>⚠ not in link</i>), while areas loaded from
@@ -402,41 +520,44 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
   <ul>
     <li><b>Selected date</b>: mean, standard deviation, median, percentiles and a histogram in the colours of the legend;</li>
     <li><b>Time series</b>: the mean over a date range, read date by date (the least cloudy first). Clouds are judged
-      over your area, not over the whole scene; you can also exclude clouds with the scene classification and restrict
-      the area to forest or vegetation. The chart and the values can be downloaded as CSV.</li>
+      over your area, not over the whole scene; you can also exclude clouds with the scene classification, terrain
+      shadow, and restrict the area with any <a href="#vis-veg">vegetation mask</a>. The chart and the values can be
+      downloaded as CSV.</li>
   </ul>
   <p>Some layers report differently: the two-date layers (NDDI change, NDVI difference to a reference date) give the difference and, for the
-    NDVI difference, its forest change report (method of the NDVI Analyst of the Canton of Aargau); the VHI season layers give the season curve.
+    NDVI difference, its change report (method of the NDVI Analyst of the Canton of Aargau) with the masked area, the
+    compared area and the affected area in hectares; the VHI season layers give the season curve.
     For a large area the change report is first computed on a coarser grid, with a warning; click
     <b>Compute at 10 m</b> for the full resolution (a canton takes a few minutes).</p>
 
   <h3 id="tools-spec">Spectral explorer</h3>
   <p>The mean surface reflectance of all twelve Sentinel-2 bands over the area, with ± one standard deviation, as a
-    chart and as CSV. It shows the spectral signature of what is in your area: water, forest, crops or bare soil.</p>
+    chart and as CSV. It shows the spectral signature of what is in your area: water, forest, crops or bare soil. The
+    vegetation mask can be chosen here too.</p>
 
   <h3 id="tools-insp">Pixel inspector</h3>
   <p>Switch it on at the top of the map and click a spot. For the satellite layers it shows the band values (stored
-    number and reflectance), the index value, the scene classification, cloud and terrain mask, the vegetation mask, the
-    swissTLM3D forest class, the broadleaf share of the Waldmischungsgrad LFI and the Nutzungsflächen category;
-    for the swissEO products the product value. See <a href="#t5">Fig. 5</a>.</p>
+    number and reflectance), the index value, the scene classification, cloud and terrain mask, the habitat map of the
+    date (forest, vegetation), the swissTLM3D forest class, the broadleaf share of the Waldmischungsgrad LFI and the
+    Nutzungsflächen category; for the swissEO products the product value. See <a href="#t6">Fig. 6</a>.</p>
 
   <h3 id="tools-exp">Image download</h3>
-  <figure><img src="img/image-download.jpg" alt="Image download dialog, Analytical tab" width="480" height="840" style="max-width:480px">
-    <figcaption><b>Fig. 15</b> The Analytical tab of the image download.</figcaption></figure>
+  <figure><img src="img/image-download.jpg" alt="Image download dialog, Analytical tab" width="460" height="828" style="max-width:460px">
+    <figcaption><b>Fig. 19</b> The Analytical tab of the image download.</figcaption></figure>
   <ul>
-    <li><b>Basic</b>: the current view as PNG or JPG, with captions (data source, date, scale bar), an optional
-      description, the label overlay, the legend and the area of interest; also in compare mode and in 3D.</li>
+    <li><b>Basic</b>: the current view as PNG or JPG, with captions (data source, date, the vegetation mask, scale bar), an
+      optional description, the map labels, the legend and the area of interest; also in compare mode and in 3D.</li>
     <li><b>Analytical</b>: several layers and raw bands at once, for the view or the area of interest, at 40, 20 or
       10 m or a custom resolution (up to 2500 × 2500 pixels). Formats: PNG, JPG or GeoTIFF in Swiss coordinates (LV95):
       8-bit, 16-bit (the stored values) or <b>32-bit float with the index or physical values</b> for your own analysis.
-      Several files are zipped.</li>
+      Several files are zipped. The masks of the layer apply.</li>
     <li><b>High-res print</b>: the view rendered for a printed size: width and height in cm (or A4 / A3, portrait or
       landscape), DPI and a scale. <i>Fit</i> keeps the whole view (or the area of interest) on the paper; a fixed scale such
       as 1:25 000 centres the print on the area of interest and warns when it does not fit.</li>
   </ul>
 
   <h3 id="tools-tl">Timelapse</h3>
-  <p>The film button builds an animation of the current layer over the area of interest (or the view):</p>
+  <p>The film button builds an animation of the current layer, with its masks, over the area of interest (or the view):</p>
   <ol class="steps">
     <li>choose the time range and <i>Select 1 image per</i> orbit, day, week, month or year; the month buttons skip
       seasons you do not want (for example winter);</li>
@@ -446,14 +567,15 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
   </ol>
   <p>There are no hard limits: a weekly glacier animation over ten years works, it just takes a few minutes.</p>
   <figure><img src="img/timelapse.jpg" alt="Timelapse dialog with monthly images of the Seeland" width="1400" height="900">
-    <figcaption><b>Fig. 16</b> A monthly timelapse of the Seeland, April to September 2026.</figcaption></figure>
+    <figcaption><b>Fig. 20</b> A monthly timelapse of the Seeland, April to September 2026.</figcaption></figure>
 
   <h2 id="share"><span class="n">3</span>Sharing and feedback</h2>
   <h3>Links</h3>
   <p>The address bar is updated with every change: place, date, cloud filter, configuration and layer, the open layer
-    menu, colour scale, masks, effects, the compare list, the WMS / WMTS layer, the basemap, the area of interest and the
-    3D view.
-    The <b>Copy link</b> button (chain icon) copies it. Links use Swiss coordinates (LV95) for the map centre, as map.geo.admin.ch does.</p>
+    menu, colour scale, masks (also the vegetation mask with its classes, categories or threshold), effects, the compare
+    list, the WMS / WMTS layer, the basemap and labels, the area of interest and the 3D view (tilt, direction, height
+    model and vertical scaling). The <b>Copy link</b> button (chain icon) copies it. Links use Swiss coordinates (LV95)
+    for the map centre, as map.geo.admin.ch does.</p>
   <h3>Feedback and issues</h3>
   <p>At the top of the <b>Info</b> tab, below the <i>not for operational use</i> notice:</p>
   <ul>
@@ -465,28 +587,45 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
   <p>Both already contain the link to exactly the view you are looking at and a summary of what is on the map, so one or
     two sentences are enough. A value from the pixel inspector helps a lot when something looks wrong.</p>
   <figure><img src="img/feedback.jpg" alt="Info tab with the Feedback and issue buttons" width="420" height="700" style="max-width:420px">
-    <figcaption><b>Fig. 17</b> Feedback and the four issue forms in the Info tab.</figcaption></figure>
+    <figcaption><b>Fig. 21</b> Feedback and the four issue forms in the Info tab.</figcaption></figure>
 
-  <h2 id="data"><span class="n">4</span>Data, coordinates and limits</h2>
-  <h3>Data</h3>
-  <ul>
-    <li><b>swissEO S2-SR</b>: Sentinel-2 surface reflectance mosaics of Switzerland at 10 m, with cloud mask, terrain
-      mask and true color image, since 2017;</li>
-    <li><b>swissEO VHI</b>: daily Vegetation Health Index for forest and all vegetation, relative to 1991–2020;</li>
-    <li><b>swissEO NDVIdiff and NDVIz</b>: NDVI change compared with the previous year, and NDVI anomaly, for the forest,
-      at the end of July, August and September;</li>
-    <li><b>swissALTIRegio</b> and <b>swissSURFACE3D</b> (10 m): swisstopo's height models, for the 3D terrain;</li>
-    <li><b>vegetation masks</b>: the habitat maps of swissEO VHI, the swissTLM3D forest, the Waldmischungsgrad LFI
-      (BAFU / WSL) and the Nutzungsflächen of the cantons (geodienste.ch);</li>
-    <li>basemaps and the location search of map.geo.admin.ch.</li>
-  </ul>
+  <h2 id="data"><span class="n">4</span>Data, sources and limits</h2>
+  <h3>Data and sources</h3>
+  <table>
+    <tr><th>Data</th><th>Used for</th><th>Source</th></tr>
+    <tr><td>swissEO S2-SR</td><td>Sentinel-2 surface reflectance mosaics of Switzerland at 10 m, with cloud mask, terrain
+      mask and true color image, since 2017: all Sentinel-2 layers</td>
+      <td><a href="https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-s2-sr" target="_blank" rel="noopener">swisstopo</a>, data.geo.admin.ch</td></tr>
+    <tr><td>swissEO VHI</td><td>Daily Vegetation Health Index for forest and all vegetation, relative to 1991–2020; VHI season layers</td>
+      <td><a href="https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-vhi" target="_blank" rel="noopener">swisstopo</a></td></tr>
+    <tr><td>swissEO NDVIdiff and NDVIz</td><td>NDVI change compared with the previous year, and NDVI anomaly, for the
+      forest, at the end of July, August and September</td>
+      <td><a href="https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-ndvidiff" target="_blank" rel="noopener">NDVIdiff</a>,
+      <a href="https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-ndviz" target="_blank" rel="noopener">NDVIz</a>, swisstopo</td></tr>
+    <tr><td>swissALTIRegio</td><td>Height model of the 3D view (default), 10 m</td>
+      <td><a href="https://www.geocat.ch/datahub/dataset/f7f058e9-288b-4c55-8f4e-6360880dbb59" target="_blank" rel="noopener">swisstopo, metadata on geocat.ch</a></td></tr>
+    <tr><td>swissSURFACE3D, 10 m</td><td>Surface model of the 3D view (option), resampled to 10 m by swissEO</td>
+      <td><a href="https://www.swisstopo.admin.ch/en/height-model-swisssurface3d" target="_blank" rel="noopener">swisstopo</a></td></tr>
+    <tr><td>Habitat maps of swissEO VHI</td><td>Vegetation masks (forest, all vegetation)</td>
+      <td>swisstopo, swissEO VHI processor (<a href="https://github.com/swisstopo/topo-satromo-v2" target="_blank" rel="noopener">topo-satromo-v2</a>)</td></tr>
+    <tr><td>swissTLM3D forest</td><td>Vegetation mask (Wald, Wald offen, Gebüschwald), pixel inspector</td>
+      <td><a href="https://www.swisstopo.admin.ch/en/landscape-model-swisstlm3d" target="_blank" rel="noopener">swisstopo</a>, wms.geo.admin.ch</td></tr>
+    <tr><td>Waldmischungsgrad LFI</td><td>Vegetation mask (broadleaf, conifer forest), pixel inspector</td>
+      <td><a href="https://www.geocat.ch/geonetwork/srv/ger/catalog.search#/metadata/b07a4589-159b-4c3a-b1e7-dbdad11f7e62" target="_blank" rel="noopener">BAFU / WSL, metadata on geocat.ch</a></td></tr>
+    <tr><td>Nutzungsflächen</td><td>Vegetation mask (13 main categories of the agricultural land use), pixel inspector</td>
+      <td><a href="https://www.geocat.ch/datahub/dataset/ae183bc4-5c91-467e-89bc-85f390340efb" target="_blank" rel="noopener">the cantons, geodienste.ch, metadata on geocat.ch</a></td></tr>
+    <tr><td>Basemaps, labels, place search</td><td>Background maps, names on the map, Go to Place</td>
+      <td>swisstopo, map.geo.admin.ch</td></tr>
+  </table>
   <p>The Info tab lists the acquisitions of the selected date with their metadata and the scaling of all products.</p>
   <h3>Coordinates</h3>
   <p>All positions you see are Swiss coordinates <b>LV95</b> (EPSG:2056): the mouse position, the pixel inspector, the
     links and the import defaults. Only GeoJSON downloads use WGS84, as the GeoJSON standard requires.</p>
   <h3>Not included compared with the Copernicus Browser</h3>
   <p>Product search and download of the original products, pins, the measuring tool, custom scripts and user
-    accounts are not available; the 3D view has no height exaggeration and no 3D timelapse. Other satellite missions are not included; the swissEO Browser shows the swissEO products only.</p>
+    accounts are not available. The 3D view has no sky and atmosphere, no shadows cast by mountains, no lens flare, no
+    anaglyph stereo and no 3D timelapse. Other satellite missions are not included; the swissEO Browser shows the
+    swissEO products only.</p>
   <h3>Limits</h3>
   <ul>
     <li>Everything is computed in your browser: large areas, long time series and large downloads take a while, and a
@@ -496,6 +635,7 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
       Firefox, open <code>about:config</code> and set <code>webgl.force-enabled</code> to <code>true</code>; in Chrome or
       Edge, switch on <i>Use graphics acceleration when available</i>. Layers of other map services can only be shown
       when the service allows access from other websites (CORS).</li>
+    <li>The Nutzungsflächen mask shows from about 1:100 000 and only where the cantons publish their data.</li>
     <li>Areas of interest can have up to 100,000 vertices and files up to 50 MB; areas from files are only part of a
       link when they are small.</li>
     <li>Layers marked <span class="beta" style="margin:0">BETA</span> are not yet verified; the VHI season layers count only
@@ -505,6 +645,7 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
   <footer>
     <p>swissEO Browser, a prototype of <a href="https://www.swisstopo.admin.ch" target="_blank" rel="noopener">swisstopo</a>.
       Data © swisstopo (open government data); swissEO S2-SR and swissEO VHI contain modified Copernicus Sentinel data.
+      Waldmischungsgrad LFI © BAFU / WSL; Nutzungsflächen © the cantons (geodienste.ch).
       User interface modelled on the Copernicus Browser of the Copernicus Data Space Ecosystem; this project is not
       affiliated with or endorsed by it. Source code and technical details:
       <a href="https://github.com/swisstopo/topo-swisseobrowser" target="_blank" rel="noopener">github.com/swisstopo/topo-swisseobrowser</a>.</p>
