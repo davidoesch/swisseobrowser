@@ -5,7 +5,7 @@ A minimal, browser-only viewer for swisstopo's **swissEO** satellite products, m
 
 **Live version: <https://swisstopo.github.io/topo-swisseobrowser/>**
 
-[![Ask DeepWiki](https://img.shields.io/badge/DeepWiki-Ask%20about%20this%20repo-003F6B)](https://deepwiki.com/swisstopo/topo-swisseobrowser)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/swisstopo/topo-swisseobrowser)
 **Search and ask questions about this repository:** [DeepWiki](https://deepwiki.com/swisstopo/topo-swisseobrowser)
 generates browsable documentation from the code and this README and answers questions about them.
 
