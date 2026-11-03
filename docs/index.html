@@ -122,7 +122,8 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
   <a class="sub" href="#vis-compare">Comparing visualizations</a>
   <a class="sub" href="#vis-hl">Highlights</a>
   <a class="sub" href="#vis-wms">WMS / WMTS services</a>
-  <a class="sub" href="#vis-base">Basemaps</a>
+  <a class="sub" href="#vis-base">Basemaps and labels</a>
+  <a class="sub" href="#vis-3d">3D terrain</a>
   <a href="#tools">2. Tools</a>
   <a class="sub" href="#tools-search">Place search</a>
   <a class="sub" href="#tools-aoi">Area of interest</a>
@@ -178,11 +179,12 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
     <li><span class="n">4</span><span><b>Date on the map</b>, <i>Copy link</i> (chain icon) and the <i>Pixel inspector</i> ((i) with a pointer)</span></li>
     <li><span class="n">5</span><span><b>Go to Place</b>: search a town, address or mountain</span></li>
     <li><span class="n">6</span><span><b>Help</b> (this page) and the <b>basemap</b> button</span></li>
-    <li><span class="n">7</span><span><b>Tools</b>: area of interest, image download, timelapse</span></li>
+    <li><span class="n">7</span><span><b>Tools</b>: area of interest, image download, timelapse, 3D terrain</span></li>
     <li><span class="n">8</span><span><b>Zoom</b>, mouse position in Swiss coordinates (LV95) and scale bar</span></li>
   </ul>
   <div class="tip"><b>Tip:</b> move the map by dragging it, zoom with the mouse wheel or the <span class="key">+</span>
-    <span class="key">−</span> buttons. The chevron <span class="key">‹</span> next to <i>EN</i> hides the menu to give the map more room.</div>
+    <span class="key">−</span> buttons. The chevron <span class="key">‹</span> next to <i>EN</i> hides the menu to give the map more room.
+    The <span class="key">3D</span> button shows the map on the terrain (see <a href="#vis-3d">3D terrain</a>).</div>
 
   <h2 id="t2"><span class="n">2</span>Go to a place</h2>
   <p>Click into <b>Go to Place</b> at the top right of the map and type at least two letters of a place name, an
@@ -332,7 +334,25 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
 
   <h3 id="vis-base">Basemaps</h3>
   <p>Hover the layer button at the top right of the map (below the <span class="key">i</span>) to choose the
-    <b>basemap</b>: <i>Map</i> (swisstopo national map), <i>SWISSIMAGE</i> (aerial photo), <i>Map Grey</i> or <i>None</i>.</p>
+    <b>basemap</b>: <i>Map</i> (swisstopo national map), <i>SWISSIMAGE</i> (aerial photo), <i>Map Grey</i> or <i>None</i>.
+    <i>Labels</i> writes the names of places, roads, peaks and lakes from swisstopo's base map above the satellite data,
+    as sharp text at every scale (in 3D upright and facing you). The names stop at the border of Switzerland and
+    Liechtenstein.</p>
+
+  <h3 id="vis-3d">3D terrain</h3>
+  <p>The <span class="key">3D</span> button below the film button lays the map, the satellite layer, the labels and the
+    area of interest on the terrain of <b>swissALTIRegio</b>, swisstopo's 10 m height model of Switzerland and its
+    border regions. Drag with the right mouse button (or hold <span class="key">Ctrl</span> and drag) to tilt and turn
+    the map; on a touch screen use two fingers. The compass above the zoom buttons turns the map back to north and flat;
+    the <span class="key">3D</span> button returns to the flat map.</p>
+  <figure><img src="img/terrain-3d.jpg" alt="The Great Aletsch Glacier in 3D with the true color image" width="1400" height="900">
+    <figcaption><b>Fig. 13</b> The Great Aletsch Glacier in 3D: true color of 13 August 2026 on swissALTIRegio, looking
+    north-east towards Lake Brienz, with the label overlay.</figcaption></figure>
+  <p>A first 3D view takes a few seconds, as the heights are read from swisstopo's data and turned into terrain in your
+    browser. The split comparison needs the flat map, so in 3D the compare list uses the <i>Opacity</i> effect; the
+    highlights open in 2D. Statistics, downloads and the timelapse of the view use the area around the centre of the
+    view; the <i>Basic</i> image download saves the view as you see it, without scale bar. Links keep the 3D view with
+    its tilt and direction.</p>
 
   <h2 id="tools"><span class="n">2</span>Tools</h2>
   <p>The tools are the buttons at the top right of the map.</p>
@@ -342,15 +362,17 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
     map.geo.admin.ch. A result zooms to its extent, or to its point at a scale of about 1:25,000.</p>
 
   <h3 id="tools-aoi">Area of interest</h3>
-  <p>The pentagon button opens three options: <b>import</b>, <b>rectangle</b> and <b>polygon</b>. Drawing again adds
-    another polygon; the vertices stay editable. The import accepts:</p>
+  <p>The pentagon button opens three options: <b>import</b>, <b>rectangle</b> and <b>polygon</b>. A polygon is finished
+    with a double-click or a click on its first vertex. Drawing again adds another polygon. The vertices stay editable:
+    drag a white dot to move a vertex, drag or click a light dot on the middle of a side to add one, and right-click a
+    vertex to remove it. The outline cannot cross itself. The import accepts:</p>
   <ul>
     <li>files: GeoJSON, KML / KMZ, GPX, WKT and zipped Shapefiles;</li>
     <li>a URL to such a file (also API or WFS addresses that return GeoJSON); the server must allow access from other websites (CORS);</li>
     <li>a pasted geometry, an MGRS or GEOREF grid cell, or a bounding box in WGS84, LV95 or LV03 coordinates.</li>
   </ul>
   <figure><img src="img/import.jpg" alt="Import dialog for an area of interest" width="500" height="475" style="max-width:500px">
-    <figcaption><b>Fig. 13</b> Importing an area of interest.</figcaption></figure>
+    <figcaption><b>Fig. 14</b> Importing an area of interest.</figcaption></figure>
   <p>The toolbar of the area copies the geometry, shows the area, centres the map, opens the <a href="#tools-stats">statistics</a>
     and the <a href="#tools-spec">spectral explorer</a>, and downloads the area as GeoJSON. Small areas are part of
     copied links; large areas from a file are not (the toolbar then shows <i>⚠ not in link</i>), while areas loaded from
@@ -380,10 +402,10 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
 
   <h3 id="tools-exp">Image download</h3>
   <figure><img src="img/image-download.jpg" alt="Image download dialog, Analytical tab" width="480" height="840" style="max-width:480px">
-    <figcaption><b>Fig. 14</b> The Analytical tab of the image download.</figcaption></figure>
+    <figcaption><b>Fig. 15</b> The Analytical tab of the image download.</figcaption></figure>
   <ul>
     <li><b>Basic</b>: the current view as PNG or JPG, with captions (data source, date, scale bar), an optional
-      description, the legend and the area of interest; also in compare mode.</li>
+      description, the label overlay, the legend and the area of interest; also in compare mode and in 3D.</li>
     <li><b>Analytical</b>: several layers and raw bands at once, for the view or the area of interest, at 40, 20 or
       10 m or a custom resolution (up to 2500 × 2500 pixels). Formats: PNG, JPG or GeoTIFF in Swiss coordinates (LV95):
       8-bit, 16-bit (the stored values) or <b>32-bit float with the index or physical values</b> for your own analysis.
@@ -404,12 +426,13 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
   </ol>
   <p>There are no hard limits: a weekly glacier animation over ten years works, it just takes a few minutes.</p>
   <figure><img src="img/timelapse.jpg" alt="Timelapse dialog with monthly images of the Seeland" width="1400" height="900">
-    <figcaption><b>Fig. 15</b> A monthly timelapse of the Seeland, April to September 2026.</figcaption></figure>
+    <figcaption><b>Fig. 16</b> A monthly timelapse of the Seeland, April to September 2026.</figcaption></figure>
 
   <h2 id="share"><span class="n">3</span>Sharing and feedback</h2>
   <h3>Links</h3>
   <p>The address bar is updated with every change: place, date, cloud filter, configuration and layer, the open layer
-    menu, colour scale, masks, effects, the compare list, the WMS / WMTS layer, the basemap and the area of interest.
+    menu, colour scale, masks, effects, the compare list, the WMS / WMTS layer, the basemap, the area of interest and the
+    3D view.
     The <b>Copy link</b> button (chain icon) copies it. Links use Swiss coordinates (LV95) for the map centre, as map.geo.admin.ch does.</p>
   <h3>Feedback and issues</h3>
   <p>At the top of the <b>Info</b> tab, below the <i>not for operational use</i> notice:</p>
@@ -422,7 +445,7 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
   <p>Both already contain the link to exactly the view you are looking at and a summary of what is on the map, so one or
     two sentences are enough. A value from the pixel inspector helps a lot when something looks wrong.</p>
   <figure><img src="img/feedback.jpg" alt="Info tab with the Feedback and issue buttons" width="420" height="700" style="max-width:420px">
-    <figcaption><b>Fig. 16</b> Feedback and the four issue forms in the Info tab.</figcaption></figure>
+    <figcaption><b>Fig. 17</b> Feedback and the four issue forms in the Info tab.</figcaption></figure>
 
   <h2 id="data"><span class="n">4</span>Data, coordinates and limits</h2>
   <h3>Data</h3>
@@ -432,6 +455,7 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
     <li><b>swissEO VHI</b>: daily Vegetation Health Index for forest and all vegetation, relative to 1991–2020;</li>
     <li><b>swissEO NDVIdiff and NDVIz</b>: NDVI change compared with the previous year, and NDVI anomaly, for the forest,
       at the end of July, August and September;</li>
+    <li><b>swissALTIRegio</b>: swisstopo's 10 m height model, for the 3D terrain;</li>
     <li>basemaps and the location search of map.geo.admin.ch.</li>
   </ul>
   <p>The Info tab lists the acquisitions of the selected date with their metadata and the scaling of all products.</p>
@@ -439,12 +463,14 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
   <p>All positions you see are Swiss coordinates <b>LV95</b> (EPSG:2056): the mouse position, the pixel inspector, the
     links and the import defaults. Only GeoJSON downloads use WGS84, as the GeoJSON standard requires.</p>
   <h3>Not included compared with the Copernicus Browser</h3>
-  <p>Product search and download of the original products, pins, 3D view, the measuring tool, custom scripts and user
-    accounts are not available. Other satellite missions are not included; the swissEO Browser shows the swissEO products only.</p>
+  <p>Product search and download of the original products, pins, the measuring tool, custom scripts and user
+    accounts are not available; the 3D view has no height exaggeration and no 3D timelapse. Other satellite missions are not included; the swissEO Browser shows the swissEO products only.</p>
   <h3>Limits</h3>
   <ul>
     <li>Everything is computed in your browser: large areas, long time series and large downloads take a while, and a
       fast internet connection helps. A first view of a new area or date is slower than the next ones.</li>
+    <li>The map is drawn with WebGL, which current browsers have. Layers of other map services can only be shown when
+      the service allows access from other websites (CORS).</li>
     <li>Areas of interest can have up to 100,000 vertices and files up to 50 MB; areas from files are only part of a
       link when they are small.</li>
     <li>Layers marked <span class="beta" style="margin:0">BETA</span> are not yet verified; the VHI season layers count only

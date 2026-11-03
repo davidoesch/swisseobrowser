@@ -33,11 +33,23 @@ the swisstopo WMS/WMTS services directly in the browser.
 | swissEO NDVIdiff v200 **BETA** | 30 example COGs on `cms.geo.admin.ch/Topo/umweltbeobachtung/beispiele/NDVIDIFFV2/` (not in STAC; the item list is in the page) | Year-on-year NDVI change of two-month first-quartile cloud-free mosaics of S2-SR v200 (June/July, July/August, August/September, 2017–2026), forest, 10 m |
 | Vegetation masks | Habitat map COGs v1-0 / v1-1 / v1-2 (forest, all vegetation) in `s3-topo-satromo-prod` (`data/MASKS/Vegetation/`, as used by the VHI processor), inside = value ≠ 0; the swissTLM3D forest (`wms.geo.admin.ch`, `ch.swisstopo.swisstlm3d-wald`) | Forest / all-vegetation mask for every S2-SR layer, statistics and exports |
 | Basemaps | `wmts.geo.admin.ch` (pixelkarte-farbe, swissimage, pixelkarte-grau) | Background maps *Map*, *SWISSIMAGE* and *Map Grey* on the native LV95 grid |
+| 3D terrain | [swissALTIRegio](https://www.swisstopo.admin.ch/en/height-model-swissaltiregio): one COG on `data.geo.admin.ch` (STAC collection `ch.swisstopo.swissaltiregio`), 10 m, LV95, Switzerland and its border regions | Heights of the optional 3D mode |
+| Labels | `vectortiles.geo.admin.ch`: swisstopo's base map vector tiles (`ch.swisstopo.base.vt`, Switzerland and Liechtenstein) with the label layers of its imagery base map style | *Labels*: place, road, peak and lake names above the data |
 | Place search | `api3.geo.admin.ch/rest/services/ech/SearchServer` with `type=locations`, as `searchLocation` in [web-mapviewer `search.api.js`](https://github.com/geoadmin/web-mapviewer/blob/3e5a2900/packages/mapviewer/src/api/search.api.js) | Municipalities, districts, cantons, place names and addresses |
 | WMS / WMTS | `wms.geo.admin.ch` (preset) and the external providers of map.geo.admin.ch ([`external-providers.json`](https://github.com/geoadmin/web-mapviewer/blob/3e5a2900/packages/mapviewer/src/modules/menu/components/advancedTools/ImportCatalogue/external-providers.json), read when the panel is opened), or any WMS / WMTS URL | Layers of other map services on the map and in the compare list |
 
-The map runs in **EPSG:2056 (CH1903+ / LV95)**, the native CRS of the tile grid and the COGs, so nothing
-is reprojected.
+The map runs in **EPSG:2056 (CH1903+ / LV95)**, the native CRS of the basemaps and the COGs, so nothing
+is reprojected. It is drawn with [MapLibre GL JS](https://maplibre.org/) and its custom projections
+(`addProjection`, experimental, pinned to 6.16.0). MapLibre needs a power-of-two tile grid, which the swisstopo
+WMTS levels are not, so the map has its own: tile 0/0/0 is a 512 px square at 2560 m/px with its top-left corner at
+the swisstopo origin (2,420,000 / 1,350,000), so zoom 8 is exactly 10 m/px and every level lines up with the 10 m
+pixel grid of the Sentinel-2 bands. The page draws every tile of this grid itself (custom `swisseo://` protocol):
+the swisstopo WMTS tiles of the nearest level are composed into it, the swissEO layers are rendered from the COGs,
+the VHI layers and external services are read by WMS or WMTS. At 20, 10, 5 and 2.5 m/px the swissEO layers are
+pixel for pixel those of the swisstopo grid. The basemaps are composed from the swisstopo level nearest to the view's
+resolution, each tile at that level's own pixel size, so only the GPU resamples them: at the resolution of a level the
+map is shown 1:1 (pixel for pixel as before at 20, 5, 2, 1 and 0.5 m/px, within a sub-pixel shift at the others);
+between the levels it is scaled, as any raster map in a continuously zooming viewer. The `zoom` of links stays the level of the swisstopo grid (see [URL parameters](#url-parameters)).
 
 ### Vegetation masks
 
@@ -115,8 +127,26 @@ The swissEO Browser therefore always uses the physical reflectance.
   [Copernicus Browser documentation](https://documentation.dataspace.copernicus.eu/Applications/Browser.html) (Part B),
   with screenshots of the app in `docs/img/`. Deployed with the page.
 - **Basemap switcher** as in the Copernicus Browser: the layer button at the top right opens (on hover) *Basemaps* (*Map* =
-  pixelkarte-farbe, *SWISSIMAGE*, *Map Grey* = pixelkarte-grau, *None*). The ASIT VD label overlay was removed
+  pixelkarte-farbe, *SWISSIMAGE*, *Map Grey* = pixelkarte-grau, *None*) and *Map overlays* (*Labels*, always drawn above
+  the data).
+- **Labels**: the place, road, peak and lake names of swisstopo's base map vector tiles, in the style of swisstopo's imagery
+  base map (white text with a dark halo), drawn by MapLibre as text: sharp at every scale and on high-DPI screens,
+  without overlaps, and upright and facing the viewer in 3D. The tiles are in Web Mercator, so MapLibre's workers fetch the
+  Web Mercator tiles under each tile of the map's grid, move the label features into LV95 and encode them again
+  (`swisseo-vt://`); the zoom levels of the style are shifted by the difference between the two grids at the latitude of
+  Switzerland (about 4.39). The names stop at the border of Switzerland and Liechtenstein. The *Basic* image download
+  takes them from the map; the high-res print and the timelapse, which are drawn away from the map, are without
+  labels. The earlier ASIT VD label overlay was removed
   ([#6](https://github.com/swisstopo/topo-swisseobrowser/issues/6)): swisstopo is not an ASIT member.
+- **3D terrain** (the *3D* button below the timelapse button): drapes the map, the data layers, the label overlay and
+  the area of interest over **swissALTIRegio**, swisstopo's 10 m terrain model, read from its COG and turned into
+  terrain tiles of the map grid in the browser (at most 20 m per pixel, about 6 s for a first view). In 3D the map can
+  be tilted and turned (right-drag or Ctrl+drag, two fingers on touch screens, the compass above the zoom buttons
+  resets it); sky and haze appear towards the horizon, and the terrain beyond the basemaps takes the map's background
+  colour. The split comparison needs the flat map, so 3D compares with opacity (switching 3D on turns a split into
+  an opacity comparison; the highlights switch back to 2D). Statistics, analytical downloads, prints and the
+  timelapse use the area around the centre of the view at its scale; the *Basic* download is the view as seen
+  (without scale bar, an AOI crop clips all of it). The link keeps `3d`, `pitch` and `bearing`.
 - **Place search** ("Go to Place", left of the basemap switcher, the width of the Copernicus Browser search field): the
   location search of map.geo.admin.ch, from two characters, results as you type (arrow keys and Enter work). A result
   zooms to its extent (municipality, district, canton) or to its point at the zoom of the result (1:25,000 when it has
@@ -318,7 +348,8 @@ The swissEO Browser therefore always uses the physical reflectance.
   - drawing: from LV95 (EPSG:2056) when the service offers it, otherwise from LV03, Web Mercator, UTM 32N (EPSG:25832) or
     WGS84, placed on the LV95 tiles with an affine transform per 512 px tile (LV03 by the 2,000,000 / 1,000,000 m offset);
     WMS with one GetMap per tile, WMTS with the tiles of the tile matrix nearest to the resolution. Services that send no
-    CORS headers are shown on the map, but cannot be drawn into the image downloads and are left out there;
+    CORS headers cannot be shown: the map is drawn with WebGL, which only uses images sent with CORS headers (the status
+    line and the layer's details say so);
   - permalink: `panel=wms` with `wmsUrl`, `wmsLayer` and `wmsOpacity`; external layers in the compare list keep their
     service URL, type and layer name in `compareLayers`.
 - **Area of interest**: draw a rectangle (axis-aligned in LV95) or polygon, or import KML/KMZ, GPX, WKT,
@@ -328,8 +359,9 @@ The swissEO Browser therefore always uses the physical reflectance.
   the content; the server must allow cross-origin requests, CORS). **Sharing:** an area imported from a
   file or pasted is part of a copied link only when it is small (about 270 vertices; the link holds at
   most 8000 characters); the import dialog warns about this and the AOI bar shows *⚠ not in link*; an
-  area loaded from a URL is shared as the URL (`aoiUrl`). Vertices stay editable (up to 2,000) and
-  drawing again adds a polygon. The AOI is shown as an outline
+  area loaded from a URL is shared as the URL (`aoiUrl`). Vertices stay editable (up to 2,000: drag a vertex, drag
+  or click the middle of a side to add one, right-click a vertex to remove it; an edit or a new vertex that makes the
+  outline cross itself is refused) and drawing again adds a polygon. The AOI is shown as an outline
   only; its toolbar copies the geometry, shows the area, centres the map and downloads the AOI as GeoJSON.
   For the area:
   - *Statistical info*: statistics and histogram for the selected date, and a time series over a date
@@ -344,7 +376,9 @@ The swissEO Browser therefore always uses the physical reflectance.
   - *Spectral explorer*: mean surface reflectance of all 12 bands (± σ), with CSV download.
 - **Image download**: three tabs as in the Copernicus Browser:
   - *Basic*: the current view as PNG or JPG, with captions (datasource, date, scale bar) and an optional
-    description, legend, crop to AOI and an optional AOI outline; works in compare mode.
+    description, map overlays, legend, crop to AOI and an optional AOI outline; works in compare mode and in 3D.
+    It is copied from the map as drawn (basemap, data layers and overlay one after the other), so it shows
+    exactly what is on screen.
   - *Analytical*: any layers of the collection (visualised) and raw bands (B01–B12, B8A, AOT, SCL, cloud
     mask, terrain mask; VHI values) for the current view or the AOI, at LOW / MEDIUM / HIGH (40 / 20 /
     10 m) or a custom resolution, up to 2500 × 2500 px, as PNG, JPG or GeoTIFF (8-bit, 16-bit = stored DN,
@@ -384,8 +418,8 @@ The swissEO Browser therefore always uses the physical reflectance.
   uses 512 px tiles like the COGs and keeps loading while panning, and a scene whose orbit misses a tile,
   or that the more recent scene already covers, is not read. Measured for the TCI of 2026-10-12: all tiles
   of a view in 1.0 to 1.5 s instead of 1.7 to 2.7 s.
-- **Loading indicator**: at the bottom left, above the attribution, the number of tiles still rendering and of
-  requests in flight; after 6 s of continuous loading it says that the connection is slow.
+- **Loading indicator**: at the bottom left, above the attribution, the number of tiles still rendering (or the basemap
+  or terrain still loading) and of requests in flight; after 6 s of continuous loading it says that the connection is slow.
 - **Pixel inspector**: the LV95 position, band values (DN and physical value), index value, SCL, cloud
   mask, terrain mask, forest / vegetation of the habitat map of the date (and of the layer's own mask) and the
   swissTLM3D forest class at a clicked location; for the two-date layers the index
@@ -399,7 +433,7 @@ The swissEO Browser therefore always uses the physical reflectance.
 - **Permalink**: the URL is updated on every change (configuration, view, date, cloud filter, layer and
   whether it is shown, open layer menu,
   legend range, masks incl. the custom mask mode, look and effects, reference date, compare list including WMS / WMTS
-  layers, the open WMS / WMTS service and layer, basemap, AOI); the *Copy link* icon (chain) at the top left of the map
+  layers, the open WMS / WMTS service and layer, basemap and label overlay, AOI, 3D with tilt and direction); the *Copy link* icon (chain) at the top left of the map
   copies it. Areas and custom masks loaded from a URL are shared as that URL;
   areas imported from a file only when they are small, masks from a file never.
 - **Feedback and issues** (Info tab, end of the *not for operational use* notice), as in
@@ -506,9 +540,10 @@ README to the page. It deploys only `swisseo-browser.html`, as `index.html` (and
 the layer thumbnails it references from `public/previews/`, so the upstream `index.html` and sources are
 never published. The repository's *Settings → Pages → Source* must be set to **GitHub Actions**.
 
-External libraries are loaded from CDNs: Leaflet, Proj4js, Proj4Leaflet, geotiff.js and Leaflet-Geoman;
-the import formats additionally load togeojson, JSZip, shpjs and mgrs on demand, and the timelapse GIF
-export loads gifenc.
+External libraries are loaded from CDNs: MapLibre GL JS (an ES module, so the page script is a module too),
+proj4js (also in MapLibre's workers, which tile the area of interest) and geotiff.js; the labels load pbf,
+@mapbox/vector-tile and @maplibre/vt-pbf into MapLibre's workers, the import formats load togeojson, JSZip, shpjs
+and mgrs on demand, and the timelapse GIF export loads gifenc.
 
 ## URL parameters
 
@@ -517,7 +552,8 @@ Parameter names follow the Copernicus Browser where an equivalent exists.
 | Parameter | Example | Meaning |
 | --- | --- | --- |
 | `center` | `2703331.08,1133878.99` | Map centre in LV95 (E,N), as on map.geo.admin.ch |
-| `zoom` | `17` | Zoom level of the LV95 grid (8 to 27; about 17 to 18 for a region; fractional values, as written by the highlights, give resolutions between the grid levels) |
+| `zoom` | `17` | Zoom level of the swisstopo LV95 grid (8 to 27; about 17 to 18 for a region; fractional values give resolutions between the grid levels, interpolated in scale; written with three decimals) |
+| `3d`, `pitch`, `bearing` | `true`, `60`, `160` | 3D terrain mode, with the tilt (0–75°) and the direction of view (degrees from north) |
 | `fromTime`, `toTime` | `2026-10-05T00:00:00.000Z` | Selected date |
 | `cloudCoverage` | `30` | Maximum cloud coverage in % |
 | `layerMenu` | `open` | The menu of the active layer is open (default: closed) |
@@ -536,7 +572,7 @@ Parameter names follow the Copernicus Browser where an equivalent exists.
 | `opacity` | `70` | Layer opacity in % |
 | `cloudMask`, `shadowMask`, `terrainMask` | `true` | Masks (written when they differ from the layer's default; the two-date layers mask clouds and shadows by default) |
 | `vegetationMask` | `forest` | Vegetation mask of the S2-SR layers: `off`, `forest` or `vegetation` (habitat map matching the date), `forest@1-0` … `vegetation@1-2` (fixed version) or `tlm` (swissTLM3D forest); the NDVI difference to a reference date layer and the Forest Disturbance Classification default to `forest` |
-| `basemap` | `swissimage` | Basemap (`pixelkarte` = *Map*, `swissimage`, `grey` = *Map Grey*, `none`); the former `labels` parameter is ignored |
+| `basemap`, `labels` | `swissimage`, `true` | Basemap (`pixelkarte` = *Map*, `swissimage`, `grey` = *Map Grey*, `none`) and the *Labels* overlay (swisstopo vector labels) |
 | `compareLayers`, `comparedOpacity`, `comparedClipping`, `compareMode` | | Compare list (base64url JSON, each entry with its LV95 view; WMS / WMTS entries as `{"l":"ext","x":{"u":service URL,"k":"WMS"/"WMTS","n":layer name,"t":title}}`), per-layer opacity and split range; `compareMode` is `split` / `opacity` when comparing and `off` otherwise (links without it open in compare mode) |
 | `panel` | `wms` | The WMS / WMTS panel is open |
 | `wmsUrl`, `wmsLayer`, `wmsOpacity` | `https://wms.geo.admin.ch/?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetCapabilities`, `ch.bafu.bundesinventare-bln`, `70` | Service of the WMS / WMTS panel (default: the swisstopo WMS), the layer shown from it and its opacity in % |
@@ -550,9 +586,11 @@ Example:
 
 ## Limitations
 
-- Not available compared with the Copernicus Browser: 3D, pins, product search and download, custom
+- Not available compared with the Copernicus Browser: pins, product search and download, custom
   scripts, other satellite collections, sharing timelapses through a server; the image download has no
-  OSM background and no choice of coordinate system (always LV95).
+  OSM background and no choice of coordinate system (always LV95). The 3D mode has no height exaggeration,
+  no split comparison and no 3D timelapse.
+- The map needs WebGL. Its custom projection API is experimental in MapLibre, so the page pins MapLibre 6.16.0.
 - The VHI forest and vegetation layers are rendered by the WMS with its published styling, so their colour scale cannot be changed.
 - The VHI season layers sum only the days with a VHI value, so long cloudy periods lead to an underestimated
   deficit; they read one COG per day, so the first view of a season takes a while, and they are not
@@ -571,8 +609,8 @@ Example:
 - swissEO NDVIdiff v200 BETA is beta data from example files outside STAC; its list of windows is fixed in the page.
 - WMS / WMTS: only services that allow cross-origin requests (CORS) can be read, and only over HTTPS; layers that the
   service offers in none of LV95, LV03, Web Mercator, UTM 32N and WGS84 cannot be shown. Layers not in LV95 are placed on
-  the LV95 grid per tile (accurate to about a pixel), not reprojected per pixel. Image tiles without CORS headers are
-  left out of the image downloads; the timelapse, statistics and pixel inspector only work with the swissEO layers.
+  the LV95 grid per tile (accurate to about a pixel), not reprojected per pixel. Services whose images come without
+  CORS headers cannot be shown at all (WebGL); the timelapse, statistics and pixel inspector only work with the swissEO layers.
   Only the default style and the default time of a layer are used.
 - The language is English only (the *EN* pull-down has no other language yet).
 
@@ -593,10 +631,10 @@ Example:
   the Canton of Aargau), [Open-EO/openeo-community-examples](https://github.com/Open-EO/openeo-community-examples)
   (NDDI drought notebook), the [Waldtrockenheit dashboard](https://waldtrockenheit-dashboard.vercel.app/vhi.html)
   (cumulative VHI deficit and days in extreme stress), [sentinel-hub/custom-scripts](https://github.com/sentinel-hub/custom-scripts)
-  (index definitions and visualisations; Forest Disturbance Classification by Joanneum Research, EvoLand); libraries [Leaflet](https://github.com/Leaflet/Leaflet),
-  [Proj4Leaflet](https://github.com/kartena/Proj4Leaflet), [proj4js](https://github.com/proj4js/proj4js),
-  [Leaflet-Geoman](https://github.com/geoman-io/leaflet-geoman), [geotiff.js](https://github.com/geotiffjs/geotiff.js),
-  [togeojson](https://github.com/placemark/togeojson), [shpjs](https://github.com/calvinmetcalf/shapefile-js),
+  (index definitions and visualisations; Forest Disturbance Classification by Joanneum Research, EvoLand); libraries [MapLibre GL JS](https://github.com/maplibre/maplibre-gl-js),
+  [proj4js](https://github.com/proj4js/proj4js), [geotiff.js](https://github.com/geotiffjs/geotiff.js),
+  [pbf](https://github.com/mapbox/pbf), [vector-tile-js](https://github.com/mapbox/vector-tile-js),
+  [vt-pbf](https://github.com/maplibre/vt-pbf), [togeojson](https://github.com/placemark/togeojson), [shpjs](https://github.com/calvinmetcalf/shapefile-js),
   [mgrs](https://github.com/proj4js/mgrs), [JSZip](https://github.com/Stuk/jszip) and
   [gifenc](https://github.com/mattdesl/gifenc).
 - Highlight texts after [watson.ch](https://www.watson.ch/schweiz/klima/773592776-dieser-satellitenbilder-vergleich-zeigt-trockenheit-in-der-schweiz)
