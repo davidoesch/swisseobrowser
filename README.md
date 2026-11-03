@@ -7,9 +7,12 @@ A minimal, browser-only viewer for swisstopo's **swissEO** satellite products, m
 
 > **Not for operational use.** This is an experimental beta prototype: values, renderings and statistics
 > are computed in the browser, are not validated and may be wrong or incomplete. For authoritative data use
-> the swisstopo products and services directly. The website was developed with the help of
-> [Claude Code](https://claude.com/claude-code) (Anthropic), an AI coding assistant. Every layer is being
-> checked in depth; see [Layer verification](#layer-verification).
+> the swisstopo products and services directly. Every layer is being checked in depth; see
+> [Layer verification](#layer-verification).
+>
+> Please note that AI (Claude Code with the Opus 5.5 model, medium effort) was used extensively to prepare this
+> website, adapting it from the Copernicus Browser. The indices were edited and tested manually in QGIS or with
+> rasterio and GDAL.
 
 The whole application is a single file: [`swisseo-browser.html`](swisseo-browser.html). There is no
 build step, no backend and no login. The page reads the swissEO Cloud Optimized GeoTIFFs (COGs) and
@@ -31,9 +34,9 @@ the swisstopo WMS/WMTS services directly in the browser.
 | [swissEO NDVIdiff v100](https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-ndvidiff) | `forest-10m` COGs of the STAC collection `ch.swisstopo.swisseo_ndvi_diff_v100` | NDVI change of the current year compared to the previous year, forest perimeter, 10 m; one product for the end of July, August and September each year (since 2018) |
 | [swissEO NDVIz v100](https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-ndviz) | `forest-10m` COGs of the STAC collection `ch.swisstopo.swisseo_ndvi_z_v100` | NDVI anomaly as z-score, forest perimeter, 10 m; end of July, August and September (since 2017) |
 | swissEO NDVIdiff v200 **BETA** | 30 example COGs on `cms.geo.admin.ch/Topo/umweltbeobachtung/beispiele/NDVIDIFFV2/` (not in STAC; the item list is in the page) | Year-on-year NDVI change of two-month first-quartile cloud-free mosaics of S2-SR v200 (June/July, July/August, August/September, 2017–2026), forest, 10 m |
-| Vegetation masks | Habitat map COGs v1-0 / v1-1 / v1-2 (forest, all vegetation) in `s3-topo-satromo-prod` (`data/MASKS/Vegetation/`, as used by the VHI processor), inside = value ≠ 0; the swissTLM3D forest (`wms.geo.admin.ch`, `ch.swisstopo.swisstlm3d-wald`) | Forest / all-vegetation mask for every S2-SR layer, statistics and exports |
+| Vegetation masks | Habitat map COGs v1-0 / v1-1 / v1-2 (forest, all vegetation) in `s3-topo-satromo-prod` (`data/MASKS/Vegetation/`, as used by the VHI processor), inside = value ≠ 0; the swissTLM3D forest (`wms.geo.admin.ch`, `ch.swisstopo.swisstlm3d-wald`); the [Waldmischungsgrad LFI](https://www.geocat.ch/geonetwork/srv/eng/catalog.search#/metadata/b07a4589-159b-4c3a-b1e7-dbdad11f7e62) (BAFU / WSL, `data.geo.admin.ch`, STAC collection `ch.bafu.landesforstinventar-waldmischungsgrad`, share of broadleaf trees, 10 m); the agricultural land use (Nutzungsflächen, geodienste.ch WMS `lwb_nutzungsflaechen_v3_0_0`, layer `nutzungsflaechen_hauptkategorien`) | Forest, vegetation, broadleaf / conifer or land-use mask for every S2-SR layer, statistics and exports |
 | Basemaps | `wmts.geo.admin.ch` (pixelkarte-farbe, swissimage, pixelkarte-grau) | Background maps *Map*, *SWISSIMAGE* and *Map Grey* on the native LV95 grid |
-| 3D terrain | [swissALTIRegio](https://www.swisstopo.admin.ch/en/height-model-swissaltiregio): one COG on `data.geo.admin.ch` (STAC collection `ch.swisstopo.swissaltiregio`), 10 m, LV95, Switzerland and its border regions | Heights of the optional 3D mode |
+| 3D terrain | [swissALTIRegio](https://www.swisstopo.admin.ch/en/height-model-swissaltiregio): one COG on `data.geo.admin.ch` (STAC collection `ch.swisstopo.swissaltiregio`), 10 m, LV95, Switzerland and its border regions; the surface model [swissSURFACE3D](https://www.swisstopo.admin.ch/en/height-model-swisssurface3d) resampled to 10 m, one COG in `s3-topo-satromo-prod` (`data/DSM/DSM_10m_EPSG2056_CH_clipped_10km_extended_9999_cog.tif`, Switzerland plus 10 km, no data −9999) | Heights of the optional 3D mode |
 | Labels | `vectortiles.geo.admin.ch`: swisstopo's base map vector tiles (`ch.swisstopo.base.vt`, Switzerland and Liechtenstein) with the label layers of its imagery base map style | *Labels*: place, road, peak and lake names above the data |
 | Place search | `api3.geo.admin.ch/rest/services/ech/SearchServer` with `type=locations`, as `searchLocation` in [web-mapviewer `search.api.js`](https://github.com/geoadmin/web-mapviewer/blob/3e5a2900/packages/mapviewer/src/api/search.api.js) | Municipalities, districts, cantons, place names and addresses |
 | WMS / WMTS | `wms.geo.admin.ch` (preset) and the external providers of map.geo.admin.ch ([`external-providers.json`](https://github.com/geoadmin/web-mapviewer/blob/3e5a2900/packages/mapviewer/src/modules/menu/components/advancedTools/ImportCatalogue/external-providers.json), read when the panel is opened), or any WMS / WMTS URL | Layers of other map services on the map and in the compare list |
@@ -53,18 +56,40 @@ between the levels it is scaled, as any raster map in a continuously zooming vie
 
 ### Vegetation masks
 
-The vegetation mask option (a pull-down) restricts every S2-SR layer, the AOI statistics, time series and
-spectral explorer, and the analytical and print exports to forest or to all vegetation:
+The vegetation mask option (a pull-down, "Choose one" when off) restricts every S2-SR layer, the AOI statistics,
+time series and spectral explorer, and the analytical and print exports. Its entries, in this order:
 
-- **Forest / All vegetation (habitat map matching the date)**, the default choice: the versioned masks of the
-  VHI processor ([topo-satromo-v2](https://github.com/swisstopo/topo-satromo-v2), `PRODUCT_VHI["vegetation_masks"]`),
-  chosen by date as in `step1_processor_vhi.py`: habitat map v1-0 (2022, CLC+ 2021) before 2024-07-12, v1-1
-  (2024, CLC+ 2023) before 2025-12-11, v1-2 (2025, CLC+ 2023) since. They are COGs on the swissEO 10 m grid at
+- **Habitat Map onward 2025-12-11**, **Habitat Map 2024-07-12 to 2025-12-11**, **Habitat Map before 2024-07-12**
+  (forest or all vegetation, for every date): the versioned masks of the VHI processor
+  ([topo-satromo-v2](https://github.com/swisstopo/topo-satromo-v2), `PRODUCT_VHI["vegetation_masks"]`), named by the
+  period in which swissEO VHI uses them: v1-2 (2025, CLC+ 2023), v1-1 (2024, CLC+ 2023) and v1-0 (2022, CLC+ 2021).
+  They are COGs on the swissEO 10 m grid at
   `https://s3-topo-satromo-prod.s3.eu-central-1.amazonaws.com/data/MASKS/Vegetation/{forest|vegetation}_mask_2056_habitatv1-…tif`
   (CORS enabled), *inside = value ≠ 0*.
-- **A fixed version** (v1-0, v1-1 or v1-2, forest or all vegetation) for every date.
-- **swissTLM3D forest**: the WMS layer `ch.swisstopo.swisstlm3d-wald` (Wald, Wald offen, Gebüschwald), drawn
-  opaque, so *inside = alpha ≥ 128* of the GetMap image; the pixel inspector gives the class (GetFeatureInfo).
+- **Habitat Map as used in swissEO VHI100** (forest or all vegetation), the default choice: the habitat map of the
+  date, chosen as in `step1_processor_vhi.py` (v1-0 before 2024-07-12, v1-1 before 2025-12-11, v1-2 since).
+- **swissTLM3D forest**: the WMS layer `ch.swisstopo.swisstlm3d-wald`, with check boxes for its classes Wald, Wald
+  offen and Gebüschwald (any combination). The layer is drawn opaque, one colour per class, so *inside = alpha ≥ 128*
+  of the GetMap image (all classes) or the nearest class colour; the pixel inspector gives the class (GetFeatureInfo).
+- **Waldmischungsgrad LFI** (BAFU / WSL): the share of broadleaf trees in the visible crowns per 10 m cell, modelled
+  from Sentinel-1 and -2 (COG with LERC compression, 0–100 %, −128 outside the stocked area). *Broadleaf forest
+  (Laubwald)* keeps cells above the threshold, *Conifer forest (Nadelwald)* those at or below it; the threshold is a
+  slider, 76 % by default. The broadleaf and conifer areas of a 2 × 2 km change report matched a GDAL read of the COG
+  (149.1 and 43.9 ha). The STAC collection states the license as "proprietary", opendata.swiss as open data: to be
+  clarified with the BAFU.
+- **Nutzungsflächen** (agricultural land use of the cantons, geodienste.ch, model LWB v3.0): check boxes for the 13
+  main categories of the WMS legend (Ackerfläche, Dauerwiesen, Dauerweiden, Reben, Obstanlagen, Übrige
+  Dauerkulturen, Geschützter Anbau, Streueflächen, Hecken-, Feld- und Ufergehölze, Übrige Fläche innerhalb der LN,
+  Sömmerungsfläche, Vegetation nicht LN, Wald). The layer `nutzungsflaechen_hauptkategorien` draws each category in
+  its own colour, so the page reads the GetMap image (GetFeatureInfo of the service returns no features): a pixel
+  within 12 of a legend colour takes that category; an anti-aliased edge pixel, whose blend of two categories can lie
+  near a third one, takes the most frequent category of its neighbours. In a 2 × 2 km test in the Canton of
+  Fribourg the 10 m areas were within 0.3 % (Ackerfläche), 2.4 % (Dauerwiesen) and 4.8 % (Dauerweiden) of the areas
+  of the polygons of the service's WFS. The service draws the layer only up to about 1:100 000 (25 m per pixel), so the mask
+  is read at 20 m or finer and a coarser grid takes the majority of the 20 m cells; a map tile or statistics grid
+  that would need more than 25 million such cells shows nothing, with a message. The coverage depends on the canton:
+  in a test in November 2026, 10 km squares in Bern, Fribourg, Vaud and Zurich were 46–78 % covered, one in Aargau
+  less than 1 %.
 
 The two-date layers use the mask of the selected date on both dates, so a new mask version never shows up as a
 change. The VHI season sums keep the forest mask of swissEO VHI v100 itself (see below).
@@ -117,8 +142,9 @@ The swissEO Browser therefore always uses the physical reflectance.
   map. The chevron collapses the menu and a round button at the top left of the map opens it again; on small screens
   (up to 760 px) the menu starts collapsed and covers the map when opened. On the map:
   - top left: the date and the number of acquisitions on the map, the *Copy link* (chain) and *Pixel inspector* ((i) with a pointer) icon buttons;
-  - top right: the place search, the **help button (i)**, below it the basemap switcher (the layer button) and the area
-    of interest, image download, compare and timelapse buttons;
+  - top right, as in the Copernicus Browser: the place search, the basemap switcher (the layer button) and the
+    **help button** (a plain *i*); below the *i* the area of interest, image download, compare, timelapse and *3D*
+    buttons (in 3D also the 3D settings, sun shading and sun time);
   - bottom right: the zoom buttons and, on one line, the mouse position (LV95 easting and northing, `E 2'661'150 N 1'187'175`)
     and the scale bar; bottom left: the attribution and the loading indicator.
 - **Help and tutorial** ([`docs/index.html`](docs/index.html), opened by the (i) button in a new tab): an *About the
@@ -140,13 +166,28 @@ The swissEO Browser therefore always uses the physical reflectance.
   ([#6](https://github.com/swisstopo/topo-swisseobrowser/issues/6)): swisstopo is not an ASIT member.
 - **3D terrain** (the *3D* button below the timelapse button): drapes the map, the data layers, the label overlay and
   the area of interest over **swissALTIRegio**, swisstopo's 10 m terrain model, read from its COG and turned into
-  terrain tiles of the map grid in the browser (at most 20 m per pixel, about 6 s for a first view). In 3D the map can
+  terrain tiles of the map grid in the browser (at most 20 m per pixel, about 6 s for a first view). In 3D the tools
+  of the Copernicus Browser's 3D view are added above the others, as far as MapLibre supports them, and *3D* becomes
+  *2D*:
+  - **3D settings** (gear): the height model, *swissALTIRegio* (terrain, the default) or the *swissSURFACE3D* surface
+    model at 10 m (with buildings and trees; its gaps and the area beyond it take swissALTIRegio's heights);
+    *Sky / atmosphere*; *Sun shading* with its parameters (method, strength, shadow, highlight and accent colour,
+    partly transparent over the image); *Vertical terrain scaling* (50–300 %); *Reset values*. Shadows cast by
+    mountains, a lens flare and anaglyph stereo of the Copernicus Browser are not available in MapLibre.
+  - **Sun shading** (light bulb): a hillshade of the height model, lit from the direction and height of the sun at
+    the map centre (NOAA formulas), above the data layers and below the labels; the sky turns warmer and darker as
+    the sun sets.
+  - **Sun time** (sun): date and time (UTC) of that sun, as sliders and fields, with the local time of the computer;
+    *Current time* follows the clock.
+
+  In 3D the map can
   be tilted and turned (right-drag or Ctrl+drag, two fingers on touch screens, the compass above the zoom buttons
   resets it); sky and haze appear towards the horizon, and the terrain beyond the basemaps takes the map's background
   colour. The split comparison needs the flat map, so 3D compares with opacity (switching 3D on turns a split into
   an opacity comparison; the highlights switch back to 2D). Statistics, analytical downloads, prints and the
   timelapse use the area around the centre of the view at its scale; the *Basic* download is the view as seen
-  (without scale bar, an AOI crop clips all of it). The link keeps `3d`, `pitch` and `bearing`.
+  (without scale bar, an AOI crop clips all of it). The link keeps `3d`, `pitch`, `bearing`, `terrain` and
+  `exaggeration`.
 - **Place search** ("Go to Place", left of the basemap switcher, the width of the Copernicus Browser search field): the
   location search of map.geo.admin.ch, from two characters, results as you type (arrow keys and Enter work). A result
   zooms to its extent (municipality, district, canton) or to its point at the zoom of the result (1:25,000 when it has
@@ -307,8 +348,9 @@ The swissEO Browser therefore always uses the physical reflectance.
     transition; the next scene fills them. The footprint comes from the TCI's internal mask at about 160 m;
     the edge zone is computed once per scene;
   - masks: clouds and cloud shadows (OmniCloudMask), terrain shadow (terrain mask 200), a vegetation
-    mask (pull-down: off, forest or all vegetation of the habitat map matching the date or of a fixed version, or
-    the swissTLM3D forest) and a **custom mask**: your own polygons
+    mask (pull-down: off, forest or all vegetation of one of the three habitat maps or of the one swissEO VHI100
+    uses on the date, the swissTLM3D forest classes, broadleaf or conifer forest of the Waldmischungsgrad LFI, or
+    Nutzungsflächen categories; see [Vegetation masks](#vegetation-masks)) and a **custom mask**: your own polygons
     (e.g. a forest map) loaded from a file or URL with the same import and limits as the area of interest;
     *Inside* keeps the data inside the polygons, *Outside* (inverted) the data outside. It works for every
     layer rendered from COGs (not the VHI WMS) and applies to the map, compare, AOI statistics, exports and
@@ -421,8 +463,9 @@ The swissEO Browser therefore always uses the physical reflectance.
 - **Loading indicator**: at the bottom left, above the attribution, the number of tiles still rendering (or the basemap
   or terrain still loading) and of requests in flight; after 6 s of continuous loading it says that the connection is slow.
 - **Pixel inspector**: the LV95 position, band values (DN and physical value), index value, SCL, cloud
-  mask, terrain mask, forest / vegetation of the habitat map of the date (and of the layer's own mask) and the
-  swissTLM3D forest class at a clicked location; for the two-date layers the index
+  mask, terrain mask, forest / vegetation of the habitat map of the date (and of the layer's own mask), the
+  swissTLM3D forest class, the broadleaf share of the Waldmischungsgrad LFI and the Nutzungsflächen main category at
+  a clicked location; for the two-date layers the index
   on both sides and the difference; for the Forest Disturbance Classification the class; for VHI,
   NDVIdiff, NDVIdiff v200 BETA and NDVIz the product value; for the VHI season layers the cumulative
   deficit, the days with VHI below 10 and the days with a VHI value.
@@ -528,7 +571,7 @@ python -m http.server 8000
 
 A current desktop browser (Firefox, Chrome, Edge) is required.
 
-Conventions for further development (for people and for Claude Code) are in [`CLAUDE.md`](CLAUDE.md):
+Conventions for further development (for people and for AI coding assistants) are in [`CLAUDE.md`](CLAUDE.md):
 no em-dashes in any text, LV95 coordinates, pushes only to this repository, how to add a layer.
 
 ### Deployment
@@ -554,6 +597,7 @@ Parameter names follow the Copernicus Browser where an equivalent exists.
 | `center` | `2703331.08,1133878.99` | Map centre in LV95 (E,N), as on map.geo.admin.ch |
 | `zoom` | `17` | Zoom level of the swisstopo LV95 grid (8 to 27; about 17 to 18 for a region; fractional values give resolutions between the grid levels, interpolated in scale; written with three decimals) |
 | `3d`, `pitch`, `bearing` | `true`, `60`, `160` | 3D terrain mode, with the tilt (0–75°) and the direction of view (degrees from north) |
+| `terrain`, `exaggeration` | `dsm`, `1.5` | 3D height model (`alti` = swissALTIRegio, the default, or `dsm` = swissSURFACE3D 10 m) and vertical terrain scaling (0.5–3) |
 | `fromTime`, `toTime` | `2026-10-05T00:00:00.000Z` | Selected date |
 | `cloudCoverage` | `30` | Maximum cloud coverage in % |
 | `layerMenu` | `open` | The menu of the active layer is open (default: closed) |
@@ -571,7 +615,7 @@ Parameter names follow the Copernicus Browser where an equivalent exists.
 | `redRange`, `greenRange`, `blueRange` | `[0,0.8]` | Advanced RGB effects |
 | `opacity` | `70` | Layer opacity in % |
 | `cloudMask`, `shadowMask`, `terrainMask` | `true` | Masks (written when they differ from the layer's default; the two-date layers mask clouds and shadows by default) |
-| `vegetationMask` | `forest` | Vegetation mask of the S2-SR layers: `off`, `forest` or `vegetation` (habitat map matching the date), `forest@1-0` … `vegetation@1-2` (fixed version) or `tlm` (swissTLM3D forest); the NDVI difference to a reference date layer and the Forest Disturbance Classification default to `forest` |
+| `vegetationMask` | `forest` | Vegetation mask of the S2-SR layers: `off`; `forest` or `vegetation` (habitat map as used in swissEO VHI100 on the date); `forest@1-0` … `vegetation@1-2` (one habitat map); `tlm` or `tlm:12.13` (swissTLM3D forest, all or some of the classes 12 Wald, 13 Wald offen, 6 Gebüschwald); `lfi-broad:76` or `lfi-conif:76` (Waldmischungsgrad LFI with the threshold in %); `lnf` or `lnf:a.dw.dp` (Nutzungsflächen, all or some main categories: `a` Ackerfläche, `dw` Dauerwiesen, `dp` Dauerweiden, `r` Reben, `o` Obstanlagen, `dk` Übrige Dauerkulturen, `g` Geschützter Anbau, `s` Streueflächen, `h` Hecken-, Feld- und Ufergehölze, `u` Übrige Fläche innerhalb der LN, `so` Sömmerungsfläche, `v` Vegetation nicht LN, `w` Wald); the NDVI difference to a reference date layer and the Forest Disturbance Classification default to `forest` |
 | `basemap`, `labels` | `swissimage`, `true` | Basemap (`pixelkarte` = *Map*, `swissimage`, `grey` = *Map Grey*, `none`) and the *Labels* overlay (swisstopo vector labels) |
 | `compareLayers`, `comparedOpacity`, `comparedClipping`, `compareMode` | | Compare list (base64url JSON, each entry with its LV95 view; WMS / WMTS entries as `{"l":"ext","x":{"u":service URL,"k":"WMS"/"WMTS","n":layer name,"t":title}}`), per-layer opacity and split range; `compareMode` is `split` / `opacity` when comparing and `off` otherwise (links without it open in compare mode) |
 | `panel` | `wms` | The WMS / WMTS panel is open |
@@ -641,5 +685,5 @@ Example:
   (Philipp Reich, 10 August 2026) and [SRF Meteo](https://www.srf.ch/meteo/meteo-stories/trockenheit-in-der-schweiz-die-duerre-aus-der-vogelperspektive)
   (Roman Brogli, Timothy Schwitter, 9 July 2026) and [Blick](https://www.blick.ch/schweiz/ostschweiz/thurgau/untersee-faellt-auf-tiefsten-august-wert-seit-1930/49bvg7s)
   (12 August 2026), shortened and translated; the images are swissEO S2-SR TCI.
-- Developed with the help of [Claude Code](https://claude.com/claude-code) (Anthropic). Not for operational use.
+- Please note that AI (Claude Code with the Opus 5.5 model, medium effort) was used extensively to prepare this website, adapting it from the Copernicus Browser. The indices were edited and tested manually in QGIS or with rasterio and GDAL. Not for operational use.
 - The repository keeps the upstream MIT license ([LICENSE.md](LICENSE.md)).

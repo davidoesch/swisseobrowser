@@ -7,7 +7,9 @@
   instead. En-dashes in number ranges (1991–2020, −1…1) are fine.
 - UI and documentation texts are in English. Highlight stories have at most ten lines and credit their
   source.
-- Keep the "Not for operational use" notice and the Claude Code note in the Info tab and the README.
+- Keep the "Not for operational use" notice and the AI note ("Please note that AI (Claude Code with the Opus 5.5 model,
+  medium effort) was used extensively to prepare this website ...") in the Info tab, the README and the help page; do
+  not add other mentions of Claude to the page or the documentation.
 
 ## Repository
 
