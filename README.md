@@ -423,6 +423,15 @@ The swissEO Browser therefore always uses the physical reflectance.
     on for the layer restricts the area in the same way. VHI, NDVIdiff and NDVIz statistics are read from
     their COGs; the two-date layers report the difference (and the change
     report of the NDVI Analyst method) instead of a time series, the VHI season layers the season curve.
+    The selected date is sampled on a grid of up to 320 cells across (at least 10 m), read from the COG overviews
+    for a large AOI. When that grid is coarser than 10 m, a warning offers **Compute at 10 m** for every layer: the
+    AOI is processed at the full 10 m resolution in chunks of 1024 × 1024 cells (two at a time, with the masks of
+    the statistics dialog), the result is shown below the coarse one and can be downloaded as CSV (settings, cell
+    counts, statistics and histogram; for class layers the cells, hectares and shares per class; for the NDVI
+    difference the change report). Counts, mean, standard deviation, minimum and maximum are exact; median and
+    percentiles come from a histogram of 4000 bins over the layer's value range (e.g. ±0.00025 for an index). An NDVI
+    run over a 12 × 6 km AOI matched an independent rasterio computation (720,000 cells; mean, σ, minimum and
+    maximum equal, median and percentiles within ±0.00025). The time series stays on the coarse grid.
   - *Spectral explorer*: mean surface reflectance of all 12 bands (± σ), with CSV download.
 - **Image download**: three tabs as in the Copernicus Browser:
   - *Basic*: the current view as PNG or JPG, with captions (datasource, date, scale bar) and an optional
@@ -657,8 +666,9 @@ Example:
 - The Forest Disturbance Classification is a single-date model trained outside Switzerland; expect
   misclassifications, use it on forest only and validate the results.
 - The NDVI difference to a reference date layer (NDVI Analyst method) works on the swissEO S2-SR mosaics instead of the original script's own Sentinel-2
-  processing; AOI reports use a grid of at least 10 m (coarser for large areas, which the report states); its
-  change report can be computed at 10 m for any AOI size.
+  processing.
+- AOI statistics use a grid of at least 10 m (coarser for large areas, which the dialog states); the statistics of
+  the selected date can be computed at 10 m for any layer and AOI size (*Compute at 10 m*), the time series not.
 - Statistics, time series, analytical downloads and high-res prints read the COGs in the browser; large
   areas, long date ranges and large prints take a while. Imports and custom masks have size limits (see
   *Limits of the browser*); areas and masks from files are not shared through links.

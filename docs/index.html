@@ -526,9 +526,22 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
   </ul>
   <p>Some layers report differently: the two-date layers (NDDI change, NDVI difference to a reference date) give the difference and, for the
     NDVI difference, its change report (method of the NDVI Analyst of the Canton of Aargau) with the masked area, the
-    compared area and the affected area in hectares; the VHI season layers give the season curve.
-    For a large area the change report is first computed on a coarser grid, with a warning; click
-    <b>Compute at 10 m</b> for the full resolution (a canton takes a few minutes).</p>
+    compared area and the affected area in hectares; the VHI season layers give the season curve.</p>
+  <h3 style="font-size:15px">Full resolution: Compute at 10 m</h3>
+  <p>To stay quick, the statistics of a large area are first computed on a coarser grid (up to 320 cells across, for
+    example 88 m for a 28 km wide area), read from the overviews of the data. A cell then mixes what lies in it, such as
+    a meadow and the road next to it, and the masks are applied at that resolution. The dialog says so in a box with the
+    button <b>Compute at 10 m</b>, for every layer:</p>
+  <ul>
+    <li>the area is processed at the full 10 m resolution, in pieces of 1024 × 1024 cells (about 10 × 10 km); the box
+      counts the pieces done. A canton takes a few minutes; closing the dialog or changing a setting stops it;</li>
+    <li>the result appears below the first one: the same statistics and histogram (for class layers the share of each
+      class, for the NDVI difference the change report in hectares), with exact counts, mean, standard deviation,
+      minimum and maximum, and the median and percentiles to a fraction of a thousandth;</li>
+    <li><b>Download CSV (10 m)</b> saves it: the settings and masks used, the number of cells, the statistics and the
+      histogram (or the cells, hectares and shares per class).</li>
+  </ul>
+  <p>The time series stays on the coarser grid, as it reads every date of the range.</p>
 
   <h3 id="tools-spec">Spectral explorer</h3>
   <p>The mean surface reflectance of all twelve Sentinel-2 bands over the area, with ± one standard deviation, as a

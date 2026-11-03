@@ -768,7 +768,9 @@ table.kv td:first-child{color:var(--muted)}
               copied link when it is small (about 270 vertices); one loaded from a URL is shared as the URL.
               Vertices stay editable; drawing again adds a polygon. <i>Statistical info</i> reads the COGs over the area for the
               selected date (statistics, histogram) and over a date range (time series, CSV); swissEO VHI statistics come from the
-              <code>forest-10m</code> / <code>vegetation-10m</code> COGs. The <i>spectral explorer</i> plots mean reflectance of
+              <code>forest-10m</code> / <code>vegetation-10m</code> COGs. A large area is sampled on a coarser grid (up to 320 cells
+              across, from the COG overviews); <i>Compute at 10 m</i> then processes the selected date at full resolution in chunks of
+              1024 × 1024 cells, for every layer, with a CSV download of the result. The <i>spectral explorer</i> plots mean reflectance of
               all 12 bands. The image download can be clipped to the area.</p>
             <p><b>Configurations:</b> as the themes of the Copernicus Browser, a configuration lists the layers for a task:
               <i>Default</i>, <i>Agriculture</i>, <i>Drought</i>, <i>Drought 2026</i> with highlights, and <i>Forest</i>. Each layer keeps its own
@@ -800,8 +802,7 @@ table.kv td:first-child{color:var(--muted)}
             <p><b>Two-date layers:</b> <i>NDDI change</i> and the <i>NDVI difference to a reference date</i> compare the selected date with a reference:
               the acquisitions within ±20 days of the same day one year earlier (or of a chosen date), clearest first, per pixel the
               first clear one (on the map and in the statistics). For a large area of interest the change report is first computed
-              on a coarser grid (up to 320 cells across, from the COG overviews); <i>Compute at 10 m</i> processes the area at full
-              resolution in chunks of 1024 × 1024 cells.</p>
+              on a coarser grid; <i>Compute at 10 m</i> gives it at full resolution (see <i>Area of interest</i>).</p>
             <p><b>Compare:</b> each entry shows the date of the data it actually shows: the nearest NDVIdiff, NDVIz or NDVIdiff v200
               BETA product, the VHI day (the nearest one if the chosen day has none) or the S2-SR date.</p>
             <p><b>Permalink:</b> the address bar is rewritten on every change (view, date, cloud filter, layer, legend range, masks,
@@ -5606,7 +5607,8 @@ async function sampleAoi(r, scenes, grid, o, signal) {
     for (let k = 0; k < n; k++) if (mask[k] && !done[k] && cmaskOut(o.cmask, g, k)) { done[k] = 1; isOut[k] = 1; outside++; }
   }
   if (r.type === "vhiseason") {                                         // season sums over the daily VHI maps
-    const ss = scenes.length ? await vhiSeason(scenes[0].slice(0, 10), bbox, W, H, signal) : null;
+    // the 10 m chunks are not kept (o.noCache: a callback makes vhiSeason skip its cache)
+    const ss = scenes.length ? await vhiSeason(scenes[0].slice(0, 10), bbox, W, H, signal, o.noCache ? () => {} : undefined) : null;
     if (ss) for (let k = 0; k < n; k++) {
       if (!mask[k] || done[k] || !ss.days[k]) continue;
       cov[k] = 1; vals[0][k] = r.metric === "def" ? ss.def[k] : ss.ext[k]; done[k] = 1;
@@ -5757,10 +5759,23 @@ function lineChart(series, o) {
   }
   return s;
 }
+/* Cell counts of nb equal classes from lo to hi (values outside go to the first or last class): from the sorted values,
+   or from a fine histogram (cell counts in bins of 1 / k1 from lo0), as the 10 m statistics keep it. */
+const sortedBins = sorted => (lo, hi, nb) => {
+  const b = new Array(nb).fill(0), w = (hi - lo) / nb || 1;
+  sorted.forEach(v => { b[clamp(Math.floor((v - lo) / w), 0, nb - 1)]++; });
+  return b;
+};
+const fineBins = (hist, lo0, k1) => (lo, hi, nb) => {
+  const b = new Array(nb).fill(0), w = (hi - lo) / nb || 1;
+  for (let i = 0; i < hist.length; i++) if (hist[i]) b[clamp(Math.floor((lo0 + (i + 0.5) / k1 - lo) / w), 0, nb - 1)] += hist[i];
+  return b;
+};
 function histChart(sorted, lo, hi, colorOf, xLabel) {
-  const NB = 40, W = 640, H = 170, m = { l: 48, r: 12, t: 8, b: 30 };
-  const bins = new Array(NB).fill(0), w = (hi - lo) / NB || 1;
-  sorted.forEach(v => { bins[clamp(Math.floor((v - lo) / w), 0, NB - 1)]++; });
+  return histBars(sortedBins(sorted)(lo, hi, 40), lo, hi, colorOf, xLabel);
+}
+function histBars(bins, lo, hi, colorOf, xLabel) {
+  const NB = bins.length, W = 640, H = 170, m = { l: 48, r: 12, t: 8, b: 30 }, w = (hi - lo) / NB || 1;
   const mx = Math.max(...bins) || 1, bw = (W - m.l - m.r) / NB;
   let s = '<svg class="chart" viewBox="0 0 ' + W + " " + H + '">';
   bins.forEach((c, i) => {
@@ -5823,6 +5838,7 @@ $("#stCloud").onchange = $("#stScl").onchange = $("#stTerr").onchange = () => { 
 
 async function runCurrentStats() {
   const rec = stRec, r = statRec(rec), box = $("#stCur");
+  if (st10Abort) st10Abort.abort();                   // settings changed: a running 10 m pass is outdated
   const grid = aoiGrid(320);
   $("#stMeta").textContent = (vegOn(stVeg) ? "Mask: " + vegName(stVeg) + " · " : "") +
     (cmaskOn(S(rec)) ? "Custom mask (" + (S(rec).cmask === "in" ? "inside" : "outside") + " the polygons) · " : "") + "Area " + areaLabel(geomArea(aoi)) + " · sampled on a " + grid.W + " × " + grid.H +
@@ -5837,59 +5853,197 @@ async function runCurrentStats() {
     if (rec.type === "vhiseason") { await seasonStats(rec, scenes, grid, opt, box); return; }
     const res = await sampleAoi(r, scenes, grid, opt);
     if (stRec !== rec) return;
-    const pct = v => (100 * v / res.total).toFixed(1) + " %";
-    if (r.type === "class" || r.type === "fnclass") {
-      const cnt = {};
-      let tot = 0;
-      res.cls.forEach(v => { if (v >= 0) { cnt[v] = (cnt[v] || 0) + 1; tot++; } });
-      const rows = Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a]).map(k => {
-        const e = r.palette[k] || ["?", null];
-        return '<div class="cls"><i style="background:' + (e[1] ? rgbCss(e[1]) : "transparent") + '"></i><span style="flex:1">' +
-               k + " · " + e[0] + "</span><b>" + (100 * cnt[k] / tot).toFixed(1) + " %</b></div>";
-      }).join("");
-      box.innerHTML = rows || '<div class="hint">No data in the area of interest.</div>';
-      return;
-    }
-    let html = "";
-    if (r.type === "rgb") {
-      const st = res.vals.map(summarize);
-      if (!st[0]) { box.innerHTML = '<div class="hint">No valid pixels (all masked or outside the swath).</div>'; return; }
-      html += '<div class="stgrid">' + ["Red " + r.bands[0].toUpperCase(), "Green " + r.bands[1].toUpperCase(), "Blue " + r.bands[2].toUpperCase()]
-        .map((n, i) => "<div>" + n + " mean ρ<b>" + st[i].mean.toFixed(4) + "</b>σ " + st[i].sd.toFixed(4) + "</div>").join("") +
-        "<div>Valid pixels<b>" + pct(st[0].n) + "</b>masked " + pct(res.masked) + "</div></div>";
-      box.innerHTML = html;
-      return;
-    }
-    const st = summarize(res.vals[0]);
-    if (!st) { box.innerHTML = '<div class="hint">No valid pixels (all masked or outside the swath).</div>'; return; }
-    html += '<div class="stgrid">' +
-      "<div>Mean<b>" + fmtNum(st.mean) + "</b></div><div>Std. dev.<b>" + fmtNum(st.sd) + "</b></div>" +
-      "<div>Median<b>" + fmtNum(st.median) + "</b></div><div>Valid pixels<b>" + pct(st.n) + "</b></div>" +
-      "<div>Min<b>" + fmtNum(st.min) + "</b></div><div>Max<b>" + fmtNum(st.max) + "</b></div>" +
-      "<div>P10 / P90<b>" + fmtNum(st.p10) + " / " + fmtNum(st.p90) + "</b></div>" +
-      "<div>" + (r.type === "terrain" ? "Shadow" : "Masked") + "<b>" + pct(r.type === "terrain" ? res.shadow : res.masked) + "</b></div></div>";
-    let lo, hi, col;
-    if (r.ramp) {
-      const s = S(rec), d0 = r.domain[0], k2 = (r.domain[1] - d0) / ((s.max - s.min) || 1e-9);
-      lo = s.min; hi = s.max;
-      col = v => { const c = r.ramp(d0 + (v - s.min) * k2); return c ? rgbCss(c) : "#999"; };
-    } else if (r.threshold != null) {
-      const thr = S(rec).thr;
-      lo = -1; hi = 1;
-      col = v => v > thr ? rgbCss(r.snow) : "#a39a8e";
-    } else if (r.classify) {
-      lo = -1; hi = 1;
-      col = v => rgbCss((r.classify.find(c => v <= c[0]) || r.classify[r.classify.length - 1])[1]);
-    } else if (r.source === "vhi") {
-      lo = 0; hi = 100;
-      col = v => rgbCss(VHI_CLASSES[v >= 60 ? 6 : clamp(Math.floor(v / 10), 0, 5)][1]);
-    } else { lo = st.min; hi = st.max; }
-    html += histChart(st.sorted, lo, hi, col, unitOf(r) + (r.ramp ? " (legend range)" : ""));
-    box.innerHTML = html;
+    box.innerHTML = curStatsHtml(rec, r, coarseStats(r, res)) + box10(grid, rec);
+    wire10(rec, async (signal, prog) => {
+      const t = await stats10(r, scenes, opt, signal, prog);
+      return t && { html: curStatsHtml(rec, r, t) + note10(t), csv: statsCsv(rec, r, t, opt) };
+    });
   } catch (e) {
     if (e && e.name === "AbortError") return;
     box.innerHTML = '<div class="hint">Reading failed: ' + (e.message || e) + "</div>";
   }
+}
+
+/* The statistics of one date in a common form: class counts ({ counts, total }) or, per band, the summary of the values
+   ({ bands, total, masked, shadow, bins }); from the sampled grid here, from the 10 m chunks in stats10. */
+function coarseStats(r, res) {
+  if (r.type === "class" || r.type === "fnclass") {
+    const counts = {};
+    res.cls.forEach(v => { if (v >= 0) counts[v] = (counts[v] || 0) + 1; });
+    return { counts, total: res.total };
+  }
+  const st = res.vals.map(summarize);
+  return { bands: st, total: res.total, masked: res.masked, shadow: res.shadow, bins: st[0] ? sortedBins(st[0].sorted) : null };
+}
+/* Range and colours of the histogram: the legend range of the layer, its classes, or the range of the values. */
+function histStyle(rec, r, s0) {
+  const byClass = x => rgbCss((r.classify.find(c => x <= c[0]) || r.classify[r.classify.length - 1])[1]);
+  if (r.type === "vhiseason" && !r.ramp) return [0, Math.max(s0.max, 31), byClass];
+  if (r.ramp) {
+    const s = S(rec), d0 = r.domain[0], k2 = (r.domain[1] - d0) / ((s.max - s.min) || 1e-9);
+    return [s.min, s.max, v => { const c = r.ramp(d0 + (v - s.min) * k2); return c ? rgbCss(c) : "#999"; }];
+  }
+  if (r.threshold != null) { const thr = S(rec).thr; return [-1, 1, v => v > thr ? rgbCss(r.snow) : "#a39a8e"]; }
+  if (r.classify) return [-1, 1, byClass];
+  if (r.source === "vhi") return [0, 100, v => rgbCss(VHI_CLASSES[v >= 60 ? 6 : clamp(Math.floor(v / 10), 0, 5)][1])];
+  return [s0.min, s0.max, null];
+}
+function curStatsHtml(rec, r, t) {
+  const pct = v => (100 * v / Math.max(1, t.total)).toFixed(1) + " %";
+  if (t.counts) {
+    const cnt = t.counts, tot = Object.values(cnt).reduce((a, b) => a + b, 0);
+    return Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a]).map(k => {
+      const e = r.palette[k] || ["?", null];
+      return '<div class="cls"><i style="background:' + (e[1] ? rgbCss(e[1]) : "transparent") + '"></i><span style="flex:1">' +
+             k + " · " + e[0] + "</span><b>" + (100 * cnt[k] / tot).toFixed(1) + " %</b></div>";
+    }).join("") || '<div class="hint">No data in the area of interest.</div>';
+  }
+  const st = t.bands;
+  if (!st[0]) return '<div class="hint">No valid pixels (all masked or outside the swath).</div>';
+  if (r.type === "rgb") return '<div class="stgrid">' + ["Red " + r.bands[0].toUpperCase(), "Green " + r.bands[1].toUpperCase(), "Blue " + r.bands[2].toUpperCase()]
+    .map((n, i) => "<div>" + n + " mean ρ<b>" + st[i].mean.toFixed(4) + "</b>σ " + st[i].sd.toFixed(4) + "</div>").join("") +
+    "<div>Valid pixels<b>" + pct(st[0].n) + "</b>masked " + pct(t.masked) + "</div></div>";
+  const s0 = st[0], [lo, hi, col] = histStyle(rec, r, s0);
+  return '<div class="stgrid">' +
+    "<div>Mean<b>" + fmtNum(s0.mean) + "</b></div><div>Std. dev.<b>" + fmtNum(s0.sd) + "</b></div>" +
+    "<div>Median<b>" + fmtNum(s0.median) + "</b></div><div>Valid pixels<b>" + pct(s0.n) + "</b></div>" +
+    "<div>Min<b>" + fmtNum(s0.min) + "</b></div><div>Max<b>" + fmtNum(s0.max) + "</b></div>" +
+    "<div>P10 / P90<b>" + fmtNum(s0.p10) + " / " + fmtNum(s0.p90) + "</b></div>" +
+    "<div>" + (r.type === "terrain" ? "Shadow" : "Masked") + "<b>" + pct(r.type === "terrain" ? t.shadow : t.masked) + "</b></div></div>" +
+    histBars(t.bins(lo, hi, 40), lo, hi, col, unitOf(r) + (r.ramp ? " (legend range)" : ""));
+}
+
+/* ---- full resolution: the area of interest at 10 m, in chunks ---- */
+/* The AOI on the 10 m grid of the COGs in chunks of 1024 × 1024 cells, each read with a margin of m cells (for a 3 × 3
+   filter): fn(grid, w, h) is called for every chunk that meets the AOI, two at a time. Returns the number of cells in the
+   AOI and of chunks, or null when aborted. The tolerance (0.001 cell) keeps the rounding of the LV95 / WGS84 round trip
+   of the AOI from adding a row or column. */
+async function eachChunk10(m, signal, prog, fn) {
+  const polys = aoiPolys(), [x0, y0, x1, y1] = polysBox(polys), e = 1e-3;
+  const X0 = Math.floor(x0 / 10 + e) * 10, Y1 = Math.ceil(y1 / 10 - e) * 10;
+  const W = Math.ceil((x1 - X0) / 10 - e), H = Math.ceil((Y1 - y0) / 10 - e), C = 1024, chunks = [];
+  for (let cy = 0; cy < H; cy += C) for (let cx = 0; cx < W; cx += C) chunks.push([cx, cy, Math.min(C, W - cx), Math.min(C, H - cy)]);
+  let done = 0, cells = 0;
+  prog("10 m: 0 / " + chunks.length + " chunks…");
+  await pool(chunks, 2, async ([cx, cy, w, h]) => {
+    if (signal.aborted) return;
+    const w2 = w + 2 * m, h2 = h + 2 * m, bbox = [X0 + (cx - m) * 10, Y1 - (cy + h + m) * 10, X0 + (cx + w + m) * 10, Y1 - (cy - m) * 10];
+    const mask = rasterPolys(polys, bbox, w2, h2, 10);
+    let cnt = 0;
+    for (let k = 0; k < mask.length; k++) cnt += mask[k];
+    for (let y = m; y < m + h; y++) for (let x = m; x < m + w; x++) cells += mask[y * w2 + x];
+    if (cnt) await fn({ bbox, W: w2, H: h2, res: 10, mask, n: cnt }, w, h);
+    done++;
+    if (!signal.aborted) prog("10 m: " + done + " / " + chunks.length + " chunks…");
+  });
+  return signal.aborted ? null : { cells, chunks: chunks.length };
+}
+/* Range of the fine histogram of a layer's values (median and percentiles); values outside count at its ends. */
+const histRange = r => r.lim ? r.lim : r.type === "terrain" ? [0, 180] : r.metric === "ext" ? [0, 250] :
+  r.source === "vhi" ? [0, 100] : r.type === "rgb" ? [0, 1.6] : [-1, 1];
+/* Statistics of the selected date at 10 m, for any layer: class counts, or per band the exact count, mean, standard
+   deviation, minimum and maximum, and median and percentiles from a histogram of 4000 bins. */
+async function stats10(r, scenes, opt, signal, prog) {
+  const cls = r.type === "class" || r.type === "fnclass", nb = r.type === "rgb" ? r.bands.length : 1;
+  const [lo, hi] = histRange(r), NB = 4000, k1 = NB / (hi - lo), hist = new Float64Array(NB), counts = {};
+  const acc = Array.from({ length: nb }, () => ({ n: 0, sum: 0, sq: 0, min: Infinity, max: -Infinity }));
+  let total = 0, masked = 0, shadow = 0;
+  opt = Object.assign({}, opt, { noCache: true });
+  const run = await eachChunk10(0, signal, prog, async grid => {
+    const res = await sampleAoi(r, scenes, grid, opt, signal), mask = grid.mask;
+    total += grid.n - res.outside; masked += res.masked; shadow += res.shadow;
+    for (let k = 0; k < mask.length; k++) {
+      if (!mask[k]) continue;
+      if (cls) { const c = res.cls[k]; if (c >= 0) counts[c] = (counts[c] || 0) + 1; continue; }
+      for (let b = 0; b < nb; b++) {
+        const v = res.vals[b][k];
+        if (!isFinite(v)) continue;
+        const a = acc[b];
+        a.n++; a.sum += v; a.sq += v * v;
+        if (v < a.min) a.min = v;
+        if (v > a.max) a.max = v;
+        if (!b) hist[clamp(Math.floor((v - lo) * k1), 0, NB - 1)]++;
+      }
+    }
+  });
+  if (!run) return null;
+  if (cls) return Object.assign({ counts, total }, run);
+  const a0 = acc[0], q = p => {
+    let c = 0;
+    const t = p * (a0.n - 1);
+    for (let i = 0; i < NB; i++) { c += hist[i]; if (c > t) return clamp(lo + (i + 0.5) / k1, a0.min, a0.max); }
+    return a0.max;
+  };
+  const bands = acc.map((a, b) => {
+    if (!a.n) return null;
+    const mean = a.sum / a.n, o = { n: a.n, mean, sd: Math.sqrt(Math.max(0, a.sq / a.n - mean * mean)), min: a.min, max: a.max };
+    return b || nb > 1 ? o : Object.assign(o, { median: q(0.5), p10: q(0.1), p90: q(0.9) });   // composites: band means only
+  });
+  return Object.assign({ bands, total, masked, shadow, bins: fineBins(hist, lo, k1), step: nb > 1 ? 0 : (hi - lo) / NB }, run);
+}
+const note10 = t => '<div class="hint">' + fmtInt(t.cells) + " cells of 10 m in the area of interest, processed in " + t.chunks + " chunk" + (t.chunks > 1 ? "s" : "") +
+  (t.step ? "; median and percentiles to ±" + +(t.step / 2).toPrecision(2) : "") + ".</div>";
+/* The warning and the "Compute at 10 m" button below statistics computed on a coarser grid. */
+function box10(grid, rec) {
+  if (grid.res <= 10) return "";
+  const cells = Math.round(geomArea(aoi) / 100);
+  const why = rec.modal ? "a cell mixes forest with its surroundings and the 3 × 3 edge filter covers " + 3 * grid.res +
+      " m instead of 30 m. The shares can differ strongly from a 10 m analysis."
+    : "a cell mixes what lies in it (for example forest and field), and the masks are applied at that resolution, so the " +
+      "values can differ from a 10 m analysis.";
+  return '<div class="warnbox" style="margin:8px 0">The area is large, so these statistics use a ' + grid.res +
+    " m grid read from the overviews of the COGs: " + why + " <i>Compute at 10 m</i> processes the area at full resolution in " +
+    "chunks of 1024 × 1024 cells (about " + fmtInt(cells) + " cells; this takes a while, a canton several minutes).<br>" +
+    '<button class="btn" id="st10Go" style="margin-top:6px;width:auto">Compute at 10 m</button> <span id="st10Prog" class="hint"></span></div>' +
+    '<div id="st10Out"></div>';
+}
+/* run(signal, prog) computes the 10 m result: { html, csv: rows } or null; shown below the button, with a CSV download. */
+function wire10(rec, run) {
+  const go = $("#st10Go");
+  if (!go) return;
+  go.onclick = async () => {
+    go.disabled = true;
+    if (st10Abort) st10Abort.abort();
+    const ctrl = st10Abort = new AbortController();
+    try {
+      const t = await run(ctrl.signal, p => { if (!ctrl.signal.aborted) $("#st10Prog").textContent = p; });
+      if (!t || stRec !== rec || ctrl.signal.aborted) return;
+      $("#st10Prog").textContent = "";
+      const out = $("#st10Out"), dl = el("button", "btn sec sm", "Download CSV (10 m)");
+      out.innerHTML = '<div class="msec">Full resolution: 10 m</div>' + t.html;
+      dl.onclick = () => downloadText("swissEO_" + rec.id + "_aoi_statistics_10m_" + state.date + ".csv",
+                                      t.csv.map(csvLine).join("\n") + "\n", "text/csv");
+      out.append(dl);
+    } catch (e) {
+      if (!(e && e.name === "AbortError")) $("#st10Prog").textContent = "Failed: " + (e.message || e);
+    } finally { go.disabled = false; }
+  };
+}
+const csvLine = a => a.map(v => /[",\n]/.test(String(v)) ? '"' + String(v).replace(/"/g, '""') + '"' : v).join(",");
+const csvHead = (rec, opt) => [["layer", rec.name + " (" + rec.id + ")"], ["date", state.date]].concat(rec.source === "s2" ? [
+  ["vegetation_mask", vegOn(opt.veg) ? vegName(opt.veg) : "none"], ["clouds_masked", !!opt.maskClouds],
+  ["scl_clouds_masked", !!opt.maskScl], ["terrain_shadow_masked", !!opt.maskTerrain]] : [],
+  [["custom_mask", opt.cmask || "off"], ["resolution_m", 10]]);
+function statsCsv(rec, r, t, opt) {
+  const rows = csvHead(rec, opt).concat([["cells_in_aoi", t.cells], ["cells_inside_masks", t.total]]);
+  if (t.counts) {
+    const tot = Object.values(t.counts).reduce((a, b) => a + b, 0);
+    rows.push([], ["code", "class", "cells", "area_ha", "share_pct"]);
+    Object.keys(t.counts).sort((a, b) => t.counts[b] - t.counts[a]).forEach(k => rows.push([k, (r.palette[k] || ["?"])[0],
+      t.counts[k], +(t.counts[k] / 100).toFixed(2), +(100 * t.counts[k] / tot).toFixed(3)]));
+    return rows;
+  }
+  rows.push(["masked_cells", t.masked]);
+  if (r.type === "terrain") rows.push(["shadow_cells", t.shadow]);
+  const rgb = r.type === "rgb", keys = rgb ? ["mean", "sd", "min", "max"] : ["mean", "sd", "min", "max", "median", "p10", "p90"];
+  rows.push([], ["band", "valid_cells"].concat(keys));
+  t.bands.forEach((s, b) => { if (s) rows.push([rgb ? r.bands[b].toUpperCase() : unitOf(r), s.n].concat(keys.map(k => +s[k].toPrecision(6)))); });
+  if (t.bands[0] && r.type !== "rgb") {
+    const [lo, hi] = histStyle(rec, r, t.bands[0]), bins = t.bins(lo, hi, 40), w = (hi - lo) / 40;
+    rows.push([], ["histogram_from", "histogram_to", "cells"]);
+    bins.forEach((c, i) => rows.push([+(lo + i * w).toPrecision(6), +(lo + (i + 1) * w).toPrecision(6), c]));
+  }
+  return rows;
 }
 
 /* Two-date layers over the AOI: the index on the date and on the reference, their difference, and for the
@@ -5932,33 +6086,31 @@ async function diffStats(rec, r, scenes, grid, opt, box) {
     }
     html += changeTable("Change report (NDVI Analyst method)" + (grid.res > 10 ? ", " + grid.res + " m grid" : ""),
                         opt, inArea, st.n, raw, filt, grid.res, thr);
-    if (grid.res > 10) html += '<div class="warnbox" style="margin:8px 0">The area is large, so this report uses a ' + grid.res +
-      " m grid read from the overviews of the COGs: a cell mixes forest with its surroundings and the 3 × 3 edge filter covers " +
-      3 * grid.res + " m instead of 30 m. The shares can differ strongly from a 10 m analysis.<br>" +
-      '<button class="btn" id="st10Go" style="margin-top:6px">Compute at 10 m</button> <span id="st10Prog" class="hint"></span></div>' +
-      '<div id="st10Out"></div>';
   }
+  html += box10(grid, rec);
   const d0 = r.domain[0], k2 = (r.domain[1] - d0) / ((s.max - s.min) || 1e-9);
-  html += histChart(st.sorted, s.min, s.max, v => { const c = r.ramp(d0 + (v - s.min) * k2); return c ? rgbCss(c) : "#999"; },
-                    unitOf(r) + " (legend range)");
+  const col = v => { const c = r.ramp(d0 + (v - s.min) * k2); return c ? rgbCss(c) : "#999"; };
+  html += histChart(st.sorted, s.min, s.max, col, unitOf(r) + " (legend range)");
   box.innerHTML = html;
-  const go = $("#st10Go");
-  if (go) go.onclick = async () => {
-    go.disabled = true;
-    if (st10Abort) st10Abort.abort();
-    const ctrl = st10Abort = new AbortController();
-    try {
-      const t = await diffReport10(rec, r, scenes, ref, opt, ctrl.signal, p => { $("#st10Prog").textContent = p; });
-      if (!t || stRec !== rec) return;
-      $("#st10Prog").textContent = "";
-      $("#st10Out").innerHTML = changeTable("Change report (NDVI Analyst method), 10 m", opt, t.inArea, t.n, t.raw, t.filt, 10, s.thr) +
-        '<div class="stgrid"><div>Mean ' + unitOf(r) + "<b>" + fmtNum(t.mean) + "</b></div><div>Std. dev.<b>" + fmtNum(t.sd) + "</b></div>" +
-        "<div>Median<b>" + fmtNum(t.median) + "</b></div><div>P10 / P90<b>" + fmtNum(t.p10) + " / " + fmtNum(t.p90) + "</b></div></div>" +
-        '<div class="hint">' + fmtInt(t.W * t.H) + " cells of 10 m processed in " + t.chunks + " chunks; median and percentiles to ±0.001.</div>";
-    } catch (e) {
-      if (!(e && e.name === "AbortError")) $("#st10Prog").textContent = "Failed: " + (e.message || e);
-    } finally { go.disabled = false; }
-  };
+  wire10(rec, async (signal, prog) => {
+    const t = await diffReport10(rec, r, scenes, ref, opt, signal, prog);
+    if (!t) return null;
+    const html = (rec.modal ? changeTable("Change report (NDVI Analyst method), 10 m", opt, t.inArea, t.n, t.raw, t.filt, 10, s.thr) : "") +
+      '<div class="stgrid"><div>Mean ' + unitOf(r) + "<b>" + fmtNum(t.mean) + "</b></div><div>Std. dev.<b>" + fmtNum(t.sd) + "</b></div>" +
+      "<div>Median<b>" + fmtNum(t.median) + "</b></div><div>Valid on both dates<b>" + (100 * t.n / Math.max(1, t.inArea)).toFixed(1) +
+      " %</b></div><div>P10 / P90<b>" + fmtNum(t.p10) + " / " + fmtNum(t.p90) + "</b></div><div>Min / max<b>" + fmtNum(t.min) + " / " +
+      fmtNum(t.max) + "</b></div></div>" + histBars(t.bins(s.min, s.max, 40), s.min, s.max, col, unitOf(r) + " (legend range)") +
+      note10(Object.assign({ step: 0.001 }, t));
+    const ha = c => +(c / 100).toFixed(2), rows = csvHead(rec, opt).concat([["reference", ref.target + " (" + refLabel(ref) + ")"],
+      ["cells_in_aoi", t.cells], ["area_cells", t.inArea], ["area_ha", ha(t.inArea)], ["compared_cells", t.n], ["compared_ha", ha(t.n)]]);
+    if (rec.modal) rows.push(["threshold", s.thr], ["affected_cells", t.raw], ["affected_ha", ha(t.raw)],
+      ["affected_pct", +(100 * t.raw / Math.max(1, t.n)).toFixed(3)], ["affected_filtered_cells", t.filt],
+      ["affected_filtered_ha", ha(t.filt)], ["affected_filtered_pct", +(100 * t.filt / Math.max(1, t.n)).toFixed(3)]);
+    rows.push([], ["statistic", unitOf(r)]);
+    [["mean", t.mean], ["sd", t.sd], ["min", t.min], ["max", t.max], ["median", t.median], ["p10", t.p10], ["p90", t.p90]]
+      .forEach(([k, v]) => rows.push([k, +v.toPrecision(6)]));
+    return { html, csv: rows };
+  });
 }
 
 /* The table of the NDVI Analyst report: area of the mask in the AOI, compared area and affected area (raw and after the
@@ -5979,48 +6131,36 @@ function changeTable(title, opt, inArea, n, raw, filt, res, thr) {
    Areas, shares, mean and standard deviation are exact; median and percentiles come from a histogram in steps of 0.001. */
 let st10Abort = null;
 async function diffReport10(rec, r, scenes, ref, opt, signal, prog) {
-  const thr = S(rec).thr, polys = aoiPolys(), [x0, y0, x1, y1] = polysBox(polys);
-  const X0 = Math.floor(x0 / 10) * 10, Y1 = Math.ceil(y1 / 10) * 10;
-  const W = Math.ceil((x1 - X0) / 10), H = Math.ceil((Y1 - y0) / 10), C = 1024, chunks = [];
-  for (let cy = 0; cy < H; cy += C) for (let cx = 0; cx < W; cx += C) chunks.push([cx, cy, Math.min(C, W - cx), Math.min(C, H - cy)]);
-  const NB = 4000, hist = new Float64Array(NB);                     // ΔNDVI from −2 to 2 in steps of 0.001
-  let inArea = 0, n = 0, raw = 0, filt = 0, sum = 0, sq = 0, done = 0;
-  prog("10 m: 0 / " + chunks.length + " chunks…");
-  await pool(chunks, 2, async ([cx, cy, w, h]) => {
-    if (signal.aborted) return;
-    const w2 = w + 2, h2 = h + 2, bbox = [X0 + (cx - 1) * 10, Y1 - (cy + h + 1) * 10, X0 + (cx + w + 1) * 10, Y1 - (cy - 1) * 10];
-    const mask = rasterPolys(polys, bbox, w2, h2, 10);
-    let cnt = 0;
-    for (let k = 0; k < mask.length; k++) cnt += mask[k];
-    if (cnt) {
-      const grid = { bbox, W: w2, H: h2, res: 10, mask, n: cnt };
-      const [A, B] = await Promise.all([sampleAoi(r, scenes, grid, opt, signal), sampleAoi(r, ref.scenes, grid, opt, signal)]);
-      const bin = new Int8Array(w2 * h2).fill(-1), dif = new Float32Array(w2 * h2);
-      for (let k = 0; k < bin.length; k++) if (mask[k]) { const d = A.vals[0][k] - B.vals[0][k]; dif[k] = d; if (d === d) bin[k] = d < thr ? 1 : 0; }
-      for (let y = 1; y <= h; y++) for (let x = 1; x <= w; x++) {
-        const k = y * w2 + x;
-        if (!mask[k]) continue;
-        if (!A.isOut[k]) inArea++;
-        if (bin[k] < 0) continue;
-        const d = dif[k];
-        n++; sum += d; sq += d * d; hist[clamp(Math.floor((d + 2) * 1000), 0, NB - 1)]++;
-        if (bin[k] === 1) raw++;
-        let ones = 0, zeros = 0;
-        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
-          const v = bin[k + dy * w2 + dx];
-          if (v === 1) ones++; else if (v === 0) zeros++;
-        }
-        if (ones > zeros) filt++;
+  const thr = S(rec).thr, NB = 4000, hist = new Float64Array(NB);   // the difference from −2 to 2 in steps of 0.001
+  let inArea = 0, n = 0, raw = 0, filt = 0, sum = 0, sq = 0, mn = Infinity, mx = -Infinity;
+  const run = await eachChunk10(1, signal, prog, async (grid, w, h) => {
+    const mask = grid.mask, w2 = grid.W, h2 = grid.H;
+    const [A, B] = await Promise.all([sampleAoi(r, scenes, grid, opt, signal), sampleAoi(r, ref.scenes, grid, opt, signal)]);
+    const bin = new Int8Array(w2 * h2).fill(-1), dif = new Float32Array(w2 * h2);
+    for (let k = 0; k < bin.length; k++) if (mask[k]) { const d = A.vals[0][k] - B.vals[0][k]; dif[k] = d; if (d === d) bin[k] = d < thr ? 1 : 0; }
+    for (let y = 1; y <= h; y++) for (let x = 1; x <= w; x++) {
+      const k = y * w2 + x;
+      if (!mask[k]) continue;
+      if (!A.isOut[k]) inArea++;
+      if (bin[k] < 0) continue;
+      const d = dif[k];
+      n++; sum += d; sq += d * d; hist[clamp(Math.floor((d + 2) * 1000), 0, NB - 1)]++;
+      if (d < mn) mn = d;
+      if (d > mx) mx = d;
+      if (bin[k] === 1) raw++;
+      let ones = 0, zeros = 0;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        const v = bin[k + dy * w2 + dx];
+        if (v === 1) ones++; else if (v === 0) zeros++;
       }
+      if (ones > zeros) filt++;
     }
-    done++;
-    if (!signal.aborted) prog("10 m: " + done + " / " + chunks.length + " chunks…");
   });
-  if (signal.aborted) return null;
-  const q = p => { let c = 0; const t = p * (n - 1); for (let i = 0; i < NB; i++) { c += hist[i]; if (c > t) return (i + 0.5) / 1000 - 2; } return 2; };
+  if (!run) return null;
+  const q = p => { let c = 0; const t = p * (n - 1); for (let i = 0; i < NB; i++) { c += hist[i]; if (c > t) return clamp((i + 0.5) / 1000 - 2, mn, mx); } return mx; };
   const mean = sum / Math.max(1, n);
-  return { inArea, n, raw, filt, mean, sd: Math.sqrt(Math.max(0, sq / Math.max(1, n) - mean * mean)),
-           median: q(0.5), p10: q(0.1), p90: q(0.9), W, H, chunks: chunks.length };
+  return Object.assign({ inArea, n, raw, filt, mean, sd: Math.sqrt(Math.max(0, sq / Math.max(1, n) - mean * mean)), min: mn, max: mx,
+                         median: q(0.5), p10: q(0.1), p90: q(0.9), bins: fineBins(hist, -2, 1000) }, run);
 }
 
 /* Season statistics over the AOI: the per-pixel sums with their histogram, and the season curve, i.e. the AOI mean
@@ -6070,11 +6210,16 @@ async function seasonStats(rec, scenes, grid, opt, box) {
   const col = rec.metric === "def"
     ? (() => { const s = S(rec), d0 = rec.domain[0], k2 = (rec.domain[1] - d0) / ((s.max - s.min) || 1e-9); return x => { const c = rec.ramp(d0 + (x - s.min) * k2); return c ? rgbCss(c) : "#999"; }; })()
     : x => rgbCss((rec.classify.find(c => x <= c[0]) || rec.classify[rec.classify.length - 1])[1]);
+  html += box10(grid, rec);
   html += histChart(st.sorted, 0, Math.max(st.max, rec.metric === "def" ? 100 : 31), col, unitOf(rec));
   html += '<div class="sec" style="font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--blue);font-weight:700;margin:12px 0 6px">Season curve (mean over the area)</div>' +
     lineChart([{ name: "", color: rec.metric === "def" ? "#cb4335" : "#7b241c", pts: rec.metric === "def" ? ptsD : ptsE }],
       { time: true, yLabel: rec.metric === "def" ? "mean Σ(40 − VHI)" : "mean days VHI < 10" });
   box.innerHTML = html;
+  wire10(rec, async (signal, prog) => {
+    const t = await stats10(rec, scenes, opt, signal, prog);
+    return t && { html: curStatsHtml(rec, rec, t) + note10(t), csv: statsCsv(rec, rec, t, opt) };
+  });
 }
 
 async function seriesDates(rec, from, to) {
