@@ -1266,6 +1266,24 @@ function resToZoom(r) {
   return i === SCALES.length - 1 ? i : i + (s - SCALES[i]) / (SCALES[i + 1] - SCALES[i]);
 }
 
+/* MapLibre needs WebGL2. Browsers switch it off on computers without a usable graphics card (virtual machines,
+   remote desktop sessions; Firefox: "AllowWebgl2:false"), so the map area says how to switch it on instead of
+   staying empty. */
+{
+  const gl = document.createElement("canvas").getContext("webgl2");
+  if (!gl) {
+    $("#map").innerHTML = '<div style="max-width:520px;margin:60px auto;padding:16px 20px;background:#fff;border:1px solid var(--border);' +
+      'border-top:4px solid var(--red);border-radius:4px;font-size:13px;line-height:1.5"><h3 style="margin:0 0 8px;color:var(--blue)">' +
+      "The map needs WebGL2</h3><p>This browser has WebGL2 switched off, which often happens on computers without a graphics card " +
+      "(virtual machines, remote desktop sessions).</p><p><b>Firefox:</b> open <code>about:config</code>, set " +
+      "<code>webgl.force-enabled</code> to <code>true</code> and reload this page.<br><b>Chrome / Edge:</b> switch on " +
+      "<i>Use graphics acceleration when available</i> in the system settings, or try another browser.</p>" +
+      '<p>Check: <a href="https://get.webgl.org/webgl2/" target="_blank" rel="noopener">get.webgl.org/webgl2</a></p></div>';
+    throw new Error("WebGL2 is not available: the map cannot be drawn.");
+  }
+  const lose = gl.getExtension("WEBGL_lose_context");
+  if (lose) lose.loseContext();
+}
 /* Layer order: the basemap, the data layers, the label overlay and the area of interest are each inserted below
    one of these (empty) marker layers. */
 const map = new maplibregl.Map({

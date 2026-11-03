@@ -569,7 +569,11 @@ python -m http.server 8000
 # then open http://localhost:8000/swisseo-browser.html
 ```
 
-A current desktop browser (Firefox, Chrome, Edge) is required.
+A current desktop browser (Firefox, Chrome, Edge) with **WebGL2** is required: the map is drawn by MapLibre GL JS.
+Browsers switch WebGL2 off on computers without a usable graphics card (virtual machines, remote desktop sessions;
+Firefox reports `AllowWebgl2:false`). The page then says so in the map area. In Firefox, `about:config` →
+`webgl.force-enabled` = `true` switches it on (software rendering, slower); in Chrome / Edge, *Use graphics
+acceleration when available*. Opening the file directly (`file://`) works as well as serving the folder.
 
 Conventions for further development (for people and for AI coding assistants) are in [`CLAUDE.md`](CLAUDE.md):
 no em-dashes in any text, LV95 coordinates, pushes only to this repository, how to add a layer.

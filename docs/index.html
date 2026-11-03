@@ -491,8 +491,11 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
   <ul>
     <li>Everything is computed in your browser: large areas, long time series and large downloads take a while, and a
       fast internet connection helps. A first view of a new area or date is slower than the next ones.</li>
-    <li>The map is drawn with WebGL, which current browsers have. Layers of other map services can only be shown when
-      the service allows access from other websites (CORS).</li>
+    <li>The map is drawn with WebGL2, which current browsers have. On computers without a graphics card (virtual
+      machines, remote desktop) browsers often switch it off, and the map area says so instead of showing the map. In
+      Firefox, open <code>about:config</code> and set <code>webgl.force-enabled</code> to <code>true</code>; in Chrome or
+      Edge, switch on <i>Use graphics acceleration when available</i>. Layers of other map services can only be shown
+      when the service allows access from other websites (CORS).</li>
     <li>Areas of interest can have up to 100,000 vertices and files up to 50 MB; areas from files are only part of a
       link when they are small.</li>
     <li>Layers marked <span class="beta" style="margin:0">BETA</span> are not yet verified; the VHI season layers count only
