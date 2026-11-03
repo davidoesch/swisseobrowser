@@ -5,6 +5,10 @@ A minimal, browser-only viewer for swisstopo's **swissEO** satellite products, m
 
 **Live version: <https://swisstopo.github.io/topo-swisseobrowser/>**
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/swisstopo/topo-swisseobrowser)
+**Search and ask questions about this repository:** [DeepWiki](https://deepwiki.com/swisstopo/topo-swisseobrowser)
+generates browsable documentation from the code and this README and answers questions about them.
+
 > **Not for operational use.** This is an experimental beta prototype: values, renderings and statistics
 > are computed in the browser, are not validated and may be wrong or incomplete. For authoritative data use
 > the swisstopo products and services directly. Every layer is being checked in depth; see
