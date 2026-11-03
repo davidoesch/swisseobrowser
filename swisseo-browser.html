@@ -1171,6 +1171,20 @@ table.kv td:first-child{color:var(--muted)}
 <!-- MapLibre GL JS is published as an ES module only, so the page script is a module (strict mode, deferred). -->
 <script type="module">
 import * as maplibregl from "https://cdn.jsdelivr.net/npm/maplibre-gl@6.16.0/dist/maplibre-gl.mjs";
+/* Opened as a file (file://), the page has no web origin: Chrome and Edge refuse MapLibre's worker from the CDN
+   ("Refused to cross-origin redirects of the top-level worker script") and any module worker from a blob URL, but
+   start a classic worker from one. The worker script is self-contained apart from its final export, so it is fetched,
+   that export removed, and started as a classic worker (MapLibre takes a URL ending in ".cjs" for a classic one). */
+if (location.protocol === "file:") {
+  const src = await (await fetch("https://cdn.jsdelivr.net/npm/maplibre-gl@6.16.0/dist/maplibre-gl-worker.mjs")).text();
+  const classic = src.replace(/export\s*\{[^}]*\}\s*;?\s*(\/\/# sourceMappingURL=\S*)?\s*$/, "");
+  maplibregl.setWorkerUrl(URL.createObjectURL(new Blob([classic], { type: "text/javascript" })) + "#worker.cjs");
+}
+/* A script module for MapLibre's workers (importScriptInWorkers). From a file:// page the workers cannot read a blob URL
+   of the page, so it goes as a data URL instead; the workers import a URL ending in ".mjs" directly, hence the comment. */
+const workerScript = src => location.protocol === "file:"
+  ? "data:text/javascript;charset=utf-8," + encodeURIComponent(src + "\n//.mjs")
+  : URL.createObjectURL(new Blob([src], { type: "text/javascript" }));
 
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
@@ -1243,9 +1257,9 @@ maplibregl.addProjection({ name: "EPSG:2056", definition: DEF2056, projection: P
                            tileMatrixSet: { origin: ORIGIN, extentAtZoom0: TILE * RES0 } });
 /* GeoJSON sources (area of interest, drawing) are tiled in MapLibre's workers, which build the projection from
    DEF2056 with proj4 as well. */
-await maplibregl.importScriptInWorkers(URL.createObjectURL(new Blob([
+await maplibregl.importScriptInWorkers(workerScript(
   'import proj4 from "https://cdn.jsdelivr.net/npm/proj4@2.22.0/+esm";\n' +
-  'self.setProjectionHandler(def => proj4("EPSG:4326", def));\n'], { type: "text/javascript" })))
+  'self.setProjectionHandler(def => proj4("EPSG:4326", def));\n'))
   .catch(e => console.warn("GeoJSON projection in the workers:", e));
 
 /* Zoom: MapLibre zooms on the quad tree (RES0 / 2^z m/px); the zoom of links, compare entries and highlights is the
@@ -1832,8 +1846,7 @@ function vectorLabels() {                          // the label layers, once the
       const st = await (await fetch(VT_STYLE)).json();
       const ls = st.layers.filter(l => VT_LAYERS.includes(l.id));
       if (!ls.length) throw new Error("no label layers in the swisstopo style");
-      await maplibregl.importScriptInWorkers(URL.createObjectURL(new Blob([vtWorker([...new Set(ls.map(l => l["source-layer"]))])],
-                                                                         { type: "text/javascript" })));
+      await maplibregl.importScriptInWorkers(workerScript(vtWorker([...new Set(ls.map(l => l["source-layer"]))])));
       map.setGlyphs(st.glyphs);
       map.setSprite(st.sprite);
       map.addSource("labels", { type: "vector", tiles: ["swisseo-vt://{z}/{x}/{y}"], maxzoom: 14 - Math.floor(VT_DZ),
@@ -6990,6 +7003,7 @@ function readUrl() {
   layerOff = q.get("showLayer") === "false";
 
   setBasemap(q.get("basemap") || "pixelkarte");
+  setLabels(q.get("labels") === "true" || q.get("labels") === "1");
 
   if (q.has("compareLayers")) {
     try {
@@ -8552,7 +8566,7 @@ if (activeHl) { const e = $(".hl.on"); if (e) e.scrollIntoView({ block: "nearest
    without the README, from the README of the repository on GitHub. */
 if (!VERIFIED_IDS) {
   const readme = u => fetch(u).then(r => r.ok ? r.text() : "").then(md => parseVerified(md) || []).catch(() => []);
-  readme("README.md")
+  (location.protocol === "file:" ? Promise.resolve([]) : readme("README.md"))      // fetch cannot read files
     .then(ids => ids.length ? ids : readme("https://raw.githubusercontent.com/swisstopo/topo-swisseobrowser/main/README.md"))
     .then(ids => {
       ids.forEach(id => VERIFIED.add(id));
