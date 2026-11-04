@@ -482,6 +482,7 @@ textarea.exdesc{height:46px;margin:4px 0 2px 24px;width:calc(100% - 24px);font-f
 .sw-lab:empty{display:none}
 /* disclaimer in the Info tab */
 .warn{border-left:4px solid var(--red)}
+.infobox{background:var(--blue-l);border-left:3px solid var(--blue);padding:7px 9px;margin:8px 0 2px;font-size:11.5px;line-height:1.45}
 .warnbox{background:#fdecea;border-left:3px solid var(--red);padding:7px 9px;margin:8px 0 2px;font-size:11.5px;line-height:1.45;color:#5a1010}
 .warn h4{color:var(--red)!important}
 /* Feedback (e-mail) and issue links in the Info tab, as the feedback popover of topo-drought-briefing */
@@ -654,10 +655,7 @@ table.kv td:first-child{color:var(--muted)}
               website, adapting it from the Copernicus Browser. The indices were edited and tested manually in QGIS or with
               rasterio and GDAL.</p>
             <div class="fb-row">
-              <div class="fb-wrap"><button class="action-btn" id="btnFeedback" title="Write an e-mail with the link to your current view">Feedback</button>
-                <div class="fb-pop" id="fbMail" hidden>
-                  <a data-mail="app">Open the mail app</a><a data-mail="gmail" target="_blank" rel="noopener">Gmail</a>
-                  <a data-mail="outlook" target="_blank" rel="noopener">Outlook Web</a></div></div>
+              <button class="action-btn" id="btnFeedback" title="Write an e-mail with the link to your current view (opens your mail app)">Feedback</button>
               <div class="fb-wrap"><button class="action-btn" id="btnIssue" title="Open a GitHub issue with the link to your current view">Report an issue / improvement</button>
                 <div class="fb-pop" id="fbIssue" hidden>
                   <a data-issue="01-layer.yml" target="_blank" rel="noopener">Fix or change a layer</a>
@@ -695,7 +693,7 @@ table.kv td:first-child{color:var(--muted)}
           </div></div>
         <div class="card"><h4>How this works</h4>
           <div style="font-size:12px">
-            <p>Everything on screen comes from public swisstopo services, and the Nutzungsflächen mask from geodienste.ch.
+            <p>Everything on screen comes from public services of swisstopo and the federal geoportal (geo.admin.ch).
               There is no other backend.</p>
             <p><b>Basemaps:</b> the layer button at the top right of the map (as in the Copernicus Browser) switches between
               <i>Map</i>, <i>SWISSIMAGE</i>, <i>Map Grey</i> (<code>wmts.geo.admin.ch</code>: pixelkarte-farbe, swissimage,
@@ -712,7 +710,8 @@ table.kv td:first-child{color:var(--muted)}
               list uses the opacity effect, and three more tools appear: <i>3D settings</i> (gear: the height model,
               swissALTIRegio or the swissSURFACE3D surface model at 10 m on the swissEO bucket; sun shading and its
               parameters; vertical terrain scaling), <i>Sun shading</i> (light bulb: a hillshade lit from the sun at the map
-              centre) and <i>Sun time</i> (sun: date and time of that sun). A sky, shadows cast by mountains, a lens flare
+              centre) and <i>Sun time</i> (sun: date and time of that sun; by default the time of the scene shown, the middle of
+              two orbits). Switching to 3D also switches the labels on. A sky, shadows cast by mountains, a lens flare
               and anaglyph stereo of the Copernicus Browser are not available in MapLibre.</p>
             <p><b>Map layout:</b> at the top left the date and acquisitions on the map, the <i>Copy link</i> (chain) and
               <i>Pixel inspector</i> ((i) with a pointer) buttons;
@@ -749,14 +748,13 @@ table.kv td:first-child{color:var(--muted)}
             <p><b>Masks:</b> <i>Clouds</i> hides cloud-mask codes 1 and 2, <i>Cloud shadows</i> code 3, and <i>Terrain shadow</i>
               terrain-mask value 200 (cast or self-shadow from swissSURFACE3D at acquisition time).
               The <i>vegetation mask</i> keeps forest or all vegetation of the habitat maps that the swissEO VHI processor
-              uses (COGs in <code>s3-topo-satromo-prod</code>, inside = value ≠ 0): one of the three maps, named by the period
-              in which swissEO VHI uses it, or by default the <i>Habitat Map as used in swissEO VHI100</i>, the one of the
-              date (v1-0 before 2024-07-12, v1-1 before 2025-12-11, v1-2 since). Or the swissTLM3D forest
+              uses (COGs in <code>s3-topo-satromo-prod</code>, inside = value ≠ 0): the <i>Habitat Map</i> of the date, as in
+              swissEO VHI (v1-0 before 2024-07-12, v1-1 before 2025-12-11, v1-2 since; in a time series per date). Or the swissTLM3D forest
               (WMS <code>ch.swisstopo.swisstlm3d-wald</code>, any of Wald, Wald offen, Gebüschwald); broadleaf or conifer forest
               of the Waldmischungsgrad LFI (BAFU / WSL, share of broadleaf trees above or at most a threshold, 76 % by
               default; <a href="https://www.geocat.ch/geonetwork/srv/ger/catalog.search#/metadata/b07a4589-159b-4c3a-b1e7-dbdad11f7e62"
-              target="_blank" rel="noopener">metadata</a>); or Nutzungsflächen main categories (geodienste.ch WMS
-              <code>lwb_nutzungsflaechen_v3_0_0</code>, read at 20 m by the legend colours; the coverage depends on the canton;
+              target="_blank" rel="noopener">metadata</a>); or Nutzungsflächen main categories (BLW, data of the cantons, WMS
+              <code>ch.blw.landwirtschaftliche-nutzungsflaechen</code> on wms.geo.admin.ch, read at 2.5 m by the legend colours;
               <a href="https://www.geocat.ch/datahub/dataset/ae183bc4-5c91-467e-89bc-85f390340efb" target="_blank"
               rel="noopener">metadata</a>). The two-date layers use the mask of the
               selected date on both dates.</p>
@@ -770,8 +768,8 @@ table.kv td:first-child{color:var(--muted)}
               selected date (statistics, histogram) and over a date range (time series, CSV); swissEO VHI statistics come from the
               <code>forest-10m</code> / <code>vegetation-10m</code> COGs. A large area is sampled on a coarser grid (up to 320 cells
               across, from the COG overviews); <i>Compute at 10 m</i> then processes the selected date at full resolution in chunks of
-              1024 × 1024 cells, for every layer, with a CSV download of the result; the time series can use the 10 m grid too
-              (<i>Grid</i>). The <i>spectral explorer</i> plots mean reflectance of
+              1024 × 1024 cells, for every layer; one choice at the top of the dialog (<i>Fast</i> or <i>Full resolution</i>)
+              applies to the selected date and the time series, and the statistics can be downloaded as CSV. The <i>spectral explorer</i> plots mean reflectance of
               all 12 bands. The image download can be clipped to the area.</p>
             <p><b>Configurations:</b> as the themes of the Copernicus Browser, a configuration lists the layers for a task:
               <i>Default</i>, <i>Agriculture</i>, <i>Drought</i>, <i>Drought 2026</i> with highlights, and <i>Forest</i>. Each layer keeps its own
@@ -846,7 +844,7 @@ table.kv td:first-child{color:var(--muted)}
             swissSURFACE3D © swisstopo. Labels © swisstopo.
             <a href="https://www.geocat.ch/geonetwork/srv/ger/catalog.search#/metadata/b07a4589-159b-4c3a-b1e7-dbdad11f7e62" target="_blank" rel="noopener">Waldmischungsgrad LFI</a>
             © BAFU / WSL. <a href="https://www.geocat.ch/datahub/dataset/ae183bc4-5c91-467e-89bc-85f390340efb" target="_blank" rel="noopener">Nutzungsflächen</a>
-            © the cantons, geodienste.ch.
+            © BLW and the cantons.
             Layers of other WMS / WMTS services: © their providers. Not for operational use.</div>
           <div class="legal">
             <a href="https://www.swisstopo.admin.ch/en/impressum-federal-office-of-topography" target="_blank" rel="noopener">Impressum</a>
@@ -942,7 +940,8 @@ table.kv td:first-child{color:var(--muted)}
           <span>Time</span><span class="rng"><input type="range" id="sunMin" min="0" max="1439" step="1"><input type="time" id="sunClock"></span>
         </div>
         <div class="hint" id="sunLocal" style="margin-top:8px"></div>
-        <div class="brow"><button class="btn" data-close>Close</button><button class="btn" id="sunNow">Current time</button></div>
+        <div class="brow"><button class="btn" data-close>Close</button><button class="btn" id="sunScene">Scene time</button>
+          <button class="btn" id="sunNow">Current time</button></div>
       </div></div>
       <div class="modal" id="expModal"><div class="box narrow">
         <div class="mhead"><h3>Image download</h3><button class="x" data-close title="Close">×</button></div>
@@ -1085,6 +1084,7 @@ table.kv td:first-child{color:var(--muted)}
       <div class="modal" id="statModal"><div class="box">
         <div class="mhead"><h3 id="stTitle">Statistical info</h3><button class="x" data-close title="Close">×</button></div>
         <div class="hint" id="stMeta" style="margin-top:0"></div>
+        <div id="stResBox" hidden></div>
         <label class="chk" id="stCloudRow"><input type="checkbox" id="stCloud" checked> Exclude clouds and cloud shadows (OmniCloudMask 1–3)</label>
         <label class="chk" id="stSclRow"><input type="checkbox" id="stScl" checked> Exclude clouds from the scene classification (SCL 3, 8, 9, 10)</label>
         <label class="chk" id="stTerrRow"><input type="checkbox" id="stTerr"> Exclude terrain shadow (terrain mask 200)</label>
@@ -1097,8 +1097,6 @@ table.kv td:first-child{color:var(--muted)}
           <button class="btn sm" id="stRun">Compute</button>
           <button class="btn sec sm" id="stStop">Stop</button>
           <button class="btn sec sm" id="stCsv">Download CSV</button>
-          <label id="stResRow" title="The grid of the time series: the coarse grid is fast; 10 m reads every date at full resolution, in chunks">Grid
-            <select id="stTsRes"><option value="coarse"></option><option value="10">10 m (full resolution, slower)</option></select></label>
           <label style="margin-left:auto">Min. valid pixels
             <select id="stMinValid"><option value="0">0 %</option><option value="10" selected>10 %</option>
               <option value="25">25 %</option><option value="50">50 %</option><option value="75">75 %</option></select></label>
@@ -1331,8 +1329,9 @@ const setCursor = c => { map.getCanvas().style.cursor = c; };
 
 /* Map controls as in the Copernicus Browser: attribution at the bottom left; at the bottom right the zoom
    buttons and, below them on one line, the mouse position (LV95 easting / northing) and the scale bar. */
-map.addControl(new maplibregl.AttributionControl({ compact: false,
-  customAttribution: '<a href="https://maplibre.org/" target="_blank" rel="noopener">MapLibre</a>' }), "bottom-left");
+/* The attribution names the data on the map (issue #12): swisstopo, the masks of other offices, the domain of a WMS / WMTS
+   layer; MapLibre is credited in the Info tab. */
+map.addControl(new maplibregl.AttributionControl({ compact: false }), "bottom-left");
 const fmtCH = v => Math.round(v).toString().replace(/\B(?=(\d{3})+(?!\d))/g, "'");      // 2'661'150 as on map.geo.admin.ch
 const control = (cls, build) => ({ onAdd(m) { const d = el("div", "maplibregl-ctrl " + cls); build(d, m); return d; }, onRemove() {} });
 map.addControl(control("coords-ctl", (d, m) => {
@@ -1402,7 +1401,7 @@ maplibregl.addProtocol("swisseo", async (params, ctrl) => {
 /* A raster layer below the marker layer o.before; returns its handle { id, pending }. */
 const tileUrl = lyr => "swisseo://" + lyr.id + "/{z}/{x}/{y}?v=" + lyr.v + (lyr.query ? "&" + lyr.query : "");
 function addRaster(draw, o) {
-  const id = "r" + ++rasterSeq, lyr = { id, draw, bounds: o.bounds || null, pending: 0, v: 0, query: o.query || "" };
+  const id = "r" + ++rasterSeq, lyr = { id, draw, bounds: o.bounds || null, pending: 0, v: 0, query: o.query || "", attr: o.attribution || "" };
   RASTERS.set(id, lyr);
   map.addSource(id, { type: "raster", tiles: [tileUrl(lyr)], tileSize: TILE, maxzoom: 14,
                       attribution: o.attribution || "" });
@@ -1570,8 +1569,22 @@ const T3D_DEFAULT = { dem: "alti", shade: true, method: "combined", hsExag: 0.4,
 /* the shading lies over the satellite image, so its colours are partly transparent */
 const rgba = (hex, a) => "rgba(" + [1, 3, 5].map(i => parseInt(hex.substr(i, 2), 16)).join(",") + "," + a + ")";
 const t3d = Object.assign({}, T3D_DEFAULT);
-let sunTime = null;                                            // null: the current time
-const sunDate = () => sunTime || new Date();
+/* The sun that lights the terrain (issue #10): by default that of the scene shown, set again whenever 3D is switched on;
+   "set" after the sliders were moved, "now" with the clock. */
+let sunMode = "scene", sunTime = null;
+const itemTime = id => Date.UTC(+id.slice(0, 4), +id.slice(5, 7) - 1, +id.slice(8, 10), +id.slice(11, 13), +id.slice(13, 15), +id.slice(15, 17));
+/* Acquisition time of the scene shown (UTC, from the item id); the middle of the acquisitions when the date has several
+   orbits; for the products without an acquisition time (VHI, NDVIdiff, …) 10:30 UTC of the date, about when Sentinel-2
+   passes over Switzerland. */
+function sceneSun() {
+  const cfg = !compareMode && currentCfg && currentCfg.date === state.date ? currentCfg : null;
+  const ids = cfg && cfg.rec.source === "s2" ? cfg.scenes.filter(id => ITEM_RE.test(id)) : [];
+  if (!ids.length) return { d: new Date(state.date + "T10:30:00Z"), txt: "the selected date, 10:30 UTC (about the time of the Sentinel-2 passes)" };
+  const ts = ids.map(itemTime), mid = (Math.min(...ts) + Math.max(...ts)) / 2;
+  return { d: new Date(Math.round(mid / 6e4) * 6e4),
+           txt: ids.length > 1 ? "the middle of the acquisitions at " + ids.map(timeOf).sort().join(" and ") : "the acquisition at " + timeOf(ids[0]) };
+}
+const sunDate = () => sunMode === "set" && sunTime ? sunTime : sunMode === "now" ? new Date() : sceneSun().d;
 /* Sun position (NOAA low-precision formulas, about 0.1°): azimuth from north clockwise and altitude, in degrees. */
 function sunPos(date, lat, lng) {
   const R = Math.PI / 180, d = date.getTime() / 864e5 - 10957.5;            // days since 2000-01-01 12:00 UTC
@@ -1627,6 +1640,7 @@ function setTerrain3D(on, cam) {
   if (on === terrainOn) return;
   terrainOn = on;
   if (on) {
+    sunMode = "scene";                    // the sun of the scene shown (issue #10)
     addDem(t3d.dem);
     // the terrain beyond the basemaps gets the map's ground colour, so no terrain tile is left out (its neighbours'
     // edges would show as walls)
@@ -1663,7 +1677,12 @@ function splitFor3D() {
   if (compareMode) setStatus("3D compares with opacity: the split needs the flat map.");
   renderCompare(); updateClips();
 }
-$("#btn3d").onclick = () => setTerrain3D(!terrainOn);
+/* Switching to 3D also switches the labels on (issue #15); back in 2D they stay as they are. */
+$("#btn3d").onclick = () => {
+  const on = !terrainOn;
+  setTerrain3D(on);
+  if (on && !labelsOn()) setLabels(true);
+};
 map.on("moveend", () => { if (terrainOn && t3d.shade) apply3D(); });   // the sun's position follows the map centre
 
 /* 3D settings dialog */
@@ -1710,22 +1729,23 @@ function sunInfo() {
   $("#sunClock").value = pad2(d.getUTCHours()) + ":" + pad2(d.getUTCMinutes());
   const off = -d.getTimezoneOffset(), loc = new Date(d.getTime() + off * 6e4).toISOString().replace("T", " ").slice(0, 16);
   const c = map.getCenter(), s = sunPos(d, c.lat, c.lng);
-  $("#sunLocal").textContent = "Local time on your computer: " + loc + " (UTC" + (off >= 0 ? "+" : "−") + Math.abs(off / 60) + ")" +
-    (sunTime ? "" : ", current time") + ". Sun at the map centre: azimuth " + s.az.toFixed(0) + "°, " +
+  $("#sunLocal").textContent = (sunMode === "scene" ? "Sun of the scene shown: " + sceneSun().txt + ". " : sunMode === "now" ? "Current time. " : "") +
+    "Local time on your computer: " + loc + " (UTC" + (off >= 0 ? "+" : "−") + Math.abs(off / 60) + "). Sun at the map centre: azimuth " + s.az.toFixed(0) + "°, " +
     (s.alt > 0 ? "height " + s.alt.toFixed(0) + "° above the horizon." : "below the horizon (" + s.alt.toFixed(0) + "°).");
 }
-function setSun(d) { sunTime = d; apply3D(); sunInfo(); }
+function setSun(mode, d) { sunMode = mode; sunTime = d || null; apply3D(); sunInfo(); }
 $("#btnSun").onclick = () => { $("#sunModal").classList.toggle("on"); $("#t3dModal").classList.remove("on"); sunInfo(); };
 $("#sunDay").oninput = $("#sunMin").oninput = () => {
   const y = sunDate().getUTCFullYear(), m = +$("#sunMin").value;
-  setSun(new Date(Date.UTC(y, 0, 1 + +$("#sunDay").value, Math.floor(m / 60), m % 60)));
+  setSun("set", new Date(Date.UTC(y, 0, 1 + +$("#sunDay").value, Math.floor(m / 60), m % 60)));
 };
 $("#sunDate").onchange = $("#sunClock").onchange = () => {
   const d = new Date($("#sunDate").value + "T" + ($("#sunClock").value || "12:00") + ":00Z");
-  if (!isNaN(d)) setSun(d);
+  if (!isNaN(d)) setSun("set", d);
 };
-$("#sunNow").onclick = () => setSun(null);
-setInterval(() => { if (terrainOn && t3d.shade && !sunTime) apply3D(); }, 60000);
+$("#sunNow").onclick = () => setSun("now");
+$("#sunScene").onclick = () => setSun("scene");
+setInterval(() => { if (terrainOn && t3d.shade && sunMode === "now") apply3D(); }, 60000);
 
 /* ============================================================
    2c. Labels: swisstopo vector tiles in the LV95 grid
@@ -2646,20 +2666,20 @@ const MASKABLE = { rgb: 1, index: 1, cont: 1, terrain: 1, fnrgb: 1, diff2: 1, fn
 const SCL_CLOUD = { 3: 1, 8: 1, 9: 1, 10: 1 };   // SCL cloud shadow, cloud medium / high probability, cirrus
 
 /* Vegetation masks of the S2-SR layers (value of the setting, also in the link):
-   - "forest@1-2" … "vegetation@1-0": one habitat map for every date (COGs on the swissEO 10 m grid, inside = value ≠ 0);
-   - "forest" / "vegetation": the habitat map that the swissEO VHI processor uses on that date
+   - "forest" / "vegetation": the habitat map that the swissEO VHI processor uses on the date of the data
      (topo-satromo-v2 step1_processor_vhi.py, PRODUCT_VHI["vegetation_masks"]): v1-0 before 2024-07-12,
-     v1-1 before 2025-12-11, v1-2 since;
+     v1-1 before 2025-12-11, v1-2 since (COGs on the swissEO 10 m grid, inside = value ≠ 0). A time series takes the
+     map of each date; the two-date layers the map of the selected date on both dates. Older links with a fixed version
+     ("forest@1-1") open with the map of the date too (issue #9: one habitat map entry);
    - "tlm" or "tlm:12.13": the forest of swissTLM3D (WMS ch.swisstopo.swisstlm3d-wald), all or some of its classes;
    - "lfi-broad:76" / "lfi-conif:76": broadleaf (share of broadleaf trees > 76 %) or conifer forest (≤ 76 %) of the
      Waldmischungsgrad LFI (BAFU / WSL), with an adjustable threshold;
-   - "lnf" or "lnf:a.dw": the agricultural land use (Nutzungsflächen, geodienste.ch), all or some main categories. */
+   - "lnf" or "lnf:a.dw": the agricultural land use (Nutzungsflächen, BLW), all or some main categories. */
 const MASK_BASE = "https://s3-topo-satromo-prod.s3.eu-central-1.amazonaws.com/data/MASKS/Vegetation/";
-const HABITAT = [   // version, used from, file name part, label (by its period of use in swissEO VHI)
-  { v: "1-0", from: "0000-00-00", file: "habitatv1-0_2022_CLCplus_2021", label: "Habitat Map before 2024-07-12", ref: "habitat map v1-0 (2022, CLC+ 2021)" },
-  { v: "1-1", from: "2024-07-12", file: "habitatv1-1_2024_CLCplus_2023", label: "Habitat Map 2024-07-12 to 2025-12-11", ref: "habitat map v1-1 (2024, CLC+ 2023)" },
-  { v: "1-2", from: "2025-12-11", file: "habitatv1-2_2025_CLCplus_2023", label: "Habitat Map onward 2025-12-11", ref: "habitat map v1-2 (2025, CLC+ 2023)" }];
-const HABITAT_VHI = "Habitat Map as used in swissEO VHI100";
+const HABITAT = [   // version, used from (date of the data), file name part, name
+  { v: "1-0", from: "0000-00-00", file: "habitatv1-0_2022_CLCplus_2021", ref: "habitat map v1-0 (2022, CLC+ 2021)" },
+  { v: "1-1", from: "2024-07-12", file: "habitatv1-1_2024_CLCplus_2023", ref: "habitat map v1-1 (2024, CLC+ 2023)" },
+  { v: "1-2", from: "2025-12-11", file: "habitatv1-2_2025_CLCplus_2023", ref: "habitat map v1-2 (2025, CLC+ 2023)" }];
 const TLM_FOREST = "ch.swisstopo.swisstlm3d-wald";
 const TLM_CLASSES = { 12: "Wald (forest)", 13: "Wald offen (open forest)", 6: "Gebüschwald (scrub forest)" };
 const TLM_KEYS = ["12", "13", "6"];
@@ -2670,9 +2690,11 @@ const LFI_T = 76;
 const META_LFI = "https://www.geocat.ch/geonetwork/srv/ger/catalog.search#/metadata/b07a4589-159b-4c3a-b1e7-dbdad11f7e62";
 const META_LNF = "https://www.geocat.ch/datahub/dataset/ae183bc4-5c91-467e-89bc-85f390340efb";
 const LFI_TYPE = { broad: "Broadleaf forest (Laubwald)", conif: "Conifer forest (Nadelwald)" };
-/* Nutzungsflächen: the WMS layer of the main categories; its fill colour gives the category. The service draws it only
-   up to 1:100 000 (about 25 m per pixel), so it is read at 20 m or finer and a coarser grid takes the majority. */
-const LNF_WMS = "https://geodienste.ch/db/lwb_nutzungsflaechen_v3_0_0/deu";
+/* Nutzungsflächen: the layer of the federal geoportal (BLW, from the cantonal data; issue #16), whose fill colour gives
+   the main category. It draws every parcel with a light-blue outline of a fixed pixel width (LNF_OUTLINE), which blends
+   with the fills around it: read at 10 m, two thirds of the pixels are outline or blend. So it is read at 2.5 m (at most
+   4 × 4 samples per cell, majority; a cell of 10 m: 2.5 m), and outline pixels take the category of their neighbours. */
+const LNF_WMS = "https://wms.geo.admin.ch/", LNF_LAYER = "ch.blw.landwirtschaftliche-nutzungsflaechen", LNF_OUTLINE = [102, 204, 255];
 const LNF = [   // key (link), name, LNF codes, WMS colour
   { k: "a",  name: "Ackerfläche (arable land)", codes: "501–632", rgb: [255, 204, 102] },
   { k: "dw", name: "Dauerwiesen (permanent meadows)", codes: "611–613, 621–623, 635, 694, 697, 698", rgb: [153, 255, 153] },
@@ -2685,14 +2707,14 @@ const LNF = [   // key (link), name, LNF codes, WMS colour
   { k: "h",  name: "Hecken-, Feld- und Ufergehölze (hedges and copses)", codes: "852, 857, 858", rgb: [153, 102, 0] },
   { k: "u",  name: "Übrige Fläche innerhalb der LN (other farmland)", codes: "897, 898", rgb: [153, 153, 153] },
   { k: "so", name: "Sömmerungsfläche (summer grazing)", codes: "930, 933, 935, 936", rgb: [255, 255, 153] },
-  { k: "v",  name: "Vegetation nicht LN (other vegetation)", codes: "902–909, 911, 998", rgb: [204, 204, 153] },
+  { k: "v",  name: "Flächen ausserhalb der LN (outside the farmland)", codes: "902–909, 911, 998", rgb: [204, 204, 153] },
   { k: "w",  name: "Wald (forest)", codes: "901", rgb: [51, 102, 51] }];
-const LNF_RES = 20, LNF_MAX_PX = 25e6;
+const LNF_RES = 2.5, LNF_MAX_PX = 25e6;
 const VEG_KIND = { forest: "Forest", vegetation: "All vegetation" };
 function vegParse(v) {
   v = v || "";
-  let m = /^(forest|vegetation)(?:@(1-[012]))?$/.exec(v);
-  if (m) return { kind: m[1], ver: m[2] || null };
+  let m = /^(forest|vegetation)(?:@1-[012])?$/.exec(v);
+  if (m) return { kind: m[1], ver: null };                     // the version follows the date
   if ((m = /^tlm(?::([\d.]+))?$/.exec(v))) {
     const c = m[1] ? TLM_KEYS.filter(k => m[1].split(".").includes(k)) : TLM_KEYS;
     return c.length ? { kind: "tlm", classes: c } : null;
@@ -2767,25 +2789,41 @@ function nearestRgb(d, o, rgbs, tol) {
 }
 /* Class (index in `rgbs`, -1 = none) of every pixel of a WMS image with one fill colour per class. Polygon edges are
    anti-aliased: a pixel between two classes has a blended colour that can lie near a third class (arable land and
-   meadow blend to about the pasture colour), so only colours within 12 of a class colour count, and every other
-   opaque pixel takes the most frequent class of its 8 neighbours (the nearest colour if none has one). */
-function classifyRgba(d, w, h, rgbs) {
+   meadow blend to about the pasture colour), so only colours within 12 of a class colour count. Every other opaque
+   pixel, and every pixel within 30 of a colour in `ignore` (outlines), takes the most frequent class of its 8
+   neighbours; this is repeated, so wider outlines fill from both sides, and what is left takes the nearest colour. An
+   outline on the edge of a polygon lies half outside it, so for outline pixels empty neighbours vote too: with more
+   empty than classed neighbours the pixel stays empty. */
+function classifyRgba(d, w, h, rgbs, ignore) {
   const c = new Int8Array(w * h);
-  for (let k = 0; k < w * h; k++) { const q = d[k * 4 + 3] < 128 ? -1 : nearestRgb(d, k * 4, rgbs, 12); c[k] = d[k * 4 + 3] >= 128 && q < 0 ? -2 : q; }
-  const n = new Int32Array(rgbs.length);
-  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
-    const k = j * w + i;
-    if (c[k] !== -2) continue;
-    n.fill(0);
-    let best = -1;
-    for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
-      const y = j + dj, x = i + di;
-      if (y < 0 || x < 0 || y >= h || x >= w) continue;
-      const q = c[y * w + x];
-      if (q >= 0 && ++n[q] > (best < 0 ? 0 : n[best])) best = q;
-    }
-    c[k] = best >= 0 ? best : nearestRgb(d, k * 4, rgbs, 442);
+  for (let k = 0; k < w * h; k++) {
+    if (d[k * 4 + 3] < 128) { c[k] = -1; continue; }
+    if (ignore && nearestRgb(d, k * 4, ignore, 30) >= 0) { c[k] = -3; continue; }      // an outline: no colour of its own
+    const q = nearestRgb(d, k * 4, rgbs, 12);
+    c[k] = q < 0 ? -2 : q;
   }
+  const n = new Int32Array(rgbs.length);
+  for (let pass = 0, open = 1; pass < 6 && open; pass++) {
+    open = 0;
+    const prev = c.slice();
+    for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
+      const k = j * w + i;
+      if (c[k] > -2) continue;
+      n.fill(0);
+      let best = -1, empty = 0;
+      for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
+        const y = j + dj, x = i + di;
+        if (y < 0 || x < 0 || y >= h || x >= w) continue;
+        const q = prev[y * w + x];
+        if (q === -1) empty++;
+        else if (q >= 0 && ++n[q] > (best < 0 ? 0 : n[best])) best = q;
+      }
+      if (c[k] === -3 && empty > (best < 0 ? 0 : n[best])) c[k] = -1;
+      else if (best >= 0) c[k] = best; else open++;
+    }
+  }
+  // left over: a blend takes the nearest colour, an outline none
+  for (let k = 0; k < w * h; k++) if (c[k] < -1) c[k] = c[k] === -3 ? -1 : nearestRgb(d, k * 4, rgbs, 442);
   return c;
 }
 /* swissTLM3D forest for a box; the layer is drawn opaque, one colour per class (anti-aliased only at the edges), so
@@ -2819,15 +2857,15 @@ async function readLfiMask(p, bbox, W, H, signal) {
   }
   return m;
 }
-/* Nutzungsflächen for a box: read at LNF_RES or finer (f × f samples per cell, majority); too large an area at that
-   resolution gives null (the caller then shows nothing and says so). */
+/* Nutzungsflächen for a box: read at LNF_RES or finer, at most 4 × 4 samples per cell (majority); too large an area
+   gives null (the caller then shows nothing and says so). */
 const LNF_RGBS = LNF.map(x => x.rgb);
 async function readLnfMask(p, bbox, W, H, signal) {
-  const f = Math.max(1, Math.ceil((bbox[2] - bbox[0]) / W / LNF_RES - 1e-6)), Wf = W * f, Hf = H * f;
+  const f = clamp(Math.ceil((bbox[2] - bbox[0]) / W / LNF_RES - 1e-6), 1, 4), Wf = W * f, Hf = H * f;
   if (Wf * Hf > LNF_MAX_PX) return null;
   const keep = LNF.map(x => p.groups.includes(x.k)), cnt = new Uint16Array(W * H);
-  await readWmsRgba(LNF_WMS, "nutzungsflaechen_hauptkategorien", bbox, Wf, Hf, signal, (d, x0, y0, w, h) => {
-    const c = classifyRgba(d, w, h, LNF_RGBS);
+  await readWmsRgba(LNF_WMS, LNF_LAYER, bbox, Wf, Hf, signal, (d, x0, y0, w, h) => {
+    const c = classifyRgba(d, w, h, LNF_RGBS, [LNF_OUTLINE]);
     for (let j = 0; j < h; j++) for (let i = 0; i < w; i++)
       if (keep[c[j * w + i]]) cnt[Math.floor((y0 + j) / f) * W + Math.floor((x0 + i) / f)]++;
   });
@@ -2835,12 +2873,13 @@ async function readLnfMask(p, bbox, W, H, signal) {
   for (let k = 0; k < m.length; k++) m[k] = cnt[k] * 2 >= f * f ? 1 : 0;
   return m;
 }
-/* Nutzungsflächen main category at a point (the colour of a small GetMap; GetFeatureInfo answers nothing). */
+/* Nutzungsfläche at a point: main category, use and code of the parcel (GetFeatureInfo; 101 px, as for swissTLM3D). */
 async function lnfAt(x, y) {
-  let c = -1;
-  await readWmsRgba(LNF_WMS, "nutzungsflaechen_hauptkategorien", [x - 2.5, y - 2.5, x + 2.5, y + 2.5], 5, 5, null,
-                    d => { c = classifyRgba(d, 5, 5, LNF_RGBS)[12]; });
-  return c;
+  const r = await fetch(LNF_WMS + "?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetFeatureInfo&LAYERS=" + LNF_LAYER + "&QUERY_LAYERS=" + LNF_LAYER +
+    "&STYLES=&CRS=EPSG%3A2056&BBOX=" + [x - 50.5, y - 50.5, x + 50.5, y + 50.5].join(",") +
+    "&WIDTH=101&HEIGHT=101&I=50&J=50&FEATURE_COUNT=1&INFO_FORMAT=application%2Fjson");
+  const f = (await r.json()).features || [];
+  return f.length ? f[0].properties : null;
 }
 
 const vegWarned = new Set();
@@ -2866,7 +2905,7 @@ async function readVegMaskGrid(p, v, date, bbox, W, H, signal) {
     if (p.kind === "lnf") {
       const m = await readLnfMask(p, bbox, W, H, signal);
       if (m) return m;
-      vegWarn("lnf-size", "The Nutzungsflächen are read at 20 m: zoom in or use a smaller area to see them (nothing is shown here).");
+      vegWarn("lnf-size", "The Nutzungsflächen are read at high resolution: zoom in or use a smaller area to see them (nothing is shown here).");
       return new Uint8Array(W * H);
     }
     const a = await readGrid(vegUrl(p, date), bbox, W, H, signal, 0), m = new Uint8Array(W * H);
@@ -2999,7 +3038,8 @@ function objToSettings(rec, o) {
   if (o.cloudMask != null) s.cloud = bool(o.cloudMask);
   if (o.shadowMask != null) s.shadow = bool(o.shadowMask);
   if (o.terrainMask != null) s.terrain = bool(o.terrainMask);
-  if (rec.source === "s2" && (vegOn(o.vegetationMask) || o.vegetationMask === "off")) s.veg = o.vegetationMask;
+  if (rec.source === "s2" && (vegOn(o.vegetationMask) || o.vegetationMask === "off"))      // normalized ("forest@1-1" -> "forest")
+    s.veg = vegOn(o.vegetationMask) ? vegStr(vegParse(o.vegetationMask)) : "off";
   s.autoGain = rec.type === "rgb" && !rec.tci && bool(o.autoGain);
   if (rec.type === "rgb" && !rec.tci && o.look === "optimized") s.look = "optimized";
   return s;
@@ -3673,13 +3713,20 @@ async function renderTile(cfg, bbox, W, H, signal) {
 
 /* One map layer for a resolved configuration {rec, s, scenes}: the 512 px tiles (the tile size of the COGs) are
    rendered from the COGs, drawn by the WMS (one GetMap per scene, the first scene on top) or by an external service. */
+/* Attribution of a layer: swisstopo, plus the office of a vegetation mask from outside swisstopo; for a WMS / WMTS layer
+   the domain of its service. */
+function layerAttr(cfg) {
+  if (cfg.rec.type === "ext") return escA(hostOf(cfg.rec.ext.u));
+  const p = cfg.rec.source === "s2" ? vegParse(cfg.s.veg) : null;
+  return ATTR + (!p ? "" : p.kind === "lnf" ? ', Nutzungsflächen &copy; <a href="https://www.blw.admin.ch" target="_blank" rel="noopener">BLW</a>'
+    : p.kind === "lfi" ? ', Waldmischungsgrad LFI &copy; <a href="https://www.lfi.ch" target="_blank" rel="noopener">BAFU / WSL</a>' : "");
+}
 function makeLayer(cfg) {
-  const rec = cfg.rec, o = { opacity: cfg.s.opacity / 100, before: "z-data", attribution: ATTR };
+  const rec = cfg.rec, o = { opacity: cfg.s.opacity / 100, before: "z-data", attribution: layerAttr(cfg) };
   if (rec.type === "wms")
     return addRaster((bbox, N, signal) => renderWmsCanvas(cfg, bbox, N, N, signal), Object.assign(o, { bounds: CH_BOX }));
   if (rec.type === "ext")
-    return addRaster((bbox, N) => extTile(rec, bbox, N),
-                     Object.assign(o, { attribution: escA(rec.ext.srv && rec.ext.srv.title || hostOf(rec.ext.u)) }));
+    return addRaster((bbox, N) => extTile(rec, bbox, N), o);
   return addRaster((bbox, N, signal) => renderTile(cfg, bbox, N, N, signal), Object.assign(o, { bounds: scenesBox(cfg.scenes) }));
 }
 
@@ -3810,6 +3857,7 @@ async function applyLayer() {
   if (tok !== applyToken) return;
 
   currentCfg = { rec, s: S(rec), scenes, date: state.date };
+  if (terrainOn && sunMode === "scene") apply3D();     // the sun follows the scene shown
   updateDateInfo(rec, scenes);
   updateDateGrey();
   showSceneInfo(rec, scenes);
@@ -3842,6 +3890,7 @@ function onSettings(rec, kind) {
   clearTimeout(redrawTimer);
   redrawTimer = setTimeout(async () => {
     if (!current) return;
+    if (currentCfg && current.attr !== layerAttr(currentCfg)) { applyLayer(); return; }    // another mask: new attribution
     await refreshAutoGain();
     if (current) redrawRaster(current);
   }, 250);
@@ -4150,8 +4199,7 @@ function classList(box, list) {
   });
 }
 
-/* Vegetation mask pull-down: off, the three habitat maps by their period of use in swissEO VHI, the one matching the
-   date (as swissEO VHI100), the swissTLM3D forest, the Waldmischungsgrad LFI and the Nutzungsflächen. Below it the
+/* Vegetation mask pull-down: off, the habitat map of the date (forest or all vegetation, as swissEO VHI), the swissTLM3D forest, the Waldmischungsgrad LFI and the Nutzungsflächen. Below it the
    options of the chosen mask: the swissTLM3D classes, the LFI threshold or the Nutzungsflächen categories. */
 function vegSelect(value, on) {
   const wrap = el("span", "vctl"), g = el("select", "vsel"), ex = el("div", "vopts");
@@ -4159,17 +4207,13 @@ function vegSelect(value, on) {
   const opt = (parent, v, t) => { const o = el("option", null, t); o.value = v; parent.append(o); };
   const grp = label => { const x = el("optgroup"); x.label = label; g.append(x); return x; };
   opt(g, "off", "Off");
-  HABITAT.slice().reverse().forEach(h => {
-    const x = grp(h.label);
-    opt(x, "forest@" + h.v, "Forest"); opt(x, "vegetation@" + h.v, "All vegetation");
-  });
-  let x = grp(HABITAT_VHI);
-  opt(x, "forest", "Forest (map of the date)"); opt(x, "vegetation", "All vegetation (map of the date)");
+  let x = grp("Habitat Map (swissEO VHI, version of the date)");
+  opt(x, "forest", "Forest"); opt(x, "vegetation", "All vegetation");
   x = grp("swissTLM3D");
   opt(x, "tlm", "Forest (classes below)");
   x = grp("Waldmischungsgrad LFI");
   opt(x, "lfi-broad", LFI_TYPE.broad); opt(x, "lfi-conif", LFI_TYPE.conif);
-  x = grp("Nutzungsflächen (geodienste.ch)");
+  x = grp("Nutzungsflächen (BLW)");
   opt(x, "lnf", "Land use (categories below)");
   let p = vegParse(value);
   const keyOf = q => !q ? "off" : q.kind === "lfi" ? "lfi-" + q.type : q.kind === "tlm" || q.kind === "lnf" ? q.kind : vegStr(q);
@@ -4202,8 +4246,8 @@ function vegSelect(value, on) {
                                                c => ({ kind: "tlm", classes: c })));
     else if (p.kind === "lnf") {
       ex.append(...classes(LNF.map(q => q.k), LNF.map(q => q.name), p.groups, LNF_RGBS, c => ({ kind: "lnf", groups: c })));
-      ex.append(el("small", null, "Read at 20 m: shown from about 1:100 000. Cantons that do not publish their data stay empty."),
-                source(META_LNF, "Nutzungsflächen, geodienste.ch"));
+      ex.append(el("small", null, "Read from the federal geoportal with 4 × 4 samples per cell (2.5 m for a 10 m cell)."),
+                source(META_LNF, "Nutzungsflächen, BLW (data of the cantons)"));
     } else if (p.kind === "lfi") {
       const l = el("label", "vrange"), r = el("input"), out = el("b");
       r.type = "range"; r.min = 0; r.max = 100; r.step = 1; r.value = p.t;
@@ -5842,40 +5886,55 @@ function openStats() {
   $("#stTo").value = state.date;
   $("#stFrom").value = SOURCES[r.source].sparse ? SOURCES[r.source].firstYear + "-01-01" : addDays(state.date, r.source === "vhi" ? -60 : -120);
   stSeries = [];
-  const tg = aoiGrid(140);
-  $("#stTsRes").options[0].textContent = tg.res + " m (fast)";
-  $("#stTsRes").value = "coarse";
-  $("#stResRow").hidden = tg.res <= 10;
+  stRes = "coarse";
   openModal("statModal");
   runCurrentStats();
   if (!noTs) runSeries();
 }
-$("#statModal").onclose = () => { if (stAbort) stAbort.abort(); if (st10Abort) st10Abort.abort(); };
+$("#statModal").onclose = () => { if (stAbort) stAbort.abort(); if (stCurAbort) stCurAbort.abort(); };
 $("#aoiStats").onclick = openStats;
 $("#stCloud").onchange = $("#stScl").onchange = $("#stTerr").onchange = () => { runCurrentStats(); };
 
+/* Statistics of the selected date over the area of interest: on the coarse grid (fast) or at 10 m when "Full resolution"
+   is chosen in the box below the info line (issue #11); the result comes with a CSV download. */
+let stRes = "coarse", stCurAbort = null;
 async function runCurrentStats() {
   const rec = stRec, r = statRec(rec), box = $("#stCur");
-  if (st10Abort) st10Abort.abort();                   // settings changed: a running 10 m pass is outdated
-  const grid = aoiGrid(320);
+  if (stCurAbort) stCurAbort.abort();                 // settings changed: a running computation is outdated
+  const ctrl = stCurAbort = new AbortController(), signal = ctrl.signal;
+  const grid = aoiGrid(320), ten = stRes === "10" && grid.res > 10;
   $("#stMeta").textContent = (vegOn(stVeg) ? "Mask: " + vegName(stVeg) + " · " : "") +
-    (cmaskOn(S(rec)) ? "Custom mask (" + (S(rec).cmask === "in" ? "inside" : "outside") + " the polygons) · " : "") + "Area " + areaLabel(geomArea(aoi)) + " · sampled on a " + grid.W + " × " + grid.H +
-    " grid at " + grid.res + " m · " + grid.n + " cells inside the area of interest.";
-  box.innerHTML = '<div class="hint">Reading the COGs over the area of interest…</div>';
+    (cmaskOn(S(rec)) ? "Custom mask (" + (S(rec).cmask === "in" ? "inside" : "outside") + " the polygons) · " : "") + "Area " + areaLabel(geomArea(aoi)) + " · " +
+    (ten ? "computed at 10 m (full resolution) · about " + fmtInt(Math.round(geomArea(aoi) / 100)) + " cells."
+         : "sampled on a " + grid.W + " × " + grid.H + " grid at " + grid.res + " m · " + grid.n + " cells inside the area of interest.");
+  stResBox();
+  box.innerHTML = '<div class="hint">' + (ten ? "Computing at full resolution…" : "Reading the COGs over the area of interest…") + "</div>";
+  const prog = p => { if (!signal.aborted) box.innerHTML = '<div class="hint">Computing at full resolution: ' + p + "</div>"; };
   try {
     const scenes = await scenesFor(rec, state.date, state.cc);
+    if (signal.aborted) return;
     if (!scenes.length) { box.innerHTML = '<div class="hint">No acquisition on ' + state.date + ".</div>"; return; }
     const opt = { maskClouds: $("#stCloud").checked, maskScl: $("#stScl").checked, maskTerrain: $("#stTerr").checked, veg: stVeg,
                   cmask: cmaskOn(S(rec)) ? S(rec).cmask : "off" };
-    if (rec.type === "diff2") { await diffStats(rec, r, scenes, grid, opt, box); return; }
-    if (rec.type === "vhiseason") { await seasonStats(rec, scenes, grid, opt, box); return; }
-    const res = await sampleAoi(r, scenes, grid, opt);
-    if (stRec !== rec) return;
-    box.innerHTML = curStatsHtml(rec, r, coarseStats(r, res)) + box10(grid, rec);
-    wire10(rec, async (signal, prog) => {
+    let out;
+    if (rec.type === "diff2") out = await diffStats(rec, r, scenes, grid, opt, ten, signal, prog);
+    else if (rec.type === "vhiseason") out = await seasonStats(rec, scenes, grid, opt, ten, signal, prog, box);
+    else if (ten) {
       const t = await stats10(r, scenes, opt, signal, prog);
-      return t && { html: curStatsHtml(rec, r, t) + note10(t), csv: statsCsv(rec, r, t, opt) };
-    });
+      out = t && { html: curStatsHtml(rec, r, t) + note10(t), csv: statsCsv(rec, r, t, opt, 10) };
+    } else {
+      const t = coarseStats(r, await sampleAoi(r, scenes, grid, opt, signal), grid);
+      out = { html: curStatsHtml(rec, r, t), csv: statsCsv(rec, r, t, opt, grid.res) };
+    }
+    if (!out || signal.aborted || stRec !== rec) return;
+    box.innerHTML = out.html;
+    if (out.csv) {
+      const dl = el("button", "btn sec sm", "Download CSV");
+      dl.style.marginTop = "6px";
+      dl.onclick = () => downloadText("swissEO_" + rec.id + "_aoi_statistics_" + (ten ? 10 : grid.res) + "m_" + state.date + ".csv",
+                                      out.csv.map(csvLine).join("\n") + "\n", "text/csv");
+      box.append(dl);
+    }
   } catch (e) {
     if (e && e.name === "AbortError") return;
     box.innerHTML = '<div class="hint">Reading failed: ' + (e.message || e) + "</div>";
@@ -5884,14 +5943,14 @@ async function runCurrentStats() {
 
 /* The statistics of one date in a common form: class counts ({ counts, total }) or, per band, the summary of the values
    ({ bands, total, masked, shadow, bins }); from the sampled grid here, from the 10 m chunks in stats10. */
-function coarseStats(r, res) {
+function coarseStats(r, res, grid) {
   if (r.type === "class" || r.type === "fnclass") {
     const counts = {};
     res.cls.forEach(v => { if (v >= 0) counts[v] = (counts[v] || 0) + 1; });
-    return { counts, total: res.total };
+    return { counts, total: res.total, cells: grid.n };
   }
   const st = res.vals.map(summarize);
-  return { bands: st, total: res.total, masked: res.masked, shadow: res.shadow, bins: st[0] ? sortedBins(st[0].sorted) : null };
+  return { bands: st, total: res.total, masked: res.masked, shadow: res.shadow, bins: st[0] ? sortedBins(st[0].sorted) : null, cells: grid.n };
 }
 /* Range and colours of the histogram: the legend range of the layer, its classes, or the range of the values. */
 function histStyle(rec, r, s0) {
@@ -6001,49 +6060,45 @@ async function stats10(r, scenes, opt, signal, prog) {
 }
 const note10 = t => '<div class="hint">' + fmtInt(t.cells) + " cells of 10 m in the area of interest, processed in " + t.chunks + " chunk" + (t.chunks > 1 ? "s" : "") +
   (t.step ? "; median and percentiles to ±" + +(t.step / 2).toPrecision(2) : "") + ".</div>";
-/* The warning and the "Compute at 10 m" button below statistics computed on a coarser grid. */
-function box10(grid, rec) {
-  if (grid.res <= 10) return "";
-  const cells = Math.round(geomArea(aoi) / 100);
-  const why = rec.modal ? "a cell mixes forest with its surroundings and the 3 × 3 edge filter covers " + 3 * grid.res +
-      " m instead of 30 m. The shares can differ strongly from a 10 m analysis."
-    : "a cell mixes what lies in it (for example forest and field), and the masks are applied at that resolution, so the " +
-      "values can differ from a 10 m analysis.";
-  return '<div class="warnbox" style="margin:8px 0">The area is large, so these statistics use a ' + grid.res +
-    " m grid read from the overviews of the COGs: " + why + " <i>Compute at 10 m</i> processes the area at full resolution in " +
-    "chunks of 1024 × 1024 cells (about " + fmtInt(cells) + " cells; this takes a while, a canton several minutes).<br>" +
-    '<button class="btn" id="st10Go" style="margin-top:6px;width:auto">Compute at 10 m</button> <span id="st10Prog" class="hint"></span></div>' +
-    '<div id="st10Out"></div>';
-}
-/* run(signal, prog) computes the 10 m result: { html, csv: rows } or null; shown below the button, with a CSV download. */
-function wire10(rec, run) {
-  const go = $("#st10Go");
-  if (!go) return;
-  go.onclick = async () => {
-    go.disabled = true;
-    if (st10Abort) st10Abort.abort();
-    const ctrl = st10Abort = new AbortController();
-    try {
-      const t = await run(ctrl.signal, p => { if (!ctrl.signal.aborted) $("#st10Prog").textContent = p; });
-      if (!t || stRec !== rec || ctrl.signal.aborted) return;
-      $("#st10Prog").textContent = "";
-      const out = $("#st10Out"), dl = el("button", "btn sec sm", "Download CSV (10 m)");
-      out.innerHTML = '<div class="msec">Full resolution: 10 m</div>' + t.html;
-      dl.onclick = () => downloadText("swissEO_" + rec.id + "_aoi_statistics_10m_" + state.date + ".csv",
-                                      t.csv.map(csvLine).join("\n") + "\n", "text/csv");
-      out.append(dl);
-    } catch (e) {
-      if (!(e && e.name === "AbortError")) $("#st10Prog").textContent = "Failed: " + (e.message || e);
-    } finally { go.disabled = false; }
-  };
+/* The box below the info line (issue #11): a large area is computed on coarser grids (the selected date up to 320 cells
+   across, the time series up to 140); one choice for both: fast (the coarse grids) or full resolution (10 m). */
+function stResBox() {
+  const b = $("#stResBox"), ts = !$("#stTsCtl").hidden, gs = aoiGrid(320).res, gt = ts ? aoiGrid(140).res : 0;
+  b.hidden = gs <= 10 && gt <= 10;
+  if (b.hidden) return;
+  const ten = stRes === "10", cells = fmtInt(Math.round(geomArea(aoi) / 100));
+  b.className = ten ? "infobox" : "warnbox";
+  b.innerHTML = ten
+    ? "<b>Full resolution:</b> the selected date" + (ts ? " and the time series are" : " is") + " computed at 10 m, in pieces of " +
+      "1024 × 1024 cells (about " + cells + " cells; a canton takes several minutes, a time series longer)."
+    : "<b>Large area:</b> to stay quick, the statistics use a coarser grid read from the overviews of the data (<b>" + gs +
+      " m</b> for the selected date" + (ts ? ", <b>" + gt + " m</b> for the time series" : "") + "). A cell mixes what lies in it " +
+      "(for example forest and field) and the masks are applied at that size" +
+      (stRec.modal ? "; the 3 × 3 edge filter covers " + 3 * gs + " m instead of 30 m" : "") + ". The values can differ from a 10 m analysis.";
+  const seg = el("div", "seg");
+  [["coarse", "Fast (coarse grid)"], ["10", "Full resolution (10 m)"]].forEach(([v, t]) => {
+    const btn = el("button", stRes === v ? "on" : "", t);
+    btn.type = "button";
+    btn.onclick = () => {
+      if (stRes === v) return;
+      stRes = v;
+      runCurrentStats();
+      if (!$("#stTsCtl").hidden) runSeries();
+    };
+    seg.append(btn);
+  });
+  const row = el("div");
+  row.style.marginTop = "6px";
+  row.append(seg);
+  b.append(row);
 }
 const csvLine = a => a.map(v => /[",\n]/.test(String(v)) ? '"' + String(v).replace(/"/g, '""') + '"' : v).join(",");
-const csvHead = (rec, opt) => [["layer", rec.name + " (" + rec.id + ")"], ["date", state.date]].concat(rec.source === "s2" ? [
+const csvHead = (rec, opt, res) => [["layer", rec.name + " (" + rec.id + ")"], ["date", state.date]].concat(rec.source === "s2" ? [
   ["vegetation_mask", vegOn(opt.veg) ? vegName(opt.veg) : "none"], ["clouds_masked", !!opt.maskClouds],
   ["scl_clouds_masked", !!opt.maskScl], ["terrain_shadow_masked", !!opt.maskTerrain]] : [],
-  [["custom_mask", opt.cmask || "off"], ["resolution_m", 10]]);
-function statsCsv(rec, r, t, opt) {
-  const rows = csvHead(rec, opt).concat([["cells_in_aoi", t.cells], ["cells_inside_masks", t.total]]);
+  [["custom_mask", opt.cmask || "off"], ["resolution_m", res]]);
+function statsCsv(rec, r, t, opt, res) {
+  const rows = csvHead(rec, opt, res).concat([["cells_in_aoi", t.cells], ["cells_inside_masks", t.total]]);
   if (t.counts) {
     const tot = Object.values(t.counts).reduce((a, b) => a + b, 0);
     rows.push([], ["code", "class", "cells", "area_ha", "share_pct"]);
@@ -6066,29 +6121,48 @@ function statsCsv(rec, r, t, opt) {
 
 /* Two-date layers over the AOI: the index on the date and on the reference, their difference, and for the
    NDVI difference layer the report of the NDVI Analyst script (forest area, affected area with and without edge removal). */
-async function diffStats(rec, r, scenes, grid, opt, box) {
+/* Two-date layers over the AOI: the difference of the index between the date and the reference, and for the NDVI difference
+   layer the report of the NDVI Analyst script (masked area, compared area, affected area with and without edge removal);
+   on the coarse grid or at 10 m. Returns { html, csv }. */
+async function diffStats(rec, r, scenes, grid, opt, ten, signal, prog) {
   const s = S(rec), ref = await resolveRef(s, state.date);
-  if (!ref.scenes.length) { box.innerHTML = '<div class="hint">No reference acquisition within ±20 days of ' + ref.target + ".</div>"; return; }
+  if (!ref.scenes.length) return { html: '<div class="hint">No reference acquisition within ±20 days of ' + ref.target + ".</div>" };
   // one mask (that of the selected date) for both dates; per cell the first clear scene, as on the map
   opt = Object.assign({}, opt, { vegDate: state.date, firstClear: true });
-  const [A, B] = await Promise.all([sampleAoi(r, scenes, grid, opt), sampleAoi(r, ref.scenes, grid, opt)]);
-  if (stRec !== rec) return;
+  const t = ten ? await diffReport10(rec, r, scenes, ref, opt, signal, prog) : await diffCoarse(rec, r, scenes, ref, grid, opt, signal);
+  if (!t) return null;
+  let html = '<div class="hint" style="margin:0 0 8px">' + state.date + " vs. the reference around " + ref.target + " (" + refLabel(ref) +
+    ", per cell the first clear one) · cells valid on both sides are compared (clouds and shadows masked as chosen above).</div>";
+  if (!t.n) return { html: html + '<div class="hint">No pixels valid on both dates.</div>' };
+  const d0 = r.domain[0], k2 = (r.domain[1] - d0) / ((s.max - s.min) || 1e-9);
+  const col = v => { const c = r.ramp(d0 + (v - s.min) * k2); return c ? rgbCss(c) : "#999"; };
+  html += '<div class="stgrid"><div>Mean ' + unitOf(r) + "<b>" + fmtNum(t.mean) + "</b></div><div>Std. dev.<b>" + fmtNum(t.sd) + "</b></div>" +
+    "<div>Median<b>" + fmtNum(t.median) + "</b></div><div>Valid on both dates<b>" + (100 * t.n / Math.max(1, t.inArea)).toFixed(1) +
+    " %</b></div><div>P10 / P90<b>" + fmtNum(t.p10) + " / " + fmtNum(t.p90) + "</b></div><div>Min / max<b>" + fmtNum(t.min) + " / " +
+    fmtNum(t.max) + "</b></div></div>" +
+    (rec.modal ? changeTable("Change report (NDVI Analyst method), " + t.res + " m grid", opt, t.inArea, t.n, t.raw, t.filt, t.res, s.thr) : "") +
+    histBars(t.bins(s.min, s.max, 40), s.min, s.max, col, unitOf(r) + " (legend range)") + (ten ? note10(Object.assign({ step: 0.001 }, t)) : "");
+  const ha = c => +(c * t.res * t.res / 1e4).toFixed(2), rows = csvHead(rec, opt, t.res).concat([["reference", ref.target + " (" + refLabel(ref) + ")"],
+    ["cells_in_aoi", t.cells], ["area_cells", t.inArea], ["area_ha", ha(t.inArea)], ["compared_cells", t.n], ["compared_ha", ha(t.n)]]);
+  if (rec.modal) rows.push(["threshold", s.thr], ["affected_cells", t.raw], ["affected_ha", ha(t.raw)],
+    ["affected_pct", +(100 * t.raw / Math.max(1, t.n)).toFixed(3)], ["affected_filtered_cells", t.filt],
+    ["affected_filtered_ha", ha(t.filt)], ["affected_filtered_pct", +(100 * t.filt / Math.max(1, t.n)).toFixed(3)]);
+  rows.push([], ["statistic", unitOf(r)]);
+  [["mean", t.mean], ["sd", t.sd], ["min", t.min], ["max", t.max], ["median", t.median], ["p10", t.p10], ["p90", t.p90]]
+    .forEach(([k, v]) => rows.push([k, +v.toPrecision(6)]));
+  return { html, csv: rows };
+}
+/* The two-date statistics on the coarse grid, with the fields of diffReport10. */
+async function diffCoarse(rec, r, scenes, ref, grid, opt, signal) {
+  const [A, B] = await Promise.all([sampleAoi(r, scenes, grid, opt, signal), sampleAoi(r, ref.scenes, grid, opt, signal)]);
   const n = grid.W * grid.H, dif = new Float32Array(n).fill(NaN);
   for (let k = 0; k < n; k++) if (grid.mask[k]) dif[k] = A.vals[0][k] - B.vals[0][k];
-  const st = summarize(dif);
-  let html ='<div class="hint" style="margin:0 0 8px">' + state.date + " vs. the reference around " + ref.target + " (" + refLabel(ref) +
-    ", per cell the first clear one) · cells valid on both sides are compared (clouds and shadows masked as chosen above).</div>";
-  if (!st) { box.innerHTML = html + '<div class="hint">No pixels valid on both dates.</div>'; return; }
-  const inArea = Math.max(1, grid.n - A.outside);
-  html += '<div class="stgrid">' +
-    "<div>Mean " + unitOf(r) + "<b>" + fmtNum(st.mean) + "</b></div><div>Std. dev.<b>" + fmtNum(st.sd) + "</b></div>" +
-    "<div>Median<b>" + fmtNum(st.median) + "</b></div><div>Valid on both dates<b>" + (100 * st.n / inArea).toFixed(1) + " %</b></div>" +
-    "<div>P10 / P90<b>" + fmtNum(st.p10) + " / " + fmtNum(st.p90) + "</b></div><div>Min / max<b>" + fmtNum(st.min) + " / " + fmtNum(st.max) + "</b></div></div>";
-  if (rec.modal) {
+  const st = summarize(dif), inArea = Math.max(1, grid.n - A.outside);
+  let raw = 0, filt = 0;
+  if (st && rec.modal) {
     // change = ΔNDVI below the threshold; edge effects removed with a 3 x 3 majority filter, as in the NDVI Analyst
-    const thr = s.thr, W = grid.W, H = grid.H, bin = new Int8Array(n).fill(-1);
+    const thr = S(rec).thr, W = grid.W, H = grid.H, bin = new Int8Array(n).fill(-1);
     for (let k = 0; k < n; k++) if (dif[k] === dif[k]) bin[k] = dif[k] < thr ? 1 : 0;
-    let raw = 0, filt = 0;
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
       const k = y * W + x;
       if (bin[k] < 0) continue;
@@ -6102,33 +6176,8 @@ async function diffStats(rec, r, scenes, grid, opt, box) {
       }
       if (ones > zeros) filt++;
     }
-    html += changeTable("Change report (NDVI Analyst method)" + (grid.res > 10 ? ", " + grid.res + " m grid" : ""),
-                        opt, inArea, st.n, raw, filt, grid.res, thr);
   }
-  html += box10(grid, rec);
-  const d0 = r.domain[0], k2 = (r.domain[1] - d0) / ((s.max - s.min) || 1e-9);
-  const col = v => { const c = r.ramp(d0 + (v - s.min) * k2); return c ? rgbCss(c) : "#999"; };
-  html += histChart(st.sorted, s.min, s.max, col, unitOf(r) + " (legend range)");
-  box.innerHTML = html;
-  wire10(rec, async (signal, prog) => {
-    const t = await diffReport10(rec, r, scenes, ref, opt, signal, prog);
-    if (!t) return null;
-    const html = (rec.modal ? changeTable("Change report (NDVI Analyst method), 10 m", opt, t.inArea, t.n, t.raw, t.filt, 10, s.thr) : "") +
-      '<div class="stgrid"><div>Mean ' + unitOf(r) + "<b>" + fmtNum(t.mean) + "</b></div><div>Std. dev.<b>" + fmtNum(t.sd) + "</b></div>" +
-      "<div>Median<b>" + fmtNum(t.median) + "</b></div><div>Valid on both dates<b>" + (100 * t.n / Math.max(1, t.inArea)).toFixed(1) +
-      " %</b></div><div>P10 / P90<b>" + fmtNum(t.p10) + " / " + fmtNum(t.p90) + "</b></div><div>Min / max<b>" + fmtNum(t.min) + " / " +
-      fmtNum(t.max) + "</b></div></div>" + histBars(t.bins(s.min, s.max, 40), s.min, s.max, col, unitOf(r) + " (legend range)") +
-      note10(Object.assign({ step: 0.001 }, t));
-    const ha = c => +(c / 100).toFixed(2), rows = csvHead(rec, opt).concat([["reference", ref.target + " (" + refLabel(ref) + ")"],
-      ["cells_in_aoi", t.cells], ["area_cells", t.inArea], ["area_ha", ha(t.inArea)], ["compared_cells", t.n], ["compared_ha", ha(t.n)]]);
-    if (rec.modal) rows.push(["threshold", s.thr], ["affected_cells", t.raw], ["affected_ha", ha(t.raw)],
-      ["affected_pct", +(100 * t.raw / Math.max(1, t.n)).toFixed(3)], ["affected_filtered_cells", t.filt],
-      ["affected_filtered_ha", ha(t.filt)], ["affected_filtered_pct", +(100 * t.filt / Math.max(1, t.n)).toFixed(3)]);
-    rows.push([], ["statistic", unitOf(r)]);
-    [["mean", t.mean], ["sd", t.sd], ["min", t.min], ["max", t.max], ["median", t.median], ["p10", t.p10], ["p90", t.p90]]
-      .forEach(([k, v]) => rows.push([k, +v.toPrecision(6)]));
-    return { html, csv: rows };
-  });
+  return Object.assign({ inArea, n: st ? st.n : 0, raw, filt, cells: grid.n, res: grid.res }, st || {}, st ? { bins: sortedBins(st.sorted) } : {});
 }
 
 /* The table of the NDVI Analyst report: area of the mask in the AOI, compared area and affected area (raw and after the
@@ -6147,7 +6196,6 @@ function changeTable(title, opt, inArea, n, raw, filt, res, thr) {
 /* The report at the full 10 m resolution for an AOI whose statistics grid is coarser: the AOI is processed in chunks of
    1024 × 1024 cells on the 10 m grid of the COGs, each read with a one-cell margin for the 3 × 3 majority filter.
    Areas, shares, mean and standard deviation are exact; median and percentiles come from a histogram in steps of 0.001. */
-let st10Abort = null;
 async function diffReport10(rec, r, scenes, ref, opt, signal, prog) {
   const thr = S(rec).thr, NB = 4000, hist = new Float64Array(NB);   // the difference from −2 to 2 in steps of 0.001
   let inArea = 0, n = 0, raw = 0, filt = 0, sum = 0, sq = 0, mn = Infinity, mx = -Infinity;
@@ -6178,12 +6226,12 @@ async function diffReport10(rec, r, scenes, ref, opt, signal, prog) {
   const q = p => { let c = 0; const t = p * (n - 1); for (let i = 0; i < NB; i++) { c += hist[i]; if (c > t) return clamp((i + 0.5) / 1000 - 2, mn, mx); } return mx; };
   const mean = sum / Math.max(1, n);
   return Object.assign({ inArea, n, raw, filt, mean, sd: Math.sqrt(Math.max(0, sq / Math.max(1, n) - mean * mean)), min: mn, max: mx,
-                         median: q(0.5), p10: q(0.1), p90: q(0.9), bins: fineBins(hist, -2, 1000) }, run);
+                         median: q(0.5), p10: q(0.1), p90: q(0.9), bins: fineBins(hist, -2, 1000), res: 10 }, run);
 }
 
 /* Season statistics over the AOI: the per-pixel sums with their histogram, and the season curve, i.e. the AOI mean
    of the cumulative deficit and of the extreme days per day (as the dashboard curves, but from the per-pixel values). */
-async function seasonStats(rec, scenes, grid, opt, box) {
+async function seasonStats(rec, scenes, grid, opt, ten, signal, prog, box) {
   const end = scenes[0].slice(0, 10), n = grid.W * grid.H, inside = new Uint8Array(n);
   let nIn = 0;
   const cg = customMask && (opt.cmask === "in" || opt.cmask === "out") ? customMaskGrid(grid.bbox, grid.W, grid.H) : null;
@@ -6200,12 +6248,12 @@ async function seasonStats(rec, scenes, grid, opt, box) {
     perDay.set(id.slice(0, 10), { sd, se, nv, nf });
     if (stRec === rec) box.innerHTML = '<div class="hint">Summing the daily VHI forest maps over the area: ' + done + " / " + total + "…</div>";
   });
-  if (stRec !== rec) return;
+  if (stRec !== rec || signal.aborted) return null;
   const v = new Float32Array(n).fill(NaN);
   let nForest = 0;
   for (let k = 0; k < n; k++) if (inside[k] && ss.days[k]) { v[k] = rec.metric === "def" ? ss.def[k] : ss.ext[k]; nForest++; }
   const st = summarize(v);
-  if (!st) { box.innerHTML = '<div class="hint">No forest with VHI values in the area of interest.</div>'; return; }
+  if (!st) return { html: '<div class="hint">No forest with VHI values in the area of interest.</div>' };
   const days = [...perDay.keys()].sort();
   let cumD = 0, cumE = 0, ptsD = [], ptsE = [], daysData = 0;
   const forestCells = Math.max(1, nForest);
@@ -6222,22 +6270,15 @@ async function seasonStats(rec, scenes, grid, opt, box) {
     ss.nDays + " daily VHI forest maps; forest cells with data: " + nForest + ". Days with a VHI value per cell: " +
     (dSum ? dSum.min + " to " + dSum.max + " (median " + dSum.median + ")" : "n/a") + "." +
     (ss.failed ? " " + ss.failed + " daily maps could not be read and are missing in the sums." : "") + "</div>";
-  html += '<div class="stgrid">' +
-    "<div>Mean " + unitOf(rec) + "<b>" + fmtNum(st.mean) + "</b></div><div>Median<b>" + fmtNum(st.median) + "</b></div>" +
-    "<div>P10 / P90<b>" + fmtNum(st.p10) + " / " + fmtNum(st.p90) + "</b></div><div>Max<b>" + fmtNum(st.max) + "</b></div></div>";
-  const col = rec.metric === "def"
-    ? (() => { const s = S(rec), d0 = rec.domain[0], k2 = (rec.domain[1] - d0) / ((s.max - s.min) || 1e-9); return x => { const c = rec.ramp(d0 + (x - s.min) * k2); return c ? rgbCss(c) : "#999"; }; })()
-    : x => rgbCss((rec.classify.find(c => x <= c[0]) || rec.classify[rec.classify.length - 1])[1]);
-  html += box10(grid, rec);
-  html += histChart(st.sorted, 0, Math.max(st.max, rec.metric === "def" ? 100 : 31), col, unitOf(rec));
-  html += '<div class="sec" style="font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--blue);font-weight:700;margin:12px 0 6px">Season curve (mean over the area)</div>' +
+  // the sums per cell: from the coarse grid, or at 10 m (the season curve stays on the coarse grid)
+  const t = ten ? await stats10(rec, scenes, opt, signal, prog)
+    : { bands: [st], total: nIn, masked: 0, shadow: 0, bins: sortedBins(st.sorted), cells: grid.n };
+  if (!t) return null;
+  html += curStatsHtml(rec, rec, t) + (ten ? note10(t) : "");
+  html += '<div class="sec" style="font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--blue);font-weight:700;margin:12px 0 6px">Season curve (mean over the area, ' + grid.res + ' m grid)</div>' +
     lineChart([{ name: "", color: rec.metric === "def" ? "#cb4335" : "#7b241c", pts: rec.metric === "def" ? ptsD : ptsE }],
       { time: true, yLabel: rec.metric === "def" ? "mean Σ(40 − VHI)" : "mean days VHI < 10" });
-  box.innerHTML = html;
-  wire10(rec, async (signal, prog) => {
-    const t = await stats10(rec, scenes, opt, signal, prog);
-    return t && { html: curStatsHtml(rec, rec, t) + note10(t), csv: statsCsv(rec, rec, t, opt) };
-  });
+  return { html, csv: statsCsv(rec, rec, t, opt, ten ? 10 : grid.res) };
 }
 
 async function seriesDates(rec, from, to) {
@@ -6291,8 +6332,8 @@ function seriesSummary(total, stopped) {
   return (stopped ? "Stopped after " + stSeries.length + " of " + total : stSeries.length) + " dates on a " + stSeriesRes + " m grid: " +
     withValid + " with valid pixels, " + allMasked + " fully masked, " + notCov +
     " not reached by that day's orbit. Dates below the minimum share of valid pixels are hidden; hover a point for details." +
-    (stSeriesRes > 10 ? " A cell of " + stSeriesRes + " m mixes what lies in it, and the masks are applied at that size: choose the 10 m grid " +
-     "for full resolution." : "");
+    (stSeriesRes > 10 ? " A cell of " + stSeriesRes + " m mixes what lies in it, and the masks are applied at that size: choose " +
+     "Full resolution (10 m) at the top." : "");
 }
 let stSeriesRes = 10;
 
@@ -6316,7 +6357,7 @@ async function runSeries() {
                                               a.date.localeCompare(b.date));
     total = todo.length;
     // the coarse grid (fast) or, when chosen, every date at 10 m in chunks (stats10)
-    const ten = $("#stTsRes").value === "10" && !$("#stResRow").hidden, grid = aoiGrid(140);
+    const grid = aoiGrid(140), ten = stRes === "10" && grid.res > 10;
     stSeriesRes = ten ? 10 : grid.res;
     const opt = { maskClouds: $("#stCloud").checked, maskScl: $("#stScl").checked, maskTerrain: $("#stTerr").checked, veg: stVeg,
                   cmask: cmaskOn(S(rec)) ? S(rec).cmask : "off" };
@@ -6350,7 +6391,6 @@ async function runSeries() {
   }
 }
 $("#stRun").onclick = runSeries;
-$("#stTsRes").onchange = runSeries;
 $("#stMinValid").onchange = drawSeries;
 $("#stStop").onclick = () => { if (stAbort) stAbort.abort(); };
 $("#stCsv").onclick = () => {
@@ -7301,16 +7341,14 @@ function viewSummary() {
   return currentRec.name + " (" + currentRec.id + "), " + day + (layerOff ? ", layer hidden" : "") +
     (VERIFIED.has(currentRec.id) ? "" : ", BETA");
 }
+/* Feedback: an e-mail in the mail app of the computer (no web-mail links, issue #13). */
+function feedbackMail() {
+  const subj = "Feedback swissEO Browser", e = encodeURIComponent;
+  const body = "Link to my view: " + viewLink() + "\nOn the map: " + viewSummary() + "\n\nMy feedback:\n";
+  return "mailto:" + FEEDBACK_TO + "?cc=" + FEEDBACK_CC + "&subject=" + e(subj) + "&body=" + e(body);
+}
 function feedbackLinks() {
-  const link = viewLink(), sum = viewSummary(), subj = "Feedback swissEO Browser";
-  const body = "Link to my view: " + link + "\nOn the map: " + sum + "\n\nMy feedback:\n";
-  const e = encodeURIComponent, to = e(FEEDBACK_TO), cc = e(FEEDBACK_CC);
-  const href = {
-    app: "mailto:" + FEEDBACK_TO + "?cc=" + FEEDBACK_CC + "&subject=" + e(subj) + "&body=" + e(body),
-    gmail: "https://mail.google.com/mail/?view=cm&fs=1&to=" + to + "&cc=" + cc + "&su=" + e(subj) + "&body=" + e(body),
-    outlook: "https://outlook.office.com/mail/deeplink/compose?to=" + to + "&cc=" + cc + "&subject=" + e(subj) + "&body=" + e(body)
-  };
-  $$("#fbMail a").forEach(a => { a.href = href[a.dataset.mail]; });
+  const link = viewLink(), sum = viewSummary();
   // The issue text is written here and passed as title + body, the URL parameters GitHub has always filled in
   // (pre-filling issue form fields by id did not work). Same sections as the forms in .github/ISSUE_TEMPLATE;
   // the choices are tick boxes. No labels parameter: GitHub answers it with a 404 for users without triage rights.
@@ -7347,14 +7385,13 @@ function issueBody(k, link, sum, browser) {
   return "### Link to the view (permalink)\n\n" + link + "\n\n" + k.parts.map(([h, t]) =>
     "### " + h + "\n\n" + t.replace("{sum}", sum).replace("{browser}", browser)).join("\n\n") + "\n";
 }
-["#btnFeedback", "#btnIssue"].forEach(id => {
-  $(id).onclick = e => {
-    e.stopPropagation();
-    const pop = $(id).nextElementSibling, open = pop.hidden;
-    $$(".fb-pop").forEach(p => { p.hidden = true; });
-    if (open) { feedbackLinks(); pop.hidden = false; }
-  };
-});
+$("#btnFeedback").onclick = () => { location.href = feedbackMail(); };
+$("#btnIssue").onclick = e => {
+  e.stopPropagation();
+  const pop = $("#fbIssue"), open = pop.hidden;
+  pop.hidden = true;
+  if (open) { feedbackLinks(); pop.hidden = false; }
+};
 document.addEventListener("click", e => { if (!e.target.closest(".fb-pop")) $$(".fb-pop").forEach(p => { p.hidden = true; }); });
 
 /* ============================================================
@@ -7465,20 +7502,18 @@ map.on("click", async e => {
     tr("SCL", scl == null ? "n/a" : scl + " · " + (P_SCL[scl] ? P_SCL[scl][0] : "?"));
     tr("Cloud mask", cld == null ? "n/a" : cld + " · " + (P_CLOUD[cld] ? P_CLOUD[cld][0] : "?"));
     tr("Terrain mask", TERRAIN_TXT(ter));
-    // habitat map of the date (as swissEO VHI), the layer's own habitat map if it is another one, the swissTLM3D forest
-    // class, the broadleaf share of the Waldmischungsgrad LFI and the Nutzungsflächen category
+    // habitat map of the date (as swissEO VHI), the swissTLM3D forest class, the broadleaf share of the
+    // Waldmischungsgrad LFI and the Nutzungsflächen category
     const hp = habitatOf(null, state.date), sp = vegParse(S(rec).veg);
-    const inMask = (kind, ver) => readPoint(vegUrl({ kind, ver }, state.date), p.x, p.y).catch(() => null);
-    const [vf, vv, own, tlm, lfi, lnf] = await Promise.all([inMask("forest", null), inMask("vegetation", null),
-      sp && sp.ver && sp.ver !== hp.v ? inMask(sp.kind, sp.ver) : null, tlmClassAt(p.x, p.y).catch(() => undefined),
+    const inMask = kind => readPoint(vegUrl({ kind, ver: null }, state.date), p.x, p.y).catch(() => null);
+    const [vf, vv, tlm, lfi, lnf] = await Promise.all([inMask("forest"), inMask("vegetation"), tlmClassAt(p.x, p.y).catch(() => undefined),
       readPoint(LFI, p.x, p.y).catch(() => undefined), lnfAt(p.x, p.y).catch(() => undefined)]);
     tr("Forest / vegetation (" + hp.ref.replace(/ \(.*/, "") + ")", (vf == null ? "n/a" : vf ? "forest" : "no forest") + " / " +
                                    (vv == null ? "n/a" : vv ? "vegetation" : "no vegetation"));
-    if (own != null) tr(vegName(S(rec).veg), own ? "inside" : "outside");
     tr("swissTLM3D forest", tlm === undefined ? "n/a" : tlm == null ? "no forest" : TLM_CLASSES[tlm] || "class " + tlm);
     tr("Broadleaf share (LFI)", lfi === undefined ? "n/a" : lfi == null || lfi < 0 || lfi > 100 ? "no forest" : lfi + " %" +
        (sp && sp.kind === "lfi" ? " · " + (lfi > sp.t ? "broadleaf" : "conifer") + " at " + sp.t + " %" : ""));
-    tr("Nutzungsfläche", lnf === undefined ? "n/a" : lnf < 0 ? "none" : LNF[lnf].name);
+    tr("Nutzungsfläche", lnf === undefined ? "n/a" : !lnf ? "none" : lnf.hauptkategorie_de + " · " + lnf.nutzung_de + " (" + lnf.lnf_code + ")");
     $("#inspBody").innerHTML = "<table>" + rows + "</table>";
   } catch (err) {
     $("#inspBody").innerHTML = '<div class="hint">Read failed: ' + err.message + "</div>";

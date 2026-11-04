@@ -38,7 +38,7 @@ the swisstopo WMS/WMTS services directly in the browser.
 | [swissEO NDVIdiff v100](https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-ndvidiff) | `forest-10m` COGs of the STAC collection `ch.swisstopo.swisseo_ndvi_diff_v100` | NDVI change of the current year compared to the previous year, forest perimeter, 10 m; one product for the end of July, August and September each year (since 2018) |
 | [swissEO NDVIz v100](https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-ndviz) | `forest-10m` COGs of the STAC collection `ch.swisstopo.swisseo_ndvi_z_v100` | NDVI anomaly as z-score, forest perimeter, 10 m; end of July, August and September (since 2017) |
 | swissEO NDVIdiff v200 **BETA** | 30 example COGs on `cms.geo.admin.ch/Topo/umweltbeobachtung/beispiele/NDVIDIFFV2/` (not in STAC; the item list is in the page) | Year-on-year NDVI change of two-month first-quartile cloud-free mosaics of S2-SR v200 (June/July, July/August, August/September, 2017–2026), forest, 10 m |
-| Vegetation masks | Habitat map COGs v1-0 / v1-1 / v1-2 (forest, all vegetation) in `s3-topo-satromo-prod` (`data/MASKS/Vegetation/`, as used by the VHI processor), inside = value ≠ 0; the swissTLM3D forest (`wms.geo.admin.ch`, `ch.swisstopo.swisstlm3d-wald`); the Waldmischungsgrad LFI (BAFU / WSL, `data.geo.admin.ch`, STAC collection `ch.bafu.landesforstinventar-waldmischungsgrad`, share of broadleaf trees, 10 m; [metadata on geocat.ch](https://www.geocat.ch/geonetwork/srv/ger/catalog.search#/metadata/b07a4589-159b-4c3a-b1e7-dbdad11f7e62)); the agricultural land use (Nutzungsflächen of the cantons, geodienste.ch WMS `lwb_nutzungsflaechen_v3_0_0`, layer `nutzungsflaechen_hauptkategorien`; [metadata on geocat.ch](https://www.geocat.ch/datahub/dataset/ae183bc4-5c91-467e-89bc-85f390340efb)) | Forest, vegetation, broadleaf / conifer or land-use mask for every S2-SR layer, statistics and exports |
+| Vegetation masks | Habitat map COGs v1-0 / v1-1 / v1-2 (forest, all vegetation) in `s3-topo-satromo-prod` (`data/MASKS/Vegetation/`, as used by the VHI processor), inside = value ≠ 0; the swissTLM3D forest (`wms.geo.admin.ch`, `ch.swisstopo.swisstlm3d-wald`); the Waldmischungsgrad LFI (BAFU / WSL, `data.geo.admin.ch`, STAC collection `ch.bafu.landesforstinventar-waldmischungsgrad`, share of broadleaf trees, 10 m; [metadata on geocat.ch](https://www.geocat.ch/geonetwork/srv/ger/catalog.search#/metadata/b07a4589-159b-4c3a-b1e7-dbdad11f7e62)); the agricultural land use (Nutzungsflächen, BLW from the data of the cantons, `wms.geo.admin.ch` layer `ch.blw.landwirtschaftliche-nutzungsflaechen`; [metadata on geocat.ch](https://www.geocat.ch/datahub/dataset/ae183bc4-5c91-467e-89bc-85f390340efb)) | Forest, vegetation, broadleaf / conifer or land-use mask for every S2-SR layer, statistics and exports |
 | Basemaps | `wmts.geo.admin.ch` (pixelkarte-farbe, swissimage, pixelkarte-grau) | Background maps *Map*, *SWISSIMAGE* and *Map Grey* on the native LV95 grid |
 | 3D terrain | [swissALTIRegio](https://www.swisstopo.admin.ch/en/height-model-swissaltiregio): one COG on `data.geo.admin.ch` (STAC collection `ch.swisstopo.swissaltiregio`), 10 m, LV95, Switzerland and its border regions ([metadata on geocat.ch](https://www.geocat.ch/datahub/dataset/f7f058e9-288b-4c55-8f4e-6360880dbb59)); the surface model [swissSURFACE3D](https://www.swisstopo.admin.ch/en/height-model-swisssurface3d) resampled to 10 m, one COG in `s3-topo-satromo-prod` (`data/DSM/DSM_10m_EPSG2056_CH_clipped_10km_extended_9999_cog.tif`, Switzerland plus 10 km, no data −9999) | Heights of the optional 3D mode |
 | Labels | `vectortiles.geo.admin.ch`: swisstopo's base map vector tiles (`ch.swisstopo.base.vt`, Switzerland and Liechtenstein) with the label layers of its imagery base map style | *Labels*: place, road, peak and lake names above the data |
@@ -63,15 +63,15 @@ between the levels it is scaled, as any raster map in a continuously zooming vie
 The vegetation mask option (a pull-down, "Choose one" when off) restricts every S2-SR layer, the AOI statistics,
 time series and spectral explorer, and the analytical and print exports. Its entries, in this order:
 
-- **Habitat Map onward 2025-12-11**, **Habitat Map 2024-07-12 to 2025-12-11**, **Habitat Map before 2024-07-12**
-  (forest or all vegetation, for every date): the versioned masks of the VHI processor
-  ([topo-satromo-v2](https://github.com/swisstopo/topo-satromo-v2), `PRODUCT_VHI["vegetation_masks"]`), named by the
-  period in which swissEO VHI uses them: v1-2 (2025, CLC+ 2023), v1-1 (2024, CLC+ 2023) and v1-0 (2022, CLC+ 2021).
-  They are COGs on the swissEO 10 m grid at
+- **Habitat Map** (forest or all vegetation; one entry since
+  [#9](https://github.com/swisstopo/topo-swisseobrowser/issues/9)): the habitat map that swissEO VHI uses on the date
+  of the data, chosen as in `step1_processor_vhi.py` of
+  [topo-satromo-v2](https://github.com/swisstopo/topo-satromo-v2) (`PRODUCT_VHI["vegetation_masks"]`): v1-0 (2022,
+  CLC+ 2021) before 2024-07-12, v1-1 (2024, CLC+ 2023) before 2025-12-11, v1-2 (2025, CLC+ 2023) since. A time series
+  takes the map of each date; the two-date layers take the map of the selected date on both dates. The small text
+  under the mask names the version in use. They are COGs on the swissEO 10 m grid at
   `https://s3-topo-satromo-prod.s3.eu-central-1.amazonaws.com/data/MASKS/Vegetation/{forest|vegetation}_mask_2056_habitatv1-…tif`
   (CORS enabled), *inside = value ≠ 0*. Source: swisstopo, swissEO VHI processor.
-- **Habitat Map as used in swissEO VHI100** (forest or all vegetation), the default choice: the habitat map of the
-  date, chosen as in `step1_processor_vhi.py` (v1-0 before 2024-07-12, v1-1 before 2025-12-11, v1-2 since).
 - **swissTLM3D forest**: the WMS layer `ch.swisstopo.swisstlm3d-wald`, with check boxes for its classes Wald, Wald
   offen and Gebüschwald (any combination). The layer is drawn opaque, one colour per class, so *inside = alpha ≥ 128*
   of the GetMap image (all classes) or the nearest class colour; the pixel inspector gives the class (GetFeatureInfo).
@@ -83,19 +83,22 @@ time series and spectral explorer, and the analytical and print exports. Its ent
   (149.1 and 43.9 ha). The STAC collection states the license as "proprietary", opendata.swiss as open data: to be
   clarified with the BAFU. Source: Swiss National Forest Inventory LFI, BAFU / WSL
   ([metadata on geocat.ch](https://www.geocat.ch/geonetwork/srv/ger/catalog.search#/metadata/b07a4589-159b-4c3a-b1e7-dbdad11f7e62)).
-- **Nutzungsflächen** (agricultural land use of the cantons, geodienste.ch, model LWB v3.0): check boxes for the 13
-  main categories of the WMS legend (Ackerfläche, Dauerwiesen, Dauerweiden, Reben, Obstanlagen, Übrige
-  Dauerkulturen, Geschützter Anbau, Streueflächen, Hecken-, Feld- und Ufergehölze, Übrige Fläche innerhalb der LN,
-  Sömmerungsfläche, Vegetation nicht LN, Wald). The layer `nutzungsflaechen_hauptkategorien` draws each category in
-  its own colour, so the page reads the GetMap image (GetFeatureInfo of the service returns no features): a pixel
-  within 12 of a legend colour takes that category; an anti-aliased edge pixel, whose blend of two categories can lie
-  near a third one, takes the most frequent category of its neighbours. In a 2 × 2 km test in the Canton of
-  Fribourg the 10 m areas were within 0.3 % (Ackerfläche), 2.4 % (Dauerwiesen) and 4.8 % (Dauerweiden) of the areas
-  of the polygons of the service's WFS. The service draws the layer only up to about 1:100 000 (25 m per pixel), so the mask
-  is read at 20 m or finer and a coarser grid takes the majority of the 20 m cells; a map tile or statistics grid
-  that would need more than 25 million such cells shows nothing, with a message. The coverage depends on the canton:
-  in a test in November 2026, 10 km squares in Bern, Fribourg, Vaud and Zurich were 46–78 % covered, one in Aargau
-  less than 1 %. Source: the cantons, geodienste.ch ([metadata on geocat.ch](https://www.geocat.ch/datahub/dataset/ae183bc4-5c91-467e-89bc-85f390340efb)).
+- **Nutzungsflächen** (agricultural land use, BLW from the data of the cantons; since
+  [#16](https://github.com/swisstopo/topo-swisseobrowser/issues/16) the layer `ch.blw.landwirtschaftliche-nutzungsflaechen`
+  of `wms.geo.admin.ch` instead of the geodienste.ch WMS): check boxes for the 13 main categories of its legend
+  (Ackerfläche, Dauerwiesen, Dauerweiden, Reben, Obstanlagen, Übrige Dauerkulturen, Geschützter Anbau, Streueflächen,
+  Hecken-, Feld- und Ufergehölze, Übrige Fläche innerhalb der LN, Sömmerungsfläche, Flächen ausserhalb der LN, Wald).
+  The layer draws each category in its own colour and every parcel with a light-blue outline (102, 204, 255) of a fixed
+  pixel width, which blends with the fills around it: read at 10 m, two thirds of the pixels are outline or blend. So
+  the page reads the GetMap image at 2.5 m (4 × 4 samples per 10 m cell, majority; at most 4 × 4 per coarser cell): a
+  pixel within 12 of a legend colour takes that category; outline pixels and blends take the most frequent category of
+  their neighbours (repeated, so wider outlines fill from both sides), and an outline pixel with more empty than
+  classed neighbours stays empty, as an outline on the edge of a parcel lies half outside it. Tests against the
+  polygons of the WFS of the same cantonal data (2025) in 2 × 2 km squares: Fribourg (Kerzers) Ackerfläche +1.5 %,
+  Dauerwiesen +0.1 %, Dauerweiden +3.4 %; Zurich +0.9 %, −0.2 %, +3.0 %. The federal layer also draws zoomed out and
+  covers the cantons that do not publish on geodienste.ch (a 2 × 2 km square in Aargau: 62 ha of the three categories,
+  none on geodienste.ch). The pixel inspector asks the service for the parcel (GetFeatureInfo: main category, use and
+  code). Source: BLW, the cantons ([metadata on geocat.ch](https://www.geocat.ch/datahub/dataset/ae183bc4-5c91-467e-89bc-85f390340efb)).
 
 The mask options in the layer menu link to the metadata of the Waldmischungsgrad LFI and the Nutzungsflächen.
 
@@ -154,7 +157,10 @@ The swissEO Browser therefore always uses the physical reflectance.
     **help button** (a plain *i*); below the *i* the area of interest, image download, compare, timelapse and *3D*
     buttons (in 3D also the 3D settings, sun shading and sun time);
   - bottom right: the zoom buttons and, on one line, the mouse position (LV95 easting and northing, `E 2'661'150 N 1'187'175`)
-    and the scale bar; bottom left: the attribution and the loading indicator.
+    and the scale bar; bottom left: the attribution and the loading indicator. The attribution names the data on the
+    map ([#12](https://github.com/swisstopo/topo-swisseobrowser/issues/12)): swisstopo, the office of a vegetation mask
+    from outside swisstopo (*Nutzungsflächen © BLW*, *Waldmischungsgrad LFI © BAFU / WSL*) and the domain of a WMS /
+    WMTS layer; MapLibre is credited in the Info tab and below.
 - **Help and tutorial** ([`docs/index.html`](docs/index.html), opened by the (i) button in a new tab): an *About the
   swissEO Browser* overview with a beginner tutorial (Part A: window, place search, date, layers, vegetation mask, pixel
   inspector, area of interest and statistics, 3D, download, sharing) and all functions in the order of the
@@ -186,8 +192,15 @@ The swissEO Browser therefore always uses the physical reflectance.
     anaglyph stereo of the Copernicus Browser are not available.
   - **Sun shading** (light bulb): a hillshade of the height model, lit from the direction and height of the sun at
     the map centre (NOAA formulas), above the data layers and below the labels.
-  - **Sun time** (sun): date and time (UTC) of that sun, as sliders and fields, with the local time of the computer;
-    *Current time* follows the clock.
+  - **Sun time** (sun): date and time (UTC) of that sun, as sliders and fields, with the local time of the computer.
+    By default, and again whenever 3D is switched on, it is the time of the scene shown
+    ([#10](https://github.com/swisstopo/topo-swisseobrowser/issues/10)): the acquisition time of the S2-SR scene (UTC,
+    from the item id), the middle between the acquisitions when the date has two orbits, and it follows the date and
+    layer; for products without an acquisition time 10:30 UTC of the date. *Scene time* returns to it, *Current time*
+    follows the clock, the sliders set a time of their own.
+
+  Switching to 3D also switches the labels on ([#15](https://github.com/swisstopo/topo-swisseobrowser/issues/15)); back
+  in 2D they stay on (the layer button switches them off). A link with `3d=true` keeps its own `labels` setting.
 
   In 3D the map can
   be tilted and turned (right-drag or Ctrl+drag, two fingers on touch screens, the compass above the zoom buttons
@@ -356,8 +369,7 @@ The swissEO Browser therefore always uses the physical reflectance.
     transition; the next scene fills them. The footprint comes from the TCI's internal mask at about 160 m;
     the edge zone is computed once per scene;
   - masks: clouds and cloud shadows (OmniCloudMask), terrain shadow (terrain mask 200), a vegetation
-    mask (pull-down: off, forest or all vegetation of one of the three habitat maps or of the one swissEO VHI100
-    uses on the date, the swissTLM3D forest classes, broadleaf or conifer forest of the Waldmischungsgrad LFI, or
+    mask (pull-down: off, forest or all vegetation of the habitat map swissEO VHI uses on the date, the swissTLM3D forest classes, broadleaf or conifer forest of the Waldmischungsgrad LFI, or
     Nutzungsflächen categories; see [Vegetation masks](#vegetation-masks)) and a **custom mask**: your own polygons
     (e.g. a forest map) loaded from a file or URL with the same import and limits as the area of interest;
     *Inside* keeps the data inside the polygons, *Outside* (inverted) the data outside. It works for every
@@ -423,19 +435,19 @@ The swissEO Browser therefore always uses the physical reflectance.
     on for the layer restricts the area in the same way. VHI, NDVIdiff and NDVIz statistics are read from
     their COGs; the two-date layers report the difference (and the change
     report of the NDVI Analyst method) instead of a time series, the VHI season layers the season curve.
-    The selected date is sampled on a grid of up to 320 cells across (at least 10 m), read from the COG overviews
-    for a large AOI. When that grid is coarser than 10 m, a warning offers **Compute at 10 m** for every layer: the
-    AOI is processed at the full 10 m resolution in chunks of 1024 × 1024 cells (two at a time, with the masks of
-    the statistics dialog), the result is shown below the coarse one and can be downloaded as CSV (settings, cell
-    counts, statistics and histogram; for class layers the cells, hectares and shares per class; for the NDVI
-    difference the change report). Counts, mean, standard deviation, minimum and maximum are exact; median and
-    percentiles come from a histogram of 4000 bins over the layer's value range (e.g. ±0.00025 for an index). An NDVI
-    run over a 12 × 6 km AOI matched an independent rasterio computation (720,000 cells; mean, σ, minimum and
-    maximum equal, median and percentiles within ±0.00025). The time series has its own **Grid** choice: its coarse
-    grid (up to 140 cells across, e.g. 200 m for a 28 km wide AOI; fast) or **10 m**, which reads every date at full
-    resolution in the same chunks (two dates at a time; Stop keeps the dates read). The summary and the CSV (column
-    `grid_m`) give the grid, and on a coarse grid the summary points to the 10 m option. The vegetation mask grids
-    are kept (the last 24), so a series reads each mask once instead of once per date.
+    For a large AOI the statistics use coarser grids read from the COG overviews: up to 320 cells across for the
+    selected date, up to 140 for the time series (at least 10 m). Then one box right below the info line at the top
+    ([#11](https://github.com/swisstopo/topo-swisseobrowser/issues/11)) names both grids, says what they mean and has one
+    choice for both: **Fast (coarse grid)** or **Full resolution (10 m)**. At 10 m the AOI is processed in chunks of
+    1024 × 1024 cells (two at a time, with the masks of the dialog), the selected date and every date of the time series
+    (two dates at a time; Stop keeps the dates read). The result of the selected date has a **Download CSV** at either
+    resolution (settings, resolution, cell counts, statistics and histogram; for class layers the cells, hectares and
+    shares per class; for the NDVI difference the change report); the time series CSV has a column `grid_m`. At 10 m,
+    counts, mean, standard deviation, minimum and maximum are exact; median and percentiles come from a histogram of
+    4000 bins over the layer's value range (e.g. ±0.00025 for an index). An NDVI run over a 12 × 6 km AOI matched an
+    independent rasterio computation (720,000 cells; mean, σ, minimum and maximum equal, median and percentiles within
+    ±0.00025). The vegetation mask grids are kept (the last 24), so a series reads each mask once instead of once per
+    date. The VHI season layers keep their season curve on the coarse grid.
   - *Spectral explorer*: mean surface reflectance of all 12 bands (± σ), with CSV download.
 - **Image download**: three tabs as in the Copernicus Browser:
   - *Basic*: the current view as PNG or JPG, with captions (datasource, date, scale bar) and an optional
@@ -504,7 +516,7 @@ The swissEO Browser therefore always uses the physical reflectance.
   [topo-drought-briefing](https://github.com/swisstopo/topo-drought-briefing): every message carries the **permalink of the
   current view** and a one-line summary of what is on the map (layer, id, date of its data, BETA; the compare list or the
   WMS / WMTS layer), so a sentence or two is enough. A local copy links to the same view on the public website.
-  - *Feedback*: an e-mail to david.oesch@swisstopo.ch and joan.sturm@swisstopo.ch, in the mail app, Gmail or Outlook Web;
+  - *Feedback*: an e-mail to david.oesch@swisstopo.ch and joan.sturm@swisstopo.ch, opened in the mail app of the computer;
   - *Report an issue / improvement*: a new GitHub issue in this repository whose title and text the viewer writes
     (URL parameters `title` and `body`), with the permalink, the layer and, for problems, the browser already in it, and
     the choices as tick boxes: *Fix or change a layer*, *Change a text or translation*, *Report a general problem*,
@@ -640,7 +652,7 @@ Parameter names follow the Copernicus Browser where an equivalent exists.
 | `redRange`, `greenRange`, `blueRange` | `[0,0.8]` | Advanced RGB effects |
 | `opacity` | `70` | Layer opacity in % |
 | `cloudMask`, `shadowMask`, `terrainMask` | `true` | Masks (written when they differ from the layer's default; the two-date layers mask clouds and shadows by default) |
-| `vegetationMask` | `forest` | Vegetation mask of the S2-SR layers: `off`; `forest` or `vegetation` (habitat map as used in swissEO VHI100 on the date); `forest@1-0` … `vegetation@1-2` (one habitat map); `tlm` or `tlm:12.13` (swissTLM3D forest, all or some of the classes 12 Wald, 13 Wald offen, 6 Gebüschwald); `lfi-broad:76` or `lfi-conif:76` (Waldmischungsgrad LFI with the threshold in %); `lnf` or `lnf:a.dw.dp` (Nutzungsflächen, all or some main categories: `a` Ackerfläche, `dw` Dauerwiesen, `dp` Dauerweiden, `r` Reben, `o` Obstanlagen, `dk` Übrige Dauerkulturen, `g` Geschützter Anbau, `s` Streueflächen, `h` Hecken-, Feld- und Ufergehölze, `u` Übrige Fläche innerhalb der LN, `so` Sömmerungsfläche, `v` Vegetation nicht LN, `w` Wald); the NDVI difference to a reference date layer and the Forest Disturbance Classification default to `forest` |
+| `vegetationMask` | `forest` | Vegetation mask of the S2-SR layers: `off`; `forest` or `vegetation` (the habitat map of the date, as swissEO VHI; older links with a version such as `forest@1-1` open with the map of the date too); `tlm` or `tlm:12.13` (swissTLM3D forest, all or some of the classes 12 Wald, 13 Wald offen, 6 Gebüschwald); `lfi-broad:76` or `lfi-conif:76` (Waldmischungsgrad LFI with the threshold in %); `lnf` or `lnf:a.dw.dp` (Nutzungsflächen, all or some main categories: `a` Ackerfläche, `dw` Dauerwiesen, `dp` Dauerweiden, `r` Reben, `o` Obstanlagen, `dk` Übrige Dauerkulturen, `g` Geschützter Anbau, `s` Streueflächen, `h` Hecken-, Feld- und Ufergehölze, `u` Übrige Fläche innerhalb der LN, `so` Sömmerungsfläche, `v` Vegetation nicht LN, `w` Wald); the NDVI difference to a reference date layer and the Forest Disturbance Classification default to `forest` |
 | `basemap`, `labels` | `swissimage`, `true` | Basemap (`pixelkarte` = *Map*, `swissimage`, `grey` = *Map Grey*, `none`) and the *Labels* overlay (swisstopo vector labels) |
 | `compareLayers`, `comparedOpacity`, `comparedClipping`, `compareMode` | | Compare list (base64url JSON, each entry with its LV95 view; WMS / WMTS entries as `{"l":"ext","x":{"u":service URL,"k":"WMS"/"WMTS","n":layer name,"t":title}}`), per-layer opacity and split range; `compareMode` is `split` / `opacity` when comparing and `off` otherwise (links without it open in compare mode) |
 | `panel` | `wms` | The WMS / WMTS panel is open |
@@ -672,8 +684,8 @@ Example:
 - The NDVI difference to a reference date layer (NDVI Analyst method) works on the swissEO S2-SR mosaics instead of the original script's own Sentinel-2
   processing.
 - AOI statistics use a grid of at least 10 m (coarser for large areas, which the dialog states); the statistics of
-  the selected date and the time series can be computed at 10 m for any layer and AOI size (*Compute at 10 m*, *Grid
-  10 m*), which takes longer (a 10 m time series of a large AOI several minutes).
+  the selected date and the time series can be computed at 10 m for any layer and AOI size (*Full resolution (10 m)*),
+  which takes longer (a 10 m time series of a large AOI several minutes).
 - Statistics, time series, analytical downloads and high-res prints read the COGs in the browser; large
   areas, long date ranges and large prints take a while. Imports and custom masks have size limits (see
   *Limits of the browser*); areas and masks from files are not shared through links.
@@ -691,7 +703,7 @@ Example:
   [open government data](https://www.swisstopo.admin.ch/ogd-conditions). swissEO S2-SR and swissEO VHI
   contain modified Copernicus Sentinel data. 3D terrain: [swissALTIRegio](https://www.geocat.ch/datahub/dataset/f7f058e9-288b-4c55-8f4e-6360880dbb59) and swissSURFACE3D
   © swisstopo. Masks: [Waldmischungsgrad LFI](https://www.geocat.ch/geonetwork/srv/ger/catalog.search#/metadata/b07a4589-159b-4c3a-b1e7-dbdad11f7e62) © BAFU / WSL;
-  [Nutzungsflächen](https://www.geocat.ch/datahub/dataset/ae183bc4-5c91-467e-89bc-85f390340efb) © the cantons, geodienste.ch. Layers of other WMS / WMTS services
+  [Nutzungsflächen](https://www.geocat.ch/datahub/dataset/ae183bc4-5c91-467e-89bc-85f390340efb) © BLW and the cantons. Layers of other WMS / WMTS services
   © their providers.
 - User-interface workflow modelled on the [Copernicus Browser](https://browser.dataspace.copernicus.eu/)
   by the Copernicus Data Space Ecosystem ([eu-cdse/copernicus-browser](https://github.com/eu-cdse/copernicus-browser):

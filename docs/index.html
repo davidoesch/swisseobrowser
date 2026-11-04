@@ -243,8 +243,8 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
   </ol>
   <figure><img src="img/mask-lnf.jpg" alt="NDVI restricted to arable land, meadows and pastures, with the category check boxes" width="1400" height="900">
     <figcaption><b>Fig. 5</b> NDVI near Kerzers, 13 August 2026, restricted by the Nutzungsflächen mask to arable land,
-    permanent meadows and permanent pastures. Each category has the colour of the cantonal map service.</figcaption></figure>
-  <p>The other masks keep forest (the habitat maps of swissEO VHI or the swissTLM3D forest), broadleaf or conifer forest
+    permanent meadows and permanent pastures. Each category has the colour of the federal map service.</figcaption></figure>
+  <p>The other masks keep forest (the habitat map of swissEO VHI or the swissTLM3D forest), broadleaf or conifer forest
     (Waldmischungsgrad LFI) or all vegetation. They are described, with their sources, in
     <a href="#vis-veg">Vegetation masks</a>. Masks also apply to statistics, downloads and the timelapse.</p>
 
@@ -273,11 +273,13 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
   <h2 id="t8"><span class="n">8</span>Look at it in 3D</h2>
   <p>The <span class="key">3D</span> button, the last of the tools, lays the map and the satellite layer on the terrain.</p>
   <ol class="steps">
-    <li>Click <span class="key">3D</span>: the map tilts. The button now says <span class="key">2D</span>, which brings back the flat map.</li>
+    <li>Click <span class="key">3D</span>: the map tilts and the place names (labels) appear. The button now says
+      <span class="key">2D</span>, which brings back the flat map; the labels stay until you switch them off in the layers button.</li>
     <li>Drag with the <b>right mouse button</b> (or hold <span class="key">Ctrl</span> and drag) to tilt and turn the
       view; on a touch screen use two fingers. The compass above the zoom buttons turns it back to north.</li>
     <li>Three more buttons appear above the tools: the <b>3D settings</b> (gear), the <b>sun shading</b> (light bulb)
-      and the <b>sun time</b> (sun). With the sun time you can light the mountains as in the morning or the evening.</li>
+      and the <b>sun time</b> (sun). The terrain is lit by the sun at the time of the satellite image; with the sun time
+      you can light the mountains as in the morning or the evening.</li>
   </ol>
   <figure><img src="img/terrain-3d.jpg" alt="The Great Aletsch Glacier in 3D with the true color image and labels" width="1400" height="900">
     <figcaption><b>Fig. 8</b> The Great Aletsch Glacier in 3D: true color of 13 August 2026 on swissALTIRegio, looking
@@ -356,15 +358,13 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
   <p>The pull-down <i>Vegetation mask</i> shows <i>Off</i> ("Choose one") by default. Its entries, in this order:</p>
   <table>
     <tr><th>Entry</th><th>What it keeps</th><th>Source</th></tr>
-    <tr><td>Habitat Map onward 2025-12-11<br>Habitat Map 2024-07-12 to 2025-12-11<br>Habitat Map before 2024-07-12</td>
-      <td>Forest or all vegetation of one of the three habitat maps of swissEO VHI (v1-2, v1-1, v1-0), named by the period
-      in which swissEO VHI uses it, for every date</td>
+    <tr><td>Habitat Map: Forest, All vegetation</td>
+      <td>Forest or all vegetation of the habitat map that swissEO VHI uses on the date of the data: v1-0 before
+      2024-07-12, v1-1 before 2025-12-11, v1-2 since. A time series takes the map of each date; the two-date layers take
+      the map of the selected date on both dates, so a new map version never shows up as a change. The small text under
+      the mask names the version in use.</td>
       <td>swissEO habitat maps (based on CLC+), as used by the
       <a href="https://github.com/swisstopo/topo-satromo-v2" target="_blank" rel="noopener">swissEO VHI processor</a></td></tr>
-    <tr><td>Habitat Map as used in swissEO VHI100</td>
-      <td>Forest or all vegetation of the habitat map that swissEO VHI uses on the selected date (v1-0 before 2024-07-12,
-      v1-1 before 2025-12-11, v1-2 since)</td>
-      <td>as above</td></tr>
     <tr><td>swissTLM3D: Forest</td>
       <td>The forest of the swissTLM3D landscape model, with check boxes for <i>Wald</i> (forest), <i>Wald offen</i>
       (open forest) and <i>Gebüschwald</i> (scrub forest), in any combination</td>
@@ -375,14 +375,15 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
       threshold, <b>76 %</b> by default.</td>
       <td><a href="https://www.geocat.ch/geonetwork/srv/ger/catalog.search#/metadata/b07a4589-159b-4c3a-b1e7-dbdad11f7e62" target="_blank" rel="noopener">Waldmischungsgrad
       of the Swiss National Forest Inventory LFI</a>, BAFU / WSL, 10 m (metadata on geocat.ch)</td></tr>
-    <tr><td>Nutzungsflächen (geodienste.ch): Land use</td>
+    <tr><td>Nutzungsflächen (BLW): Land use</td>
       <td>The agricultural land use of the cantons, with check boxes for its 13 main categories: Ackerfläche (arable land),
       Dauerwiesen (permanent meadows), Dauerweiden (permanent pastures), Reben (vineyards), Obstanlagen (orchards), Übrige
       Dauerkulturen (other permanent crops), Geschützter Anbau (protected cultivation), Streueflächen (litter meadows),
       Hecken-, Feld- und Ufergehölze (hedges and copses), Übrige Fläche innerhalb der LN (other farmland),
-      Sömmerungsfläche (summer grazing), Vegetation nicht LN (other vegetation), Wald (forest)</td>
+      Sömmerungsfläche (summer grazing), Flächen ausserhalb der LN (outside the farmland), Wald (forest)</td>
       <td><a href="https://www.geocat.ch/datahub/dataset/ae183bc4-5c91-467e-89bc-85f390340efb" target="_blank" rel="noopener">Nutzungsflächen</a>
-      of the cantons, map service of geodienste.ch (metadata on geocat.ch)</td></tr>
+      of the Federal Office for Agriculture (BLW), from the data of the cantons, map service of the federal geoportal
+      (metadata on geocat.ch)</td></tr>
   </table>
   <figure><img src="img/mask-lfi.jpg" alt="NDVI of the Sihlwald restricted to broadleaf forest, with the threshold slider" width="1400" height="900">
     <figcaption><b>Fig. 11</b> NDVI of the Sihlwald and the Albis on 13 August 2026, restricted to broadleaf forest of
@@ -391,8 +392,10 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
   <ul>
     <li>Below the pull-down, the menu shows the mask in use and its options: the check boxes, the slider and a link to the
       metadata of the source.</li>
-    <li>The <b>Nutzungsflächen</b> are read from the map service at 20 m, so they show from about 1:100 000 (zoom in
-      further when the map stays empty). Not every canton publishes all its data, so some areas stay empty.</li>
+    <li>The <b>Nutzungsflächen</b> are read from the federal map service at 2.5 m (4 × 4 samples per 10 m cell). The
+      service draws every parcel with a thin outline; outline pixels take the category of the parcel next to them.
+      Areas agree with the parcels of the cantonal data to within about 1 to 3 %. The pixel inspector shows the main
+      category, the use and its code.</li>
     <li>The two-date layers (NDDI change, NDVI difference to a reference date) use the mask of the selected date on both
       dates, so a new version of a habitat map never shows up as a change.</li>
     <li>The mask also applies to the <a href="#tools-stats">statistics</a> (where you can choose another one), the
@@ -445,8 +448,8 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
     of the Copernicus Browser does.</p>
   <h3 style="font-size:15px">Opening and navigating</h3>
   <ul>
-    <li>Select a layer, then click the <span class="key">3D</span> button below the tools. The map tilts; the button now
-      says <span class="key">2D</span> and returns to the flat map.</li>
+    <li>Select a layer, then click the <span class="key">3D</span> button below the tools. The map tilts and the labels
+      are switched on; the button now says <span class="key">2D</span> and returns to the flat map (the labels stay on).</li>
     <li>Drag with the <b>right mouse button</b>, or hold <span class="key">Ctrl</span> and drag, to tilt and turn the
       view; on a touch screen use two fingers. Move and zoom as usual. The compass above the zoom buttons turns the map
       back to north and flat.</li>
@@ -472,9 +475,13 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
   <ul>
     <li>The <b>light bulb</b> switches the sun shading on and off. The terrain is lit from the direction and height of
       the sun at the centre of the map, so the shading follows the map when you move it.</li>
-    <li>The <b>sun</b> opens <b>Sun time</b>: the date and the time (UTC) of that sun, with sliders and fields. The dialog
-      shows the local time of your computer and the position of the sun (direction and height above the horizon).
-      <i>Current time</i> goes back to now; the shading then follows the clock.</li>
+    <li>The <b>sun</b> opens <b>Sun time</b>: the date and the time (UTC) of that sun, with sliders and fields. By default,
+      and every time you switch to 3D, it is the <b>time of the scene shown</b>: when the satellite took the image, or
+      the middle between the two passes when the date has two. It follows when you change the date or the layer. For
+      products without a time of their own (VHI, NDVIdiff, …) it is 10:30 UTC of the date, about when Sentinel-2 passes.
+      Move a slider for another time; <i>Scene time</i> goes back to the scene, <i>Current time</i> follows the clock.
+      The dialog shows the local time of your computer and the position of the sun (direction and height above the
+      horizon).</li>
   </ul>
   <figure><img src="img/sun-time.jpg" alt="The sun time dialog with an evening sun over the Aletsch Glacier" width="1400" height="900">
     <figcaption><b>Fig. 17</b> Sun time 13 August 2026, 16:45 UTC: the sun stands in the west, 19° above the horizon,
@@ -527,24 +534,22 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
   <p>Some layers report differently: the two-date layers (NDDI change, NDVI difference to a reference date) give the difference and, for the
     NDVI difference, its change report (method of the NDVI Analyst of the Canton of Aargau) with the masked area, the
     compared area and the affected area in hectares; the VHI season layers give the season curve.</p>
-  <h3 style="font-size:15px">Full resolution: Compute at 10 m</h3>
-  <p>To stay quick, the statistics of a large area are first computed on a coarser grid (up to 320 cells across, for
-    example 88 m for a 28 km wide area), read from the overviews of the data. A cell then mixes what lies in it, such as
-    a meadow and the road next to it, and the masks are applied at that resolution. The dialog says so in a box with the
-    button <b>Compute at 10 m</b>, for every layer:</p>
+  <h3 style="font-size:15px">Large areas: fast or full resolution</h3>
+  <p>To stay quick, the statistics of a large area use a coarser grid read from the overviews of the data, for example
+    133 m for the selected date and 200 m for the time series of a 30 km wide area. A cell then mixes what lies in it,
+    such as a meadow and the road next to it, and the masks are applied at that size. A box right below the line with the
+    area says so, names both grids and has one choice for the whole dialog:</p>
   <ul>
-    <li>the area is processed at the full 10 m resolution, in pieces of 1024 × 1024 cells (about 10 × 10 km); the box
-      counts the pieces done. A canton takes a few minutes; closing the dialog or changing a setting stops it;</li>
-    <li>the result appears below the first one: the same statistics and histogram (for class layers the share of each
-      class, for the NDVI difference the change report in hectares), with exact counts, mean, standard deviation,
-      minimum and maximum, and the median and percentiles to a fraction of a thousandth;</li>
-    <li><b>Download CSV (10 m)</b> saves it: the settings and masks used, the number of cells, the statistics and the
-      histogram (or the cells, hectares and shares per class).</li>
+    <li><b>Fast (coarse grid)</b>, the default;</li>
+    <li><b>Full resolution (10 m)</b>: the selected date and the time series are computed at 10 m, in pieces of
+      1024 × 1024 cells (about 10 × 10 km). The selected date shows the pieces done; the time series shows its points as
+      the dates are read, and <i>Stop</i> keeps them. A canton takes a few minutes, a time series longer; closing the
+      dialog or changing a setting stops it. Counts, mean, standard deviation, minimum and maximum are exact, the median
+      and percentiles to a fraction of a thousandth.</li>
   </ul>
-  <p>The <b>time series</b> has the same choice in <i>Grid</i>, next to <i>Download CSV</i>: its coarse grid (fast, for
-    example 200 m for a 28 km wide area) or <b>10 m</b>, which reads every date of the range at full resolution. A 10 m
-    series of a large area takes several minutes; the points appear as the dates are read and <i>Stop</i> keeps them. The
-    text below the chart and the CSV (column <code>grid_m</code>) say which grid was used.</p>
+  <p><b>Download CSV</b> below the statistics of the selected date saves them at the resolution used: the settings and
+    masks, the number of cells, the statistics and the histogram (for class layers the cells, hectares and shares per
+    class, for the NDVI difference the change report). The time series CSV has a column <code>grid_m</code>.</p>
 
   <h3 id="tools-spec">Spectral explorer</h3>
   <p>The mean surface reflectance of all twelve Sentinel-2 bands over the area, with ± one standard deviation, as a
@@ -595,7 +600,7 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
   <h3>Feedback and issues</h3>
   <p>At the top of the <b>Info</b> tab, below the <i>not for operational use</i> notice:</p>
   <ul>
-    <li><b>Feedback</b> writes an e-mail to the swissEO team (in your mail app, Gmail or Outlook Web);</li>
+    <li><b>Feedback</b> opens an e-mail to the swissEO team in the mail app of your computer;</li>
     <li><b>Report an issue / improvement</b> opens a GitHub issue form of one of four kinds: <i>Fix or change a layer</i>,
       <i>Change a text or translation</i>, <i>Report a general problem</i> or <i>Suggest an improvement</i>. This needs a
       free GitHub account.</li>
@@ -629,7 +634,7 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
     <tr><td>Waldmischungsgrad LFI</td><td>Vegetation mask (broadleaf, conifer forest), pixel inspector</td>
       <td><a href="https://www.geocat.ch/geonetwork/srv/ger/catalog.search#/metadata/b07a4589-159b-4c3a-b1e7-dbdad11f7e62" target="_blank" rel="noopener">BAFU / WSL, metadata on geocat.ch</a></td></tr>
     <tr><td>Nutzungsflächen</td><td>Vegetation mask (13 main categories of the agricultural land use), pixel inspector</td>
-      <td><a href="https://www.geocat.ch/datahub/dataset/ae183bc4-5c91-467e-89bc-85f390340efb" target="_blank" rel="noopener">the cantons, geodienste.ch, metadata on geocat.ch</a></td></tr>
+      <td><a href="https://www.geocat.ch/datahub/dataset/ae183bc4-5c91-467e-89bc-85f390340efb" target="_blank" rel="noopener">BLW and the cantons, metadata on geocat.ch</a></td></tr>
     <tr><td>Basemaps, labels, place search</td><td>Background maps, names on the map, Go to Place</td>
       <td>swisstopo, map.geo.admin.ch</td></tr>
   </table>
@@ -651,7 +656,7 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
       Firefox, open <code>about:config</code> and set <code>webgl.force-enabled</code> to <code>true</code>; in Chrome or
       Edge, switch on <i>Use graphics acceleration when available</i>. Layers of other map services can only be shown
       when the service allows access from other websites (CORS).</li>
-    <li>The Nutzungsflächen mask shows from about 1:100 000 and only where the cantons publish their data.</li>
+    <li>The Nutzungsflächen mask is read at high resolution: for a very large view or area it asks you to zoom in.</li>
     <li>Areas of interest can have up to 100,000 vertices and files up to 50 MB; areas from files are only part of a
       link when they are small.</li>
     <li>Layers marked <span class="beta" style="margin:0">BETA</span> are not yet verified; the VHI season layers count only
@@ -661,7 +666,7 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
   <footer>
     <p>swissEO Browser, a prototype of <a href="https://www.swisstopo.admin.ch" target="_blank" rel="noopener">swisstopo</a>.
       Data © swisstopo (open government data); swissEO S2-SR and swissEO VHI contain modified Copernicus Sentinel data.
-      Waldmischungsgrad LFI © BAFU / WSL; Nutzungsflächen © the cantons (geodienste.ch).
+      Waldmischungsgrad LFI © BAFU / WSL; Nutzungsflächen © BLW and the cantons.
       User interface modelled on the Copernicus Browser of the Copernicus Data Space Ecosystem; this project is not
       affiliated with or endorsed by it. Source code and technical details:
       <a href="https://github.com/swisstopo/topo-swisseobrowser" target="_blank" rel="noopener">github.com/swisstopo/topo-swisseobrowser</a>.</p>
