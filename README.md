@@ -366,7 +366,10 @@ The swissEO Browser therefore always uses the physical reflectance.
     [main_cloudfree_mosaic.py](https://github.com/swisstopo/topo-satromo-v2/blob/main/main_functions/main_cloudfree_mosaic.py)
     (edge margin 200 px, brightness 40), pixels within 2 km of the scene's real footprint edge whose mean
     RGB is below 40 count as no data, plus one 10 m pixel around them against the JPEG ringing of the hard
-    transition; the next scene fills them. The footprint comes from the TCI's internal mask at about 160 m;
+    transition; the next scene fills them. Where no other scene of the day has data (beyond the other swath, or along
+    the outer limit of the mosaic beyond the border), the dark pixels stay
+    ([#14](https://github.com/swisstopo/topo-swisseobrowser/issues/14): in November, with a low sun, 40 % of the pixels
+    there are that dark and were left empty). The footprint comes from the TCI's internal mask at about 160 m;
     the edge zone is computed once per scene;
   - masks: clouds and cloud shadows (OmniCloudMask), terrain shadow (terrain mask 200), a vegetation
     mask (pull-down: off, forest or all vegetation of the habitat map swissEO VHI uses on the date, the swissTLM3D forest classes, broadleaf or conifer forest of the Waldmischungsgrad LFI, or

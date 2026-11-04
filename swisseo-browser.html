@@ -741,8 +741,8 @@ table.kv td:first-child{color:var(--muted)}
             <p><b>True color (TCI):</b> the JPEG tiles are decoded by the browser itself and kept in a cache, so each COG
               tile is decoded once; the map uses 512 px tiles like the COGs. The TCI's internal mask decides what is data, so
               black pixels stay black. On days with more than one scene (orbit), dark strips along a swath edge (mean RGB below 40
-              within 2 km of the scene edge) always count as no data, as in the swissEO cloud-free mosaics, so the other scene of
-              the day fills them.</p>
+              within 2 km of the scene edge) are replaced by the other scene of the day, as in the swissEO cloud-free mosaics;
+              where no other scene has data they stay.</p>
             <p><b>Spectral layers:</b> the band COGs are read straight from <code>data.geo.admin.ch</code> over HTTP range requests
               (geotiff.js). Only the overview matching the zoom and the tiles in view are fetched.</p>
             <p><b>Masks:</b> <i>Clouds</i> hides cloud-mask codes 1 and 2, <i>Cloud shadows</i> code 3, and <i>Terrain shadow</i>
@@ -3387,21 +3387,24 @@ async function renderScene(rec, s, id, bbox, W, H, signal) {
 
   if (rec.tci) {
     // the delivered TCI; gain / gamma / RGB ranges on top (1 / 1 / [0, 1] = unchanged). The internal mask decides
-    // what is data, so black (0, 0, 0) stays black; dark pixels in the scene's edge zone count as no data.
+    // what is data, so black (0, 0, 0) stays black. Dark pixels in the scene's edge zone are held back in img.held:
+    // renderTile uses them only where no other scene of the day has data (issue #14).
     const ig = 1 / s.gamma, rg = [s.r, s.g, s.b], val = a.valid;
     const ez = s.edge ? await tciEdgeZone(id).catch(() => null) : null;
     const drop = ez ? tciDarkEdges(a, val, ez, bbox, W, H) : null;
+    const held = drop ? new ImageData(W, H) : null;
     for (let k = 0; k < n; k++) {
       if ((val ? !val[k] : a[0][k] === 0 && a[1][k] === 0 && a[2][k] === 0) || masked(k)) continue;
-      if (drop && drop[k]) continue;
+      const o = drop && drop[k] ? held.data : d;
       for (let c = 0; c < 3; c++) {
         let v = clamp(a[c][k] / 255 * s.gain, 0, 1);
         if (ig !== 1) v = Math.pow(v, ig);
         v = clamp((v - rg[c][0]) / ((rg[c][1] - rg[c][0]) || 1e-6), 0, 1);
-        d[k * 4 + c] = 255 * v;
+        o[k * 4 + c] = 255 * v;
       }
-      d[k * 4 + 3] = 255;
+      o[k * 4 + 3] = 255;
     }
+    img.held = held;
     return img;
   }
 
@@ -3688,26 +3691,27 @@ async function renderTile(cfg, bbox, W, H, signal) {
   if (cfg.rec.type === "diff2") return renderDiff2(cfg, bbox, W, H, signal);
   if (cfg.rec.type === "vhiseason") return renderSeason(cfg, bbox, W, H, signal);
   let s = cfg.gf && cfg.gf !== 1 ? Object.assign({}, cfg.s, { gain: cfg.s.gain * cfg.gf }) : cfg.s;
-  // TCI: dark scene edges count as no data when the day has another scene (orbit) that fills them
+  // TCI: dark scene edges are held back when the day has another scene (orbit) that may fill them
   if (cfg.rec.tci) s = Object.assign({}, s, { edge: cfg.scenes.length > 1 });
   // scenes one after the other, most recent first: a scene whose orbit misses the tile (known footprint) is
   // skipped, and once every pixel is filled the remaining scenes are not read at all
   let out = null;
+  const helds = [];
+  const fill = (o, d) => {
+    for (let i = 3; i < o.length; i += 4) if (o[i] === 0 && d[i]) { o[i-3] = d[i-3]; o[i-2] = d[i-2]; o[i-1] = d[i-1]; o[i] = d[i]; }
+  };
   for (const id of cfg.scenes) {
     if (coversNow(id, bbox) === false) continue;
     const im = await renderScene(cfg.rec, s, id, bbox, W, H, signal);
     if (!im) continue;
-    if (!out) out = im;
-    else {
-      const o = out.data, d = im.data;
-      for (let i = 3; i < o.length; i += 4) {
-        if (o[i] === 0 && d[i]) { o[i-3] = d[i-3]; o[i-2] = d[i-2]; o[i-1] = d[i-1]; o[i] = d[i]; }
-      }
-    }
+    if (im.held) helds.push(im.held.data);
+    if (!out) out = im; else fill(out.data, im.data);
     let full = true;
     for (let i = 3; i < out.data.length; i += 4) if (!out.data[i]) { full = false; break; }
     if (full) break;
   }
+  // dark edge pixels that no other scene of the day covers stay (beyond the other swath, or the border of the mosaic)
+  if (out) helds.forEach(h => fill(out.data, h));
   return out;
 }
 
@@ -3858,6 +3862,8 @@ async function applyLayer() {
 
   currentCfg = { rec, s: S(rec), scenes, date: state.date };
   if (terrainOn && sunMode === "scene") apply3D();     // the sun follows the scene shown
+  // the habitat map follows the date: the menu names the version of the new date (issue #9)
+  $$("#layerlist .vegname").forEach(e => { e.textContent = vegOn(S(rec).veg) ? vegName(S(rec).veg) : "Choose one"; });
   updateDateInfo(rec, scenes);
   updateDateGrey();
   showSceneInfo(rec, scenes);
@@ -4430,7 +4436,7 @@ function layerBody(rec) {
   if (rec.source === "s2") {
     const l = el("div", "tog vrow");
     const small = () => vegOn(s.veg) ? vegName(s.veg) : "Choose one";
-    l.innerHTML = "<span>Vegetation mask<small></small></span>";
+    l.innerHTML = '<span>Vegetation mask<small class="vegname"></small></span>';
     l.querySelector("small").textContent = small();
     l.append(vegSelect(s.veg, v => { s.veg = v; l.querySelector("small").textContent = small(); onSettings(rec); }));
     body.append(l);

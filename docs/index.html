@@ -255,8 +255,8 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
     terrain information, the forest / vegetation mask, the swissTLM3D forest class, the broadleaf share of the
     Waldmischungsgrad LFI and the Nutzungsflächen category. Click the button again to switch it off.</p>
   <figure><img src="img/pixel-inspector.jpg" alt="Pixel inspector showing band and NDVI values" width="1400" height="900">
-    <figcaption><b>Fig. 6</b> The pixel inspector on a field: band values (stored number and reflectance), the NDVI and
-    the masks at this spot.</figcaption></figure>
+    <figcaption><b>Fig. 6</b> The pixel inspector on a field: band values (stored number and reflectance), the NDVI, the
+    masks at this spot and the parcel of the Nutzungsflächen (arable land, peas, code 537).</figcaption></figure>
 
   <h2 id="t7"><span class="n">7</span>Draw an area and get statistics</h2>
   <ol class="steps">
@@ -268,7 +268,9 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
   <p>You get the mean, median and other statistics with a histogram for the selected date, and a <b>time series</b>:
     the values of the area over a date range, which you can download as CSV.</p>
   <figure><img src="img/statistics.jpg" alt="Statistics and NDVI time series for a group of fields" width="1400" height="900">
-    <figcaption><b>Fig. 7</b> Statistics and NDVI time series of a group of fields in the Seeland.</figcaption></figure>
+    <figcaption><b>Fig. 7</b> Statistical info of NDVI for 112 km² of the Seeland. The area is large, so the box at the
+    top names the coarser grids (44 m for the selected date, 101 m for the time series) and offers <i>Full resolution
+    (10 m)</i> for both.</figcaption></figure>
 
   <h2 id="t8"><span class="n">8</span>Look at it in 3D</h2>
   <p>The <span class="key">3D</span> button, the last of the tools, lays the map and the satellite layer on the terrain.</p>
@@ -484,8 +486,9 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
       horizon).</li>
   </ul>
   <figure><img src="img/sun-time.jpg" alt="The sun time dialog with an evening sun over the Aletsch Glacier" width="1400" height="900">
-    <figcaption><b>Fig. 17</b> Sun time 13 August 2026, 16:45 UTC: the sun stands in the west, 19° above the horizon,
-    and lights the slopes facing it.</figcaption></figure>
+    <figcaption><b>Fig. 17</b> Sun time set with the sliders to 13 August 2026, 16:45 UTC: the sun stands in the west,
+    19° above the horizon, and lights the slopes facing it. <i>Scene time</i> returns to the time of the image
+    (10:22 UTC that day).</figcaption></figure>
   <h3 style="font-size:15px">What works in 3D</h3>
   <ul>
     <li>The <b>Basic</b> image download saves the 3D view as you see it (PNG or JPG, without scale bar, as a tilted view
