@@ -282,6 +282,8 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
     <li>Three more buttons appear above the tools: the <b>3D settings</b> (gear), the <b>sun shading</b> (light bulb)
       and the <b>sun time</b> (sun). The terrain is lit by the sun at the time of the satellite image; with the sun time
       you can light the mountains as in the morning or the evening.</li>
+    <li>For towns and forests, open the layers button and tick <b>3D buildings</b> or <b>3D trees</b> under
+      <i>3D objects</i> (experimental). Zoom in: they appear near the camera only.</li>
   </ol>
   <figure><img src="img/terrain-3d.jpg" alt="The Great Aletsch Glacier in 3D with the true color image and labels" width="1400" height="900">
     <figcaption><b>Fig. 8</b> The Great Aletsch Glacier in 3D: true color of 13 August 2026 on swissALTIRegio, looking
@@ -468,11 +470,23 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
       Igor, multidirectional), the <i>shading strength</i> and the <i>shadow</i>, <i>highlight</i> and <i>accent
       colours</i>. The colours are partly transparent, so the satellite image stays visible.</li>
     <li><b>Vertical terrain scaling</b> from 50 to 300 %: values above 100 % make the relief steeper.</li>
+    <li><b>Shadows of the 3D buildings and trees</b> (with the sun shading): the 3D objects cast shadows on each other
+      and on the ground around the centre of the map.</li>
     <li><b>Reset values</b> returns all settings except the height model to their defaults.</li>
   </ul>
   <figure><img src="img/3d-settings.jpg" alt="The 3D settings dialog next to the 3D view of the Aletsch Glacier" width="1400" height="900">
     <figcaption><b>Fig. 16</b> The 3D settings: height model, sun shading with its parameters, vertical terrain scaling,
     and the sources of the height models.</figcaption></figure>
+  <h3 style="font-size:15px">3D buildings and trees (experimental)</h3>
+  <ul>
+    <li>In 3D the layers button has a section <b>3D objects</b>: <i>3D buildings</i> (swissBUILDINGS3D) and <i>3D trees</i>,
+      the same 3D models as in the 3D view of map.geo.admin.ch. They are lit by the sun of the sun shading.</li>
+    <li>Only objects that would be at least a few pixels large are drawn: buildings up to about 3.4 km and trees up to about
+      1.4 km from the camera. Zoom in to see them.</li>
+    <li>They need a capable graphics card; on an older computer switch the shadows off in the 3D settings, or the trees.
+      With the height model swissSURFACE3D (which already contains buildings and trees) they stand partly inside the
+      terrain: use swissALTIRegio.</li>
+  </ul>
   <h3 style="font-size:15px">Sun shading (light bulb) and sun time (sun)</h3>
   <ul>
     <li>The <b>light bulb</b> switches the sun shading on and off. The terrain is lit from the direction and height of
