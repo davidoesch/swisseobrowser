@@ -15,20 +15,27 @@
 
 - The app is the single file `swisseo-browser.html` (no build, no backend). It belongs together with
   `README.md`, `CLAUDE.md`, `.github/workflows/pages.yml`, the issue forms in `.github/ISSUE_TEMPLATE/`, the
-  help pages in `docs/` and the thumbnails it references in `public/previews/`. Everything else is the upstream Copernicus Browser, kept only as a reference:
+  help pages in `docs/` and the thumbnails it references in `public/previews/`. Everything else is the original Copernicus Browser, kept only as a reference:
   do not modify it.
-- **Git: push only to the remote `origin`** (github.com/swisstopo/topo-swisseobrowser); local `main`
-  tracks `origin/main`. Never commit for or push to `upstream` (eu-cdse/copernicus-browser); its push URL
-  is disabled on purpose. `davidoesch` (github.com/davidoesch/swisseobrowser) is the former repository.
-- The upstream `.gitignore` ignores `.github`, so workflow and issue-form changes need `git add -f`.
+- **Git: this repository is a fork of swisstopo's.** Remotes:
+  - `origin` = github.com/davidoesch/swisseobrowser (the fork): **push only here**.
+  - `upstream` = github.com/swisstopo/topo-swisseobrowser: **fetch / pull only, never push**; its push URL is
+    `DISABLED` on purpose. Changes go to swisstopo only through a pull request the user opens themselves.
+  - Local `main` tracks `upstream/main` (so `git pull` gets swisstopo's updates) and pushes to `origin`
+    (`branch.main.pushRemote=origin`, `remote.pushDefault=origin`). Integrate updates with
+    `git pull --rebase upstream main` or a merge; never force-push to `origin/main` without the user asking.
+  - The Copernicus Browser (eu-cdse/copernicus-browser) is no longer a remote; its files remain only as a reference.
+- The Copernicus Browser `.gitignore` ignores `.github`, so workflow and issue-form changes need `git add -f`.
 - Issues: the Info tab writes the issue text itself (`ISSUE_KINDS` / `issueBody()` in the page, passed as `title` and
   `body`; pre-filling issue form fields by id did not work), always starting with the permalink. Keep its sections in
   sync with the forms in `.github/ISSUE_TEMPLATE/` (each with a required `permalink` field) and keep
   `blank_issues_enabled: true`, otherwise GitHub sends the link to the template chooser and drops the text.
 - Help and tutorial: `docs/index.html` (screenshots in `docs/img/`, JPEG, 1400 × 900 px views of the app), opened by
   the (i) button at the top right of the map. When a function is added or changed, update its section there too.
-- A push to `main` that changes the page, the README or `docs/` deploys GitHub Pages
-  (https://swisstopo.github.io/topo-swisseobrowser/).
+- A push to `main` that changes the page, the README or `docs/` deploys GitHub Pages of the repository it is
+  pushed to: the fork at https://davidoesch.github.io/swisseobrowser/; swisstopo's own deploy is
+  https://swisstopo.github.io/topo-swisseobrowser/. Links in the README, `docs/` and the issue forms point to
+  swisstopo's repository; leave them, so they stay correct when changes go upstream.
 
 ## Conventions
 
