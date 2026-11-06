@@ -40,7 +40,8 @@
   and favicon), not the logo of the Confederation, and everything that means "this website" points to the fork:
   `REPO` and `PUBLIC_URL` in the page (issues, copied links), the README link of the layer verification, the source
   link of the help page and the example links of the issue forms. The credits name swisstopo/topo-swisseobrowser as
-  the original. Links to swisstopo's existing issues (#2 … #16) stay as they are.
+  the original. Links to swisstopo's existing issues (#2 … #16) stay as they are. Feedback goes only through GitHub
+  issues of the fork (no e-mail addresses), and the page has no swisstopo Impressum or legal links.
 
 ## Conventions
 

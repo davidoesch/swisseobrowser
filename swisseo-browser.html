@@ -486,7 +486,7 @@ textarea.exdesc{height:46px;margin:4px 0 2px 24px;width:calc(100% - 24px);font-f
 .infobox{background:var(--blue-l);border-left:3px solid var(--blue);padding:7px 9px;margin:8px 0 2px;font-size:11.5px;line-height:1.45}
 .warnbox{background:#fdecea;border-left:3px solid var(--red);padding:7px 9px;margin:8px 0 2px;font-size:11.5px;line-height:1.45;color:#5a1010}
 .warn h4{color:var(--red)!important}
-/* Feedback (e-mail) and issue links in the Info tab, as the feedback popover of topo-drought-briefing */
+/* Feedback and issue links (GitHub issues) in the Info tab, as the feedback popover of topo-drought-briefing */
 .fb-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .fb-wrap{position:relative}
 .fb-pop{position:absolute;top:calc(100% + 5px);left:0;z-index:50;background:#fff;border:1px solid var(--border);border-radius:5px;
@@ -494,8 +494,6 @@ textarea.exdesc{height:46px;margin:4px 0 2px 24px;width:calc(100% - 24px);font-f
 .fb-pop a{display:block;padding:7px 12px;font-size:12.5px;color:var(--text);text-decoration:none;white-space:nowrap;cursor:pointer}
 .fb-pop a:hover{background:var(--hover);color:var(--blue)}
 ul.links{margin:0;padding-left:16px;font-size:12px;line-height:1.6}
-/* swisstopo legal links at the bottom of the Info tab */
-.legal{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:10px;padding-top:8px;border-top:1px solid var(--border);font-size:11.5px}
 table.kv{width:100%;border-collapse:collapse;font-size:11.5px}
 table.kv td,table.kv th{padding:3px 6px 3px 0;border-bottom:1px solid #0000000d;text-align:left;vertical-align:top}
 table.kv th{color:var(--blue);font-weight:700}
@@ -654,17 +652,17 @@ table.kv td:first-child{color:var(--muted)}
               website, adapting it from the Copernicus Browser. The indices were edited and tested manually in QGIS or with
               rasterio and GDAL.</p>
             <div class="fb-row">
-              <button class="action-btn" id="btnFeedback" title="Write an e-mail with the link to your current view (opens your mail app)">Feedback</button>
-              <div class="fb-wrap"><button class="action-btn" id="btnIssue" title="Open a GitHub issue with the link to your current view">Report an issue / improvement</button>
+              <div class="fb-wrap"><button class="action-btn" id="btnIssue" title="Feedback as a GitHub issue, with the link to your current view">Feedback / report an issue</button>
                 <div class="fb-pop" id="fbIssue" hidden>
+                  <a data-issue="feedback" target="_blank" rel="noopener">General feedback</a>
                   <a data-issue="01-layer.yml" target="_blank" rel="noopener">Fix or change a layer</a>
                   <a data-issue="02-text.yml" target="_blank" rel="noopener">Change a text or translation</a>
                   <a data-issue="03-problem.yml" target="_blank" rel="noopener">Report a general problem</a>
                   <a data-issue="04-idea.yml" target="_blank" rel="noopener">Suggest an improvement</a>
                   <a data-issue="" target="_blank" rel="noopener">All issue forms on GitHub</a></div></div>
             </div>
-            <div class="hint" style="margin-top:6px">Both include the link to exactly the view you see now (layer, date,
-              place, settings), so a sentence or two is enough. Issues need a GitHub account.</div>
+            <div class="hint" style="margin-top:6px">Feedback goes to GitHub as an issue (a free GitHub account is needed). It
+              includes the link to exactly the view you see now (layer, date, place, settings), so a sentence or two is enough.</div>
           </div></div>
         <div class="card"><h4>Selected date</h4>
           <div id="sceneInfo" style="font-size:12px;color:var(--muted)">No acquisition selected.</div></div>
@@ -854,12 +852,7 @@ table.kv td:first-child{color:var(--muted)}
             <a href="https://www.geocat.ch/geonetwork/srv/ger/catalog.search#/metadata/b07a4589-159b-4c3a-b1e7-dbdad11f7e62" target="_blank" rel="noopener">Waldmischungsgrad LFI</a>
             © BAFU / WSL. <a href="https://www.geocat.ch/datahub/dataset/ae183bc4-5c91-467e-89bc-85f390340efb" target="_blank" rel="noopener">Nutzungsflächen</a>
             © BLW and the cantons.
-            Layers of other WMS / WMTS services: © their providers. Not for operational use.</div>
-          <div class="legal">
-            <a href="https://www.swisstopo.admin.ch/en/impressum-federal-office-of-topography" target="_blank" rel="noopener">Impressum</a>
-            <a href="https://www.swisstopo.admin.ch/en/legal-framework" target="_blank" rel="noopener">Legal framework</a>
-            <a href="https://www.swisstopo.admin.ch/en/terms-and-conditions" target="_blank" rel="noopener">Terms and conditions</a>
-            <a href="https://www.swisstopo.admin.ch/en/swisstopo-netiquette-rules" target="_blank" rel="noopener">Netiquette</a></div></div>
+            Layers of other WMS / WMTS services: © their providers. Not for operational use.</div></div>
       </div>
     </aside>
 
@@ -7770,9 +7763,6 @@ async function showSceneInfo(rec, ids) {
 }
 
 /* ---- Feedback and issues: every message carries the permalink of the current view ---- */
-/* One address in "to", the other in "cc": a list in "to" needs a separator (comma or semicolon) that not every
-   mail client accepts (issue #1). */
-const FEEDBACK_TO = "david.oesch@swisstopo.ch", FEEDBACK_CC = "joan.sturm@swisstopo.ch";
 const REPO = "https://github.com/davidoesch/swisseobrowser";
 const PUBLIC_URL = "https://davidoesch.github.io/swisseobrowser/";
 /* The link to the current view; a local copy (file, localhost) links to the same view on the public website. */
@@ -7790,12 +7780,6 @@ function viewSummary() {
   return currentRec.name + " (" + currentRec.id + "), " + day + (layerOff ? ", layer hidden" : "") +
     (VERIFIED.has(currentRec.id) ? "" : ", BETA");
 }
-/* Feedback: an e-mail in the mail app of the computer (no web-mail links, issue #13). */
-function feedbackMail() {
-  const subj = "Feedback swissEO Browser", e = encodeURIComponent;
-  const body = "Link to my view: " + viewLink() + "\nOn the map: " + viewSummary() + "\n\nMy feedback:\n";
-  return "mailto:" + FEEDBACK_TO + "?cc=" + FEEDBACK_CC + "&subject=" + e(subj) + "&body=" + e(body);
-}
 function feedbackLinks() {
   const link = viewLink(), sum = viewSummary();
   // The issue text is written here and passed as title + body, the URL parameters GitHub has always filled in
@@ -7810,6 +7794,8 @@ function feedbackLinks() {
 }
 const ticks = items => items.map(t => "- [ ] " + t).join("\n");
 const ISSUE_KINDS = {
+  // general feedback: a blank issue (no form of its own), with the view and room for the message
+  "feedback": { title: "[FEEDBACK] ", parts: [["On the map", "{sum}"], ["My feedback", ""]] },
   "01-layer.yml": { title: "[LAYER] ", parts: [["Layer", "{sum}"],
     ["What is wrong? (tick one)", ticks(["Wrong values (index, reflectance, product value)", "Colours, legend or rendering",
       "Dates or data missing", "Masks (clouds, shadows, vegetation, custom mask)", "Statistics, time series or spectral explorer",
@@ -7834,7 +7820,6 @@ function issueBody(k, link, sum, browser) {
   return "### Link to the view (permalink)\n\n" + link + "\n\n" + k.parts.map(([h, t]) =>
     "### " + h + "\n\n" + t.replace("{sum}", sum).replace("{browser}", browser)).join("\n\n") + "\n";
 }
-$("#btnFeedback").onclick = () => { location.href = feedbackMail(); };
 $("#btnIssue").onclick = e => {
   e.stopPropagation();
   const pop = $("#fbIssue"), open = pop.hidden;

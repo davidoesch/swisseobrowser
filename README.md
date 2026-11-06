@@ -3,7 +3,8 @@
 A minimal, browser-only viewer for swisstopo's **swissEO** satellite products, modelled on the
 [Copernicus Browser](https://browser.dataspace.copernicus.eu/) workflow.
 
-**Live version: <https://swisstopo.github.io/topo-swisseobrowser/>**
+**Live version: <https://davidoesch.github.io/swisseobrowser/>** (a private fork of
+[swisstopo/topo-swisseobrowser](https://github.com/swisstopo/topo-swisseobrowser))
 
 [![Ask DeepWiki](https://img.shields.io/badge/DeepWiki-Ask%20about%20this%20repo-003F6B)](https://deepwiki.com/swisstopo/topo-swisseobrowser)
 **Search and ask questions about this repository:** [DeepWiki](https://deepwiki.com/swisstopo/topo-swisseobrowser)
@@ -544,11 +545,10 @@ The swissEO Browser therefore always uses the physical reflectance.
   [topo-drought-briefing](https://github.com/swisstopo/topo-drought-briefing): every message carries the **permalink of the
   current view** and a one-line summary of what is on the map (layer, id, date of its data, BETA; the compare list or the
   WMS / WMTS layer), so a sentence or two is enough. A local copy links to the same view on the public website.
-  - *Feedback*: an e-mail to david.oesch@swisstopo.ch and joan.sturm@swisstopo.ch, opened in the mail app of the computer;
-  - *Report an issue / improvement*: a new GitHub issue in this repository whose title and text the viewer writes
-    (URL parameters `title` and `body`), with the permalink, the layer and, for problems, the browser already in it, and
-    the choices as tick boxes: *Fix or change a layer*, *Change a text or translation*, *Report a general problem*,
-    *Suggest an improvement*. The same four kinds are issue forms ([`.github/ISSUE_TEMPLATE`](.github/ISSUE_TEMPLATE)) for
+  - *Feedback / report an issue*: a new GitHub issue in this repository (no e-mail) whose title and text the viewer
+    writes (URL parameters `title` and `body`), with the permalink, the layer and, for problems, the browser already in
+    it, and the choices as tick boxes: *General feedback* (a blank issue), *Fix or change a layer*, *Change a text or
+    translation*, *Report a general problem*, *Suggest an improvement*. The last four kinds are also issue forms ([`.github/ISSUE_TEMPLATE`](.github/ISSUE_TEMPLATE)) for
     issues opened directly on GitHub, each with a required permalink field. Pre-filling the form fields from the URL
     did not work, hence the text; for it blank issues have to stay enabled (`config.yml`). Issues need a GitHub account,
     and *Issues* must be switched on in the repository settings.
@@ -622,7 +622,7 @@ Firefox on a laptop:
 
 ## Running it
 
-Use the live version at <https://swisstopo.github.io/topo-swisseobrowser/>, or run it locally by serving the
+Use the live version at <https://davidoesch.github.io/swisseobrowser/>, or run it locally by serving the
 folder with any static web server:
 
 ```bash
