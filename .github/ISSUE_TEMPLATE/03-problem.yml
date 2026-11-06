@@ -12,7 +12,7 @@ body:
     attributes:
       label: Link to the view (permalink)
       description: Filled in by the viewer. Otherwise press *Copy link* at the top left of the map and paste it here.
-      placeholder: "https://swisstopo.github.io/topo-swisseobrowser/?…"
+      placeholder: "https://davidoesch.github.io/swisseobrowser/?…"
     validations:
       required: true
   - type: dropdown

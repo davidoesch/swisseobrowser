@@ -35,8 +35,12 @@
   the (i) button at the top right of the map. When a function is added or changed, update its section there too.
 - A push to `main` that changes the page, the README or `docs/` deploys GitHub Pages of the repository it is
   pushed to: the fork at https://davidoesch.github.io/swisseobrowser/; swisstopo's own deploy is
-  https://swisstopo.github.io/topo-swisseobrowser/. Links in the README, `docs/` and the issue forms point to
-  swisstopo's repository; leave them, so they stay correct when changes go upstream.
+  https://swisstopo.github.io/topo-swisseobrowser/.
+- **Identity of the fork**: this is a private fork, so the page and the help page show a square Swiss flag (header
+  and favicon), not the logo of the Confederation, and everything that means "this website" points to the fork:
+  `REPO` and `PUBLIC_URL` in the page (issues, copied links), the README link of the layer verification, the source
+  link of the help page and the example links of the issue forms. The credits name swisstopo/topo-swisseobrowser as
+  the original. Links to swisstopo's existing issues (#2 … #16) stay as they are.
 
 ## Conventions
 

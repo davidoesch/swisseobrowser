@@ -1,7 +1,7 @@
 blank_issues_enabled: true
 contact_links:
   - name: Feedback by e-mail
-    url: https://swisstopo.github.io/topo-swisseobrowser/
+    url: https://davidoesch.github.io/swisseobrowser/
     about: For general feedback, use Feedback in the Info tab of the swissEO Browser (opens an e-mail with the link to your view).
   - name: swissEO products of swisstopo
     url: https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-s2-sr

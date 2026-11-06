@@ -13,7 +13,7 @@ body:
     attributes:
       label: Link to the view (permalink)
       description: Filled in by the viewer. Otherwise press *Copy link* at the top left of the map and paste it here.
-      placeholder: "https://swisstopo.github.io/topo-swisseobrowser/?zoom=…&center=…&layerId=…"
+      placeholder: "https://davidoesch.github.io/swisseobrowser/?zoom=…&center=…&layerId=…"
     validations:
       required: true
   - type: input

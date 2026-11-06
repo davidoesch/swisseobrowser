@@ -648,7 +648,7 @@ table.kv td:first-child{color:var(--muted)}
               scripts). Every layer that has <b>not yet</b> passed this check carries the label
               <span class="ver">BETA</span> behind its name: it still needs to be verified, and its values may be wrong.
               Verified layers carry no label. The status is kept as a checklist in the
-              <a href="https://github.com/swisstopo/topo-swisseobrowser#layer-verification" target="_blank" rel="noopener">README</a>
+              <a href="https://github.com/davidoesch/swisseobrowser#layer-verification" target="_blank" rel="noopener">README</a>
               and applied to the website on every deployment.</p>
             <p>Please note that AI (Claude Code with the Opus 5.5 model, medium effort) was used extensively to prepare this
               website, adapting it from the Copernicus Browser. The indices were edited and tested manually in QGIS or with
@@ -821,7 +821,8 @@ table.kv td:first-child{color:var(--muted)}
           <ul class="links">
             <li><a href="https://github.com/eu-cdse/copernicus-browser" target="_blank" rel="noopener">eu-cdse/copernicus-browser</a>:
               the Copernicus Browser, model for the user interface, themes, layer descriptions and previews</li>
-            <li><a href="https://github.com/swisstopo/topo-swisseobrowser" target="_blank" rel="noopener">swisstopo/topo-swisseobrowser</a>: this website</li>
+            <li><a href="https://github.com/davidoesch/swisseobrowser" target="_blank" rel="noopener">davidoesch/swisseobrowser</a>: this website,
+              a private fork of <a href="https://github.com/swisstopo/topo-swisseobrowser" target="_blank" rel="noopener">swisstopo/topo-swisseobrowser</a></li>
             <li><a href="https://github.com/swisstopo/topo-satromo-v2" target="_blank" rel="noopener">swisstopo/topo-satromo-v2</a>:
               processing of the swissEO products (S2-SR, VHI, NDVIdiff, NDVIz, vegetation masks)</li>
             <li><a href="https://github.com/swisstopo/topo-drought-briefing" target="_blank" rel="noopener">swisstopo/topo-drought-briefing</a>: colour scheme</li>
@@ -7772,8 +7773,8 @@ async function showSceneInfo(rec, ids) {
 /* One address in "to", the other in "cc": a list in "to" needs a separator (comma or semicolon) that not every
    mail client accepts (issue #1). */
 const FEEDBACK_TO = "david.oesch@swisstopo.ch", FEEDBACK_CC = "joan.sturm@swisstopo.ch";
-const REPO = "https://github.com/swisstopo/topo-swisseobrowser";
-const PUBLIC_URL = "https://swisstopo.github.io/topo-swisseobrowser/";
+const REPO = "https://github.com/davidoesch/swisseobrowser";
+const PUBLIC_URL = "https://davidoesch.github.io/swisseobrowser/";
 /* The link to the current view; a local copy (file, localhost) links to the same view on the public website. */
 function viewLink() {
   writeUrl();
@@ -9229,7 +9230,7 @@ if (activeHl) { const e = $(".hl.on"); if (e) e.scrollIntoView({ block: "nearest
 if (!VERIFIED_IDS) {
   const readme = u => fetch(u).then(r => r.ok ? r.text() : "").then(md => parseVerified(md) || []).catch(() => []);
   (location.protocol === "file:" ? Promise.resolve([]) : readme("README.md"))      // fetch cannot read files
-    .then(ids => ids.length ? ids : readme("https://raw.githubusercontent.com/swisstopo/topo-swisseobrowser/main/README.md"))
+    .then(ids => ids.length ? ids : readme("https://raw.githubusercontent.com/davidoesch/swisseobrowser/main/README.md"))
     .then(ids => {
       ids.forEach(id => VERIFIED.add(id));
       if (ids.length) { renderLayerList(); renderCompare(); }
