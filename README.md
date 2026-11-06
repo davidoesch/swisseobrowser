@@ -203,6 +203,10 @@ The swissEO Browser therefore always uses the physical reflectance.
 
   Switching to 3D also switches the labels on ([#15](https://github.com/swisstopo/topo-swisseobrowser/issues/15)); back
   in 2D they stay on (the layer button switches them off). A link with `3d=true` keeps its own `labels` setting.
+  In 3D the point labels (places, peaks, points of interest) float 50 m above the terrain (`symbol-height-offset`,
+  MapLibre 6.6+, measured from the ground; `LABEL_LIFT`), so the 3D buildings and trees do not cover them; the 3D
+  objects are drawn above the sun shading and below the labels. Labels along lines (streets, rivers) cannot be lifted
+  and stay on the ground. In 2D the offset is removed.
   - **3D objects** (experimental; layers button, section *3D objects*, only in 3D): *3D buildings* and *3D trees*,
     swisstopo's 3D Tiles `ch.swisstopo.swissbuildings3d.3d` and `ch.swisstopo.vegetation.3d`
     ([docs.geo.admin.ch](https://docs.geo.admin.ch/visualize-data/3d-tiles.html)), the tilesets of map.geo.admin.ch's

@@ -708,7 +708,9 @@ table.kv td:first-child{color:var(--muted)}
               swissALTIRegio or the swissSURFACE3D surface model at 10 m on the swissEO bucket; sun shading and its
               parameters; vertical terrain scaling), <i>Sun shading</i> (light bulb: a hillshade lit from the sun at the map
               centre) and <i>Sun time</i> (sun: date and time of that sun; by default the time of the scene shown, the middle of
-              two orbits). Switching to 3D also switches the labels on. A sky, shadows cast by mountains, a lens flare
+              two orbits). Switching to 3D also switches the labels on; the names of places, peaks and points of interest
+              then float 50 m above the terrain, so buildings and trees do not cover them (street and river names stay on the
+              ground). A sky, shadows cast by mountains, a lens flare
               and anaglyph stereo of the Copernicus Browser are not available in MapLibre.</p>
             <p><b>3D objects (experimental):</b> in 3D the layers button offers <i>3D buildings</i> (swissBUILDINGS3D)
               and <i>3D trees</i>, the 3D Tiles of map.geo.admin.ch's 3D view (<a href="https://docs.geo.admin.ch/visualize-data/3d-tiles.html"
@@ -1529,6 +1531,16 @@ function setBasemap(name) {
   basemapCtl.sync();
   writeUrlSoon();
 }
+/* In 3D the point labels (places, peaks, POIs) float LABEL_LIFT meters above the terrain, so the 3D buildings and
+   trees do not cover them (symbol-height-offset, MapLibre 6.6+, measured from the ground); labels along lines (roads,
+   rivers) cannot be lifted and stay on the ground. In 2D the property is removed again. */
+const LABEL_LIFT = 50;
+function liftLabels() {
+  labelIds.forEach(id => {
+    if (!map.getLayer(id) || (map.getLayoutProperty(id, "symbol-placement") || "point") !== "point") return;
+    map.setLayoutProperty(id, "symbol-height-offset", terrainOn ? LABEL_LIFT : undefined);
+  });
+}
 /* The labels: swisstopo's vector labels (section 2c). */
 async function setLabels(on) {
   labelsWanted = on;
@@ -1544,6 +1556,7 @@ async function setLabels(on) {
     if (!labelsWanted || labelIds.length) return;
     ls.forEach(l => map.addLayer(l, "z-over"));
     labelIds = ls.map(l => l.id);
+    liftLabels();
   } catch (e) {
     console.warn("labels", e);
     if (labelsWanted) setStatus("The swisstopo labels could not be loaded.");
@@ -1633,7 +1646,7 @@ function apply3D() {
                   "hillshade-exaggeration": sun.alt > 0 ? t3d.hsExag : Math.min(1, t3d.hsExag + 0.3),
                   "hillshade-shadow-color": rgba(t3d.shadow, 0.55), "hillshade-highlight-color": rgba(t3d.highlight, 0.2),
                   "hillshade-accent-color": rgba(t3d.accent, 0.3) };
-  const before = labelIds.find(id => map.getLayer(id)) || "z-over";
+  const before = map.getLayer("obj3d") ? "obj3d" : labelIds.find(id => map.getLayer(id)) || "z-over";
   if (t3d.shade && map.getLayer("hs") && map.getLayer("hs").source !== demLayer.id) map.removeLayer("hs");
   if (t3d.shade && !map.getLayer("hs")) map.addLayer({ id: "hs", type: "hillshade", source: demLayer.id, paint }, before);
   else if (t3d.shade) Object.entries(paint).forEach(([k, v]) => map.setPaintProperty("hs", k, v));
@@ -1694,6 +1707,7 @@ function setTerrain3D(on, cam) {
   $("#btn3d").title = on ? "Back to the flat map (2D)" : "3D terrain";
   basemapCtl.sync();
   syncObj3d();
+  liftLabels();
   splitFor3D();
   writeUrlSoon();
 }
@@ -2177,7 +2191,8 @@ async function syncObj3d() {
   try { await loadThree(); }
   catch (e) { console.warn("three.js", e); setStatus("The 3D objects could not be loaded (three.js)."); return; }
   if (!terrainOn || !obj3dWanted.size) return;
-  if (!obj3dLayer) { obj3dLayer = makeObj3dLayer(); map.addLayer(obj3dLayer, "z-aoi"); }
+  // above the sun shading, below the labels: the lifted labels stay visible over the roofs (section 2b)
+  if (!obj3dLayer) { obj3dLayer = makeObj3dLayer(); map.addLayer(obj3dLayer, labelIds.find(id => map.getLayer(id)) || "z-over"); }
   obj3dLayer.sync();
 }
 
