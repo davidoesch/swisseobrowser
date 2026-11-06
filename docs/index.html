@@ -18,10 +18,9 @@ body{margin:0;font:15px/1.6 Arial,Helvetica,"Noto Sans",sans-serif;color:var(--t
 a{color:var(--blue)}
 header{position:sticky;top:0;z-index:10;background:#fff;border-bottom:3px solid var(--red);box-shadow:0 1px 4px rgba(0,0,0,.08)}
 .hbar{max-width:1240px;margin:0 auto;display:flex;align-items:center;gap:14px;padding:10px 16px}
-/* Confederation logo as on map.geo.admin.ch (ConfederationFullLogo.vue) and in the menu of the app */
+/* square Swiss flag, as in the menu of the app */
 .conf-logo{display:flex;gap:.8rem;text-decoration:none;color:#000;flex:0 0 auto}
-.conf-logo .swiss-flag{width:2rem;height:36px;flex:0 0 2rem}
-.conf-txt{display:flex;flex-direction:column;font-size:7.5pt;line-height:10.35pt;letter-spacing:.078em;white-space:nowrap}
+.conf-logo .swiss-flag{width:36px;height:36px;flex:0 0 36px}
 .hbar .sep{width:1px;align-self:stretch;background:var(--border);margin:0 4px}
 .hbar .t{font-size:18px;font-weight:700;color:var(--blue)}
 .hbar .t small{font-weight:400;color:var(--muted);font-size:14px;margin-left:6px}
@@ -82,7 +81,7 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
   .hbar .t{font-size:16px;white-space:nowrap}
   .hbar .open{padding:7px 10px;font-size:13px}
   .hbar .open .long{display:none}
-  .conf-txt,.hbar .sep{display:none}
+  .hbar .sep{display:none}
   h1{font-size:23px} h2{font-size:19px}
 }
 </style>
@@ -90,10 +89,8 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
 <body>
 <header><div class="hbar">
   <a class="conf-logo" href="../swisseo-browser.html" title="swissEO Browser">
-    <!-- Swiss flag of web-mapviewer (assets/svg/swiss-flag.svg), as in ConfederationFullLogo.vue -->
-    <svg class="swiss-flag" viewBox="0 0 604 669" aria-hidden="true"><path fill="#D52B1E" d="M302,2 C 402,2 502,19 602,52 C 602,286 604,534 302,667 C 0,534 2,286 2,52 C 102,19 202,2 302,2 z"/><path fill="#fff" d="M102,242 h140 v-140 h120 v140 h140 v120 h-140 v140 h-120 v-140 h-140 z"/></svg>
-    <div class="conf-txt"><span>Schweizerische Eidgenossenschaft</span><span>Confédération suisse</span>
-      <span>Confederazione Svizzera</span><span>Confederaziun svizra</span></div>
+    <!-- square Swiss flag (a private fork, not the logo of the Confederation) -->
+    <svg class="swiss-flag" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" fill="#D52B1E"/><path fill="#fff" d="M13 6h6v7h7v6h-7v7h-6v-7H6v-6h7z"/></svg>
   </a>
   <span class="sep" aria-hidden="true"></span>
   <div class="t">swissEO Browser<span class="beta">BETA</span><small>Help and tutorial</small></div>
