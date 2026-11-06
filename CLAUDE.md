@@ -21,9 +21,10 @@
   - `origin` = github.com/davidoesch/swisseobrowser (the fork): **push only here**.
   - `upstream` = github.com/swisstopo/topo-swisseobrowser: **fetch / pull only, never push**; its push URL is
     `DISABLED` on purpose. Changes go to swisstopo only through a pull request the user opens themselves.
-  - Local `main` tracks `upstream/main` (so `git pull` gets swisstopo's updates) and pushes to `origin`
-    (`branch.main.pushRemote=origin`, `remote.pushDefault=origin`). Integrate updates with
-    `git pull --rebase upstream main` or a merge; never force-push to `origin/main` without the user asking.
+  - Local `main` tracks `origin/main` (so VS Code's Sync / Push goes to the fork) and pushes to `origin`
+    (`branch.main.pushRemote=origin`, `remote.pushDefault=origin`). Get swisstopo's updates explicitly with
+    `git pull upstream main` (or `--rebase`), then `git push origin main`; never force-push to `origin/main`
+    without the user asking.
   - The Copernicus Browser (eu-cdse/copernicus-browser) is no longer a remote; its files remain only as a reference.
 - The Copernicus Browser `.gitignore` ignores `.github`, so workflow and issue-form changes need `git add -f`.
 - Issues: the Info tab writes the issue text itself (`ISSUE_KINDS` / `issueBody()` in the page, passed as `title` and
