@@ -1531,15 +1531,19 @@ function setBasemap(name) {
   basemapCtl.sync();
   writeUrlSoon();
 }
-/* In 3D the point labels (places, peaks, POIs) float LABEL_LIFT meters above the terrain, so the 3D buildings and
-   trees do not cover them (symbol-height-offset, MapLibre 6.6+, measured from the ground); labels along lines (roads,
-   rivers) cannot be lifted and stay on the ground. In 2D the property is removed again. */
+/* In 3D the point labels (places, peaks, POIs) float LABEL_LIFT meters above the terrain (symbol-height-offset,
+   MapLibre 6.6+, measured from the ground) and are drawn after the 3D buildings and trees, which do not cover them;
+   the labels along lines (streets, rivers) cannot be lifted, stay on the ground and are drawn before the 3D objects,
+   which cover them where they stand in front. In 2D the offset is removed and the style's order restored. */
 const LABEL_LIFT = 50;
-function liftLabels() {
-  labelIds.forEach(id => {
-    if (!map.getLayer(id) || (map.getLayoutProperty(id, "symbol-placement") || "point") !== "point") return;
-    map.setLayoutProperty(id, "symbol-height-offset", terrainOn ? LABEL_LIFT : undefined);
-  });
+function arrangeLabels() {
+  const ids = labelIds.filter(id => map.getLayer(id));
+  const point = id => (map.getLayoutProperty(id, "symbol-placement") || "point") === "point";
+  ids.filter(point).forEach(id => map.setLayoutProperty(id, "symbol-height-offset", terrainOn ? LABEL_LIFT : undefined));
+  if (map.getLayer("obj3d")) {
+    ids.filter(id => !point(id)).forEach(id => map.moveLayer(id, "obj3d"));     // each in turn: the order is kept
+    ids.filter(point).forEach(id => map.moveLayer(id, "z-over"));
+  } else ids.forEach(id => map.moveLayer(id, "z-over"));
 }
 /* The labels: swisstopo's vector labels (section 2c). */
 async function setLabels(on) {
@@ -1556,7 +1560,7 @@ async function setLabels(on) {
     if (!labelsWanted || labelIds.length) return;
     ls.forEach(l => map.addLayer(l, "z-over"));
     labelIds = ls.map(l => l.id);
-    liftLabels();
+    arrangeLabels();
   } catch (e) {
     console.warn("labels", e);
     if (labelsWanted) setStatus("The swisstopo labels could not be loaded.");
@@ -1646,7 +1650,7 @@ function apply3D() {
                   "hillshade-exaggeration": sun.alt > 0 ? t3d.hsExag : Math.min(1, t3d.hsExag + 0.3),
                   "hillshade-shadow-color": rgba(t3d.shadow, 0.55), "hillshade-highlight-color": rgba(t3d.highlight, 0.2),
                   "hillshade-accent-color": rgba(t3d.accent, 0.3) };
-  const before = map.getLayer("obj3d") ? "obj3d" : labelIds.find(id => map.getLayer(id)) || "z-over";
+  const before = map.getLayersOrder().find(id => id === "obj3d" || labelIds.includes(id)) || "z-over";
   if (t3d.shade && map.getLayer("hs") && map.getLayer("hs").source !== demLayer.id) map.removeLayer("hs");
   if (t3d.shade && !map.getLayer("hs")) map.addLayer({ id: "hs", type: "hillshade", source: demLayer.id, paint }, before);
   else if (t3d.shade) Object.entries(paint).forEach(([k, v]) => map.setPaintProperty("hs", k, v));
@@ -1707,7 +1711,7 @@ function setTerrain3D(on, cam) {
   $("#btn3d").title = on ? "Back to the flat map (2D)" : "3D terrain";
   basemapCtl.sync();
   syncObj3d();
-  liftLabels();
+  arrangeLabels();
   splitFor3D();
   writeUrlSoon();
 }
@@ -2184,15 +2188,19 @@ async function syncObj3d() {
   obj3dAttribution();
   const want = terrainOn && obj3dWanted.size > 0;
   if (!want) {
-    if (obj3dLayer && map.getLayer("obj3d")) map.removeLayer("obj3d");
+    if (obj3dLayer && map.getLayer("obj3d")) { map.removeLayer("obj3d"); arrangeLabels(); }
     obj3dLayer = null;
     return;
   }
   try { await loadThree(); }
   catch (e) { console.warn("three.js", e); setStatus("The 3D objects could not be loaded (three.js)."); return; }
   if (!terrainOn || !obj3dWanted.size) return;
-  // above the sun shading, below the labels: the lifted labels stay visible over the roofs (section 2b)
-  if (!obj3dLayer) { obj3dLayer = makeObj3dLayer(); map.addLayer(obj3dLayer, labelIds.find(id => map.getLayer(id)) || "z-over"); }
+  // above the sun shading; the street and river names below, the lifted point labels above it (arrangeLabels)
+  if (!obj3dLayer) {
+    obj3dLayer = makeObj3dLayer();
+    map.addLayer(obj3dLayer, "z-over");
+    arrangeLabels();
+  }
   obj3dLayer.sync();
 }
 
