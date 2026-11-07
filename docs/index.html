@@ -442,7 +442,8 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
   <h3 id="vis-base">Basemaps and labels</h3>
   <p>Hover the layers button at the top right of the map (left of the <span class="key">i</span>), as in the Copernicus
     Browser, to choose the <b>basemap</b>: <i>Map</i> (swisstopo national map), <i>SWISSIMAGE</i> (aerial photo),
-    <i>Map Grey</i> or <i>None</i>. Under <i>Map overlays</i>, <b>Labels</b> writes the names of places, roads, peaks and
+    <i>Map Grey</i> or <i>None</i>; in 3D also the <i>swissTLM map for 3D</i>, the background of the 3D view of
+    map.geo.admin.ch. Under <i>Map overlays</i>, <b>Labels</b> writes the names of places, roads, peaks and
     lakes from swisstopo's base map above the satellite data, as sharp text at every scale (in 3D upright and facing you).
     The names stop at the border of Switzerland and Liechtenstein.</p>
 
@@ -462,8 +463,9 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
   <p>In 3D three buttons appear above the image download, as in the Copernicus Browser:</p>
   <h3 style="font-size:15px">3D settings (gear)</h3>
   <ul>
-    <li><b>Height model</b>: <i>swissALTIRegio</i>, swisstopo's 10 m model of the bare terrain of Switzerland and its
-      border regions (the default), or <i>swissSURFACE3D 10 m</i>, the surface with buildings and trees, resampled to
+    <li><b>Height model</b>: <i>swissALTI3D</i>, swisstopo's 0.5 m model of the bare terrain of Switzerland (the
+      default; further away and beyond Switzerland swissALTIRegio), <i>swissALTIRegio</i>, the 10 m model of Switzerland
+      and its border regions, or <i>swissSURFACE3D 10 m</i>, the surface with buildings and trees, resampled to
       10 m by swissEO (beyond Switzerland and in its gaps the heights of swissALTIRegio).</li>
     <li><b>Sun shading of the terrain</b> and its parameters: the <i>shading method</i> (combined, standard, basic,
       Igor, multidirectional), the <i>shading strength</i> and the <i>shadow</i>, <i>highlight</i> and <i>accent
@@ -476,17 +478,18 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
   <figure><img src="img/3d-settings.jpg" alt="The 3D settings dialog next to the 3D view of the Aletsch Glacier" width="1400" height="900">
     <figcaption><b>Fig. 16</b> The 3D settings: height model, sun shading with its parameters, vertical terrain scaling,
     and the sources of the height models.</figcaption></figure>
-  <h3 style="font-size:15px">3D buildings and trees (experimental)</h3>
+  <h3 style="font-size:15px">3D buildings, trees, bridges and cableways (experimental)</h3>
   <ul>
-    <li>In 3D the layers button has a section <b>3D objects</b>: <i>3D buildings</i> (swissBUILDINGS3D) and <i>3D trees</i>,
-      the same 3D models as in the 3D view of map.geo.admin.ch. They are lit by the sun of the sun shading.</li>
+    <li>In 3D the layers button has a section <b>3D objects</b>: <i>3D buildings</i> (swissBUILDINGS3D), <i>3D trees</i>
+      and <i>3D bridges, cableways</i> (swissTLM3D), the same 3D models as in the 3D view of map.geo.admin.ch. They are lit by the sun of the sun shading.</li>
     <li>In 3D the names of places, peaks and points of interest float 50 m above the ground, so the buildings and trees
-      do not hide them. Street and river names stay on the ground, behind the buildings and trees in front of them.</li>
+      do not hide them. Street and river names stay on the ground, behind the buildings and trees in front of them, and
+      lake names lie flat on the water.</li>
     <li>Only objects that would be at least a few pixels large are drawn: buildings up to about 3.4 km and trees up to about
       1.4 km from the camera. Zoom in to see them.</li>
     <li>They need a capable graphics card; on an older computer switch the shadows off in the 3D settings, or the trees.
       With the height model swissSURFACE3D (which already contains buildings and trees) they stand partly inside the
-      terrain: use swissALTIRegio.</li>
+      terrain: use swissALTI3D.</li>
   </ul>
   <h3 style="font-size:15px">Sun shading (light bulb) and sun time (sun)</h3>
   <ul>
@@ -640,7 +643,9 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--border);padd
       forest, at the end of July, August and September</td>
       <td><a href="https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-ndvidiff" target="_blank" rel="noopener">NDVIdiff</a>,
       <a href="https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-ndviz" target="_blank" rel="noopener">NDVIz</a>, swisstopo</td></tr>
-    <tr><td>swissALTIRegio</td><td>Height model of the 3D view (default), 10 m</td>
+    <tr><td>swissALTI3D</td><td>Height model of the 3D view (default), 0.5 m, Switzerland</td>
+      <td><a href="https://www.swisstopo.admin.ch/en/height-model-swissalti3d" target="_blank" rel="noopener">swisstopo</a></td></tr>
+    <tr><td>swissALTIRegio</td><td>Height model of the 3D view further away and beyond Switzerland (option), 10 m</td>
       <td><a href="https://www.geocat.ch/datahub/dataset/f7f058e9-288b-4c55-8f4e-6360880dbb59" target="_blank" rel="noopener">swisstopo, metadata on geocat.ch</a></td></tr>
     <tr><td>swissSURFACE3D, 10 m</td><td>Surface model of the 3D view (option), resampled to 10 m by swissEO</td>
       <td><a href="https://www.swisstopo.admin.ch/en/height-model-swisssurface3d" target="_blank" rel="noopener">swisstopo</a></td></tr>

@@ -700,25 +700,28 @@ table.kv td:first-child{color:var(--muted)}
               drawn as text above the data layers. The tiles are in Web Mercator and are moved into the LV95 grid in the browser.
               The basic image download can include them; the high-res print and the timelapse, which are drawn away from the
               map, are without labels.</p>
-            <p><b>3D terrain:</b> the <i>3D</i> button drapes the map over swissALTIRegio, swisstopo's 10 m height model
-              (one COG on <code>data.geo.admin.ch</code>, <a href="https://www.geocat.ch/datahub/dataset/f7f058e9-288b-4c55-8f4e-6360880dbb59"
-              target="_blank" rel="noopener">metadata on geocat.ch</a>), turned into terrain in the browser. Tilt and turn the map with the
+            <p><b>3D terrain:</b> the <i>3D</i> button drapes the map over <a href="https://www.swisstopo.admin.ch/en/height-model-swissalti3d" target="_blank"
+              rel="noopener">swissALTI3D</a>, swisstopo's 0.5 m terrain model of Switzerland (one COG per km² on
+              <code>data.geo.admin.ch</code>, the latest release of each), close to the camera; further away and beyond
+              Switzerland over swissALTIRegio, the 10 m model (<a href="https://www.geocat.ch/datahub/dataset/f7f058e9-288b-4c55-8f4e-6360880dbb59"
+              target="_blank" rel="noopener">metadata on geocat.ch</a>), both turned into terrain in the browser. Tilt and turn the map with the
               right mouse button or Ctrl + drag; the compass resets it; <i>2D</i> returns to the flat map. In 3D the compare
               list uses the opacity effect, and three more tools appear: <i>3D settings</i> (gear: the height model,
-              swissALTIRegio or the swissSURFACE3D surface model at 10 m on the swissEO bucket; sun shading and its
+              swissALTI3D, swissALTIRegio or the swissSURFACE3D surface model at 10 m on the swissEO bucket; sun shading and its
               parameters; vertical terrain scaling), <i>Sun shading</i> (light bulb: a hillshade lit from the sun at the map
               centre) and <i>Sun time</i> (sun: date and time of that sun; by default the time of the scene shown, the middle of
               two orbits). Switching to 3D also switches the labels on; the names of places, peaks and points of interest
-              then float 50 m above the terrain, so buildings and trees do not cover them (street and river names stay on the
+              then float 50 m above the terrain, so buildings and trees do not cover them (street, river and lake names stay on the
               ground). A sky, shadows cast by mountains, a lens flare
               and anaglyph stereo of the Copernicus Browser are not available in MapLibre.</p>
-            <p><b>3D objects (experimental):</b> in 3D the layers button offers <i>3D buildings</i> (swissBUILDINGS3D)
-              and <i>3D trees</i>, the 3D Tiles of map.geo.admin.ch's 3D view (<a href="https://docs.geo.admin.ch/visualize-data/3d-tiles.html"
+            <p><b>3D objects (experimental):</b> in 3D the layers button offers <i>3D buildings</i> (swissBUILDINGS3D),
+              <i>3D trees</i> and <i>3D bridges, cableways</i> (swissTLM3D), the 3D Tiles of map.geo.admin.ch's 3D view (<a href="https://docs.geo.admin.ch/visualize-data/3d-tiles.html"
               target="_blank" rel="noopener">docs.geo.admin.ch</a>), drawn with three.js and lit by the sun of the sun shading.
               To keep the map fluid, objects smaller than a few pixels are left out: buildings beyond about 3.4 km, trees
               beyond about 1.4 km from the camera (on a screen 760 px high). With the sun shading on, they cast shadows on each
               other and on the terrain around the map centre (<i>3D settings</i>). They need a capable graphics card: on an
-              older integrated one the frame rate about halves.</p>
+              older integrated one the frame rate about halves. In 3D the basemaps also offer the <i>swissTLM map for 3D</i>
+              (WMTS <code>ch.swisstopo.swisstlm3d-karte-farbe.3d</code>), the background of map.geo.admin.ch's 3D view.</p>
             <p><b>Map layout:</b> at the top left the date and acquisitions on the map, the <i>Copy link</i> (chain) and
               <i>Pixel inspector</i> ((i) with a pointer) buttons;
               at the top right the place search, the layer button and the help (<i>i</i>), below it the area of interest and
@@ -849,6 +852,7 @@ table.kv td:first-child{color:var(--muted)}
           <div style="color:var(--muted);font-size:11.5px">© swisstopo,
             <a href="https://www.swisstopo.admin.ch/ogd-conditions" target="_blank">open government data</a>.
             The swissEO products contain modified Copernicus Sentinel data. 3D terrain:
+            <a href="https://www.swisstopo.admin.ch/en/height-model-swissalti3d" target="_blank" rel="noopener">swissALTI3D</a>,
             <a href="https://www.geocat.ch/datahub/dataset/f7f058e9-288b-4c55-8f4e-6360880dbb59" target="_blank" rel="noopener">swissALTIRegio</a>,
             swissSURFACE3D © swisstopo. Labels © swisstopo.
             <a href="https://www.geocat.ch/geonetwork/srv/ger/catalog.search#/metadata/b07a4589-159b-4c3a-b1e7-dbdad11f7e62" target="_blank" rel="noopener">Waldmischungsgrad LFI</a>
@@ -933,7 +937,9 @@ table.kv td:first-child{color:var(--muted)}
           (with the sun shading; layers control, <i>3D objects</i>)</label>
         <div class="hint" style="margin-top:8px">The shading lights the height model from the sun's direction and height at the
           map centre (see <i>Sun time</i>). A sky, shadows cast by mountains, a lens flare and anaglyph stereo are not
-          available in this map library.<br>Sources: <a href="https://www.geocat.ch/datahub/dataset/f7f058e9-288b-4c55-8f4e-6360880dbb59"
+          available in this map library.<br>Sources: <a href="https://www.swisstopo.admin.ch/en/height-model-swissalti3d" target="_blank" rel="noopener">swissALTI3D</a> (0.5 m,
+          the default; up to 10 m per pixel and beyond Switzerland swissALTIRegio),
+          <a href="https://www.geocat.ch/datahub/dataset/f7f058e9-288b-4c55-8f4e-6360880dbb59"
           target="_blank" rel="noopener">swissALTIRegio</a> (metadata on geocat.ch),
           <a href="https://www.swisstopo.admin.ch/en/height-model-swisssurface3d" target="_blank" rel="noopener">swissSURFACE3D</a>
           (resampled to 10 m by swissEO).</div>
@@ -1437,9 +1443,13 @@ const BASEMAPS = {
   pixelkarte: wmts("ch.swisstopo.pixelkarte-farbe", "jpeg"),
   swissimage: wmts("ch.swisstopo.swissimage", "jpeg"),
   grey:       wmts("ch.swisstopo.pixelkarte-grau", "jpeg"),
+  // only in 3D: the swissTLM map made for 3D views (map.geo.admin.ch's 3D background)
+  tlm3d:      wmts("ch.swisstopo.swisstlm3d-karte-farbe.3d", "jpeg"),
   none:       null
 };
-const BASE_NAMES = { pixelkarte: "Map", swissimage: "SWISSIMAGE", grey: "Map Grey", none: "None" };
+const BASE_NAMES = { pixelkarte: "Map", swissimage: "SWISSIMAGE", grey: "Map Grey", tlm3d: "swissTLM map for 3D", none: "None" };
+const BASE_3D = new Set(["tlm3d"]);              // basemaps offered only in 3D
+let base3dWas = null;                            // a 3D basemap left for 2D, shown again in 3D
 let baseLayer = null, basemap = "pixelkarte", baseMapLayer = null;
 
 let labelIds = [], labelsWanted = false;                           // the vector label layers on the map
@@ -1477,7 +1487,11 @@ const OBJ3D = {
                attribution: '&copy; <a href="https://www.swisstopo.admin.ch/en/landscape-model-swissbuildings3d-3-0-beta">swisstopo swissBUILDINGS3D</a>' },
   trees:     { name: "3D trees", url: "https://3d.geo.admin.ch/ch.swisstopo.vegetation.3d/v1/tileset.json",
                sse: 6, size: 6, minPx: 5, cache: 800,
-               attribution: '&copy; <a href="https://docs.geo.admin.ch/visualize-data/3d-tiles.html">swisstopo 3D vegetation</a>' }
+               attribution: '&copy; <a href="https://docs.geo.admin.ch/visualize-data/3d-tiles.html">swisstopo 3D vegetation</a>' },
+  // swissTLM3D's 3D objects (bridges, cableways, …): few and light tiles, content at every level (additive refinement)
+  tlm:       { name: "3D bridges, cableways (swissTLM3D)", url: "https://3d.geo.admin.ch/ch.swisstopo.swisstlm3d.3d/v1/tileset.json",
+               sse: 8, size: 30, minPx: 3, cache: 400,
+               attribution: '&copy; <a href="https://www.swisstopo.admin.ch/en/landscape-model-swisstlm3d">swisstopo swissTLM3D</a>' }
 };
 const obj3dWanted = new Set();          // the toggles, kept while the map is flat
 /* Basemap switcher at the top right, as the layers control of the Copernicus Browser (opens on hover or click). */
@@ -1514,14 +1528,15 @@ const basemapCtl = (() => {
   map.on("click", () => open(false));
   return { onAdd: () => d, onRemove() {},
            sync() {
-             Object.keys(radios).forEach(k => { radios[k].checked = k === basemap; }); cb.checked = labelsOn();
+             Object.keys(radios).forEach(k => { radios[k].checked = k === basemap; radios[k].parentElement.hidden = BASE_3D.has(k) && !terrainOn; });
+             cb.checked = labelsOn();
              Object.keys(objCb).forEach(k => { objCb[k].checked = obj3dWanted.has(k); });
              objSep.hidden = obj.hidden = !terrainOn;
            } };
 })();
 map.addControl(basemapCtl, "top-right");
 function setBasemap(name) {
-  if (!(name in BASEMAPS)) name = "pixelkarte";
+  if (!(name in BASEMAPS) || (BASE_3D.has(name) && !terrainOn)) name = "pixelkarte";
   if (BASEMAPS[name] !== baseLayer || (BASEMAPS[name] && !baseMapLayer)) {
     removeRaster(baseMapLayer);
     baseMapLayer = BASEMAPS[name] ? wmtsRaster(BASEMAPS[name], "z-base") : null;
@@ -1531,14 +1546,16 @@ function setBasemap(name) {
   basemapCtl.sync();
   writeUrlSoon();
 }
-/* In 3D the point labels (places, peaks, POIs) float LABEL_LIFT meters above the terrain (symbol-height-offset,
+/* In 3D the point labels (places, peaks, POIs; not the lake names) float LABEL_LIFT meters above the terrain (symbol-height-offset,
    MapLibre 6.6+, measured from the ground) and are drawn after the 3D buildings and trees, which do not cover them;
    the labels along lines (streets, rivers) cannot be lifted, stay on the ground and are drawn before the 3D objects,
    which cover them where they stand in front. In 2D the offset is removed and the style's order restored. */
 const LABEL_LIFT = 50;
 function arrangeLabels() {
   const ids = labelIds.filter(id => map.getLayer(id));
-  const point = id => (map.getLayoutProperty(id, "symbol-placement") || "point") === "point";
+  // the lake names stay on the water, which is flat and not covered: treated as the labels along lines
+  const point = id => (map.getLayoutProperty(id, "symbol-placement") || "point") === "point" &&
+                      map.getLayer(id).sourceLayer !== "water_name";
   ids.filter(point).forEach(id => map.setLayoutProperty(id, "symbol-height-offset", terrainOn ? LABEL_LIFT : undefined));
   if (map.getLayer("obj3d")) {
     ids.filter(id => !point(id)).forEach(id => map.moveLayer(id, "obj3d"));     // each in turn: the order is kept
@@ -1568,11 +1585,12 @@ async function setLabels(on) {
 }
 
 /* ============================================================
-   2b. 3D terrain: swissALTIRegio or the swissSURFACE3D surface model
+   2b. 3D terrain: swissALTI3D, swissALTIRegio or the swissSURFACE3D surface model
    ============================================================ */
-/* The 3D mode drapes the map over swissALTIRegio, swisstopo's 10 m terrain model of Switzerland and its border
-   regions. It is one COG in LV95 on the 10 m pixel grid of the map, so its heights become terrain tiles of the map
-   grid without reprojection: Terrarium-encoded, 256 px, at most 20 m per pixel (MapLibre interpolates beyond). */
+/* swissALTIRegio, swisstopo's 10 m terrain model of Switzerland and its border regions (the coarse levels and the area
+   beyond swissALTI3D, below). It is one COG in LV95 on the 10 m pixel grid of the map, so its heights become terrain
+   tiles of the map grid without reprojection: Terrarium-encoded, 256 px, at most 20 m per pixel (MapLibre interpolates
+   beyond). */
 const ALTI = "https://data.geo.admin.ch/ch.swisstopo.swissaltiregio/swissaltiregio/swissaltiregio_2056_5728.tif";
 const ALTI_BOX = [2385000, 974000, 2935000, 1404000];
 const ATTR_ALTI = '&copy; <a href="https://www.swisstopo.admin.ch/en/height-model-swissaltiregio">swisstopo swissALTIRegio</a>';
@@ -1588,7 +1606,81 @@ function terrarium(h, N) {                                     // heights in m -
    swissEO bucket (Switzerland plus 10 km, no data −9999); beyond it and in its gaps the heights of swissALTIRegio. */
 const DSM = "https://s3-topo-satromo-prod.s3.eu-central-1.amazonaws.com/data/DSM/DSM_10m_EPSG2056_CH_clipped_10km_extended_9999_cog.tif";
 const ATTR_DSM = '&copy; <a href="https://www.swisstopo.admin.ch/en/height-model-swisssurface3d">swisstopo swissSURFACE3D</a> (10 m)';
+/* swissALTI3D, swisstopo's terrain model of Switzerland and Liechtenstein at 0.5 m (the default in 3D): one COG per km²
+   and release in the STAC collection ch.swisstopo.swissalti3d, LV95 with LN02 heights (as swissALTIRegio), each as
+   0.5 m and 2 m asset; the 0.5 m COGs have overviews at 1, 2 and 4 m. The terrain tiles of the map reach zoom 13
+   (0.625 m per pixel): from zoom 10 (5 m per pixel) on, a tile is read from the 0.5 m assets (the 2 m asset where a km²
+   has no 0.5 m one) of the latest release of every km² it touches, at the overview that fits; up to zoom 9 (10 m per
+   pixel and coarser) and beyond Switzerland or in gaps from swissALTIRegio. The items are looked up in the STAC API
+   once per block of 4 × 4 km; at most ALTI3D_OPEN COGs are kept open (their header and cached blocks). */
+const ALTI3D_ITEMS = "https://data.geo.admin.ch/api/stac/v0.9/collections/ch.swisstopo.swissalti3d/items";
+const ATTR_ALTI3D = '&copy; <a href="https://www.swisstopo.admin.ch/en/height-model-swissalti3d">swisstopo swissALTI3D</a>';
+const alti3dKm = new Map(), alti3dBlocks = new Map(), alti3dOpen = [], ALTI3D_OPEN = 48;
+function alti3dBlock(bx, by) {                 // the latest release of each km² in the block, by "E-N" (km, lower left)
+  const key = bx + "-" + by;
+  if (!alti3dBlocks.has(key)) {
+    const pr = (async () => {
+      const c = [[0, 0], [1, 0], [0, 1], [1, 1]].map(([i, j]) => lv95(bx * 4000 + 1 + i * 3998, by * 4000 + 1 + j * 3998));
+      const lo = c.map(q => q[0]), la = c.map(q => q[1]);
+      let url = ALTI3D_ITEMS + "?limit=100&bbox=" + [Math.min(...lo), Math.min(...la), Math.max(...lo), Math.max(...la)].join(",");
+      while (url) {
+        const r = await fetch(url);
+        if (!r.ok) throw new Error("swissALTI3D STAC " + r.status);
+        const j = await r.json();
+        (j.features || []).forEach(f => {
+          const m = /_(\d{4})_(\d{4})-(\d{4})$/.exec(f.id);
+          if (!m) return;
+          const k = m[2] + "-" + m[3], prev = alti3dKm.get(k);
+          if (prev && prev.year >= +m[1]) return;
+          const tifs = Object.values(f.assets || {}).map(a => a.href).filter(h => /\.tif$/.test(h));
+          const href = tifs.find(h => /_0\.5_/.test(h)) || tifs.find(h => /_2_/.test(h));
+          if (href) alti3dKm.set(k, { year: +m[1], href });
+        });
+        const next = (j.links || []).find(l => l.rel === "next");
+        url = next && next.href !== url ? next.href : null;
+      }
+    })();
+    pr.catch(() => alti3dBlocks.delete(key));                // asked again with the next tile
+    alti3dBlocks.set(key, pr);
+  }
+  return alti3dBlocks.get(key);
+}
+/* the COGs used last stay open; the oldest beyond ALTI3D_OPEN are closed (header and decoded tiles released) */
+function alti3dUsed(urls) {
+  urls.forEach(u => { const i = alti3dOpen.indexOf(u); if (i >= 0) alti3dOpen.splice(i, 1); alti3dOpen.push(u); });
+  while (alti3dOpen.length > ALTI3D_OPEN) {
+    const u = alti3dOpen.shift(), pr = pyrCache.get(u);
+    pyrCache.delete(u);
+    if (pr) pr.then(py => py.levels.forEach(l => [l.im, l.mask].forEach(im => {
+      const i = cachedImages.indexOf(im);
+      if (i >= 0) cachedImages.splice(i, 1);
+    }))).catch(() => {});
+  }
+}
+async function drawAlti3d(bbox, N, signal) {
+  if ((bbox[2] - bbox[0]) / N > 6) return DEMS.alti.draw(bbox, N, signal);
+  const kx0 = Math.floor(bbox[0] / 1000), kx1 = Math.ceil(bbox[2] / 1000) - 1;
+  const ky0 = Math.floor(bbox[1] / 1000), ky1 = Math.ceil(bbox[3] / 1000) - 1, blocks = new Map();
+  for (let x = kx0; x <= kx1; x++) for (let y = ky0; y <= ky1; y++) blocks.set(Math.floor(x / 4) + "," + Math.floor(y / 4), [Math.floor(x / 4), Math.floor(y / 4)]);
+  await Promise.all([...blocks.values()].map(([bx, by]) => alti3dBlock(bx, by)));
+  const urls = [];
+  for (let x = kx0; x <= kx1; x++) for (let y = ky0; y <= ky1; y++) { const t = alti3dKm.get(x + "-" + y); if (t) urls.push(t.href); }
+  const out = new Float32Array(N * N).fill(-9999);
+  (await Promise.all(urls.map(u => readGrid(u, bbox, N, N, signal, -9999)))).forEach(g => {
+    if (g) for (let k = 0; k < g.length; k++) if (g[k] > -500) out[k] = g[k];
+  });
+  alti3dUsed(urls);
+  let gap = false;
+  for (let k = 0; k < out.length && !gap; k++) gap = !(out[k] > -500);
+  if (gap) {                                                 // beyond Switzerland and in gaps: swissALTIRegio
+    const a = await readGrid(ALTI, bbox, N, N, signal, 0);
+    for (let k = 0; k < out.length; k++) if (!(out[k] > -500)) out[k] = a ? a[k] : 0;
+  }
+  return terrarium(out, N);
+}
 const DEMS = {
+  alti3d: { name: "swissALTI3D: terrain (0.5 m; beyond Switzerland swissALTIRegio)", attribution: ATTR_ALTI3D + ", " + ATTR_ALTI,
+            maxzoom: 13, draw: drawAlti3d },
   alti: { name: "swissALTIRegio: terrain (10 m)", attribution: ATTR_ALTI,
           draw: async (bbox, N, signal) => terrarium(await readGrid(ALTI, bbox, N, N, signal, 0), N) },
   dsm:  { name: "swissSURFACE3D 10 m: surface with buildings and trees", attribution: ATTR_DSM,
@@ -1608,7 +1700,7 @@ let demLayer = null, terrainOn = false, navCtl = null;
    The sun shading is a hillshade of the height model lit from the sun's direction and height at the map centre.
    A sky / atmosphere (not drawn by MapLibre here), cast shadows, a lens flare and anaglyph stereo, as in the
    Copernicus Browser's 3D view, are not available. */
-const T3D_DEFAULT = { dem: "alti", shade: true, method: "combined", hsExag: 0.4, shadow: "#000000",
+const T3D_DEFAULT = { dem: "alti3d", shade: true, method: "combined", hsExag: 0.4, shadow: "#000000",
                       highlight: "#ffffff", accent: "#000000", exag: 1, objShadow: true };
 /* the shading lies over the satellite image, so its colours are partly transparent */
 const rgba = (hex, a) => "rgba(" + [1, 3, 5].map(i => parseInt(hex.substr(i, 2), 16)).join(",") + "," + a + ")";
@@ -1661,17 +1753,17 @@ function apply3D() {
 }
 function addDem(kind) {
   // an empty terrain tile would read as -32768 m, so tiles without data are flat at 0 m
-  const def = DEMS[kind] || DEMS.alti, id = "dem_" + kind;
+  const def = DEMS[kind] || DEMS[T3D_DEFAULT.dem], id = "dem_" + kind;
   if (!RASTERS.has(id)) {
     RASTERS.set(id, { id, size: 256, bounds: ALTI_BOX, pending: 0, v: 0, dem: true, empty: N => terrarium(null, N), draw: def.draw });
     map.addSource(id, { type: "raster-dem", tiles: ["swisseo://" + id + "/{z}/{x}/{y}"], tileSize: 256, encoding: "terrarium",
-                        maxzoom: 8, attribution: def.attribution });
+                        maxzoom: def.maxzoom || 8, attribution: def.attribution });
   }
   demLayer = RASTERS.get(id);
 }
 const setTerrain = () => map.setTerrain({ source: demLayer.id, exaggeration: t3d.exag });
 function setDem(kind) {
-  t3d.dem = kind in DEMS ? kind : "alti";
+  t3d.dem = kind in DEMS ? kind : T3D_DEFAULT.dem;
   if (!terrainOn) return;
   addDem(t3d.dem);
   setTerrain();
@@ -1709,6 +1801,8 @@ function setTerrain3D(on, cam) {
   $$(".t3d").forEach(b => { b.hidden = !on; });
   $("#btn3d").textContent = on ? "2D" : "3D";
   $("#btn3d").title = on ? "Back to the flat map (2D)" : "3D terrain";
+  if (!on && BASE_3D.has(basemap)) { base3dWas = basemap; setBasemap("pixelkarte"); }
+  else if (on && base3dWas) { setBasemap(base3dWas); base3dWas = null; }
   basemapCtl.sync();
   syncObj3d();
   arrangeLabels();
@@ -1954,14 +2048,20 @@ function disposeObj(o) {
 const td = new TextDecoder();
 const tileJson = (buf, o, len) => len ? JSON.parse(td.decode(new Uint8Array(buf, o, len)).replace(/[\0\s]+$/, "")) : {};
 /* Lambert shading in the sun's light: the PBR materials of the tiles have no metal and no roughness, which looks wet */
-function lambert(m) {
+function lambert(m, flat) {
   const l = new THREE.MeshLambertMaterial({ color: m.color, map: m.map || null, side: THREE.DoubleSide,
                                             alphaTest: m.map ? Math.max(m.alphaTest, 0.5) : 0, transparent: false,
-                                            vertexColors: m.vertexColors });
+                                            vertexColors: m.vertexColors, flatShading: flat });
   m.dispose();
   return l;
 }
-const lambertAll = root => root.traverse(m => { if (m.isMesh) m.material = Array.isArray(m.material) ? m.material.map(lambert) : lambert(m.material); });
+/* the swissTLM3D objects come without normals: shaded flat (normals of the faces), with vertex normals for the shadows */
+const lambertAll = root => root.traverse(m => {
+  if (!m.isMesh) return;
+  const flat = !m.geometry.attributes.normal;
+  if (flat) m.geometry.computeVertexNormals();
+  m.material = Array.isArray(m.material) ? m.material.map(x => lambert(x, flat)) : lambert(m.material, flat);
+});
 async function parseTile3D(buf, url) {
   const dv = new DataView(buf), magic = td.decode(new Uint8Array(buf, 0, 4));
   if (magic === "cmpt") {
@@ -2446,7 +2546,8 @@ function trimTileCache() {
 function pyramid(url) {
   if (!pyrCache.has(url)) {
     pyrCache.set(url, (async () => {
-      const tiff = await GeoTIFF.fromUrl(url, { cache: true, blockSize: url.includes("swisseo_vhi") ? 65536 : 131072, cacheSize: 300 });
+      const tiff = await GeoTIFF.fromUrl(url, { cache: true, blockSize: /swisseo_vhi|swissalti3d/.test(url) ? 65536 : 131072,
+                                                cacheSize: url.includes("swissalti3d") ? 60 : 300 });
       const n = await tiff.getImageCount();
       const full = await tiff.getImage(0);
       const o = full.getOrigin(), r = full.getResolution();
@@ -7624,7 +7725,7 @@ function writeUrl() {
   p.set("zoom", +mapZoom().toFixed(3));                                   // zoom of the swisstopo grid levels
   if (terrainOn) {
     p.set("3d", "true"); p.set("pitch", +map.getPitch().toFixed(1)); p.set("bearing", +map.getBearing().toFixed(1));
-    if (t3d.dem !== "alti") p.set("terrain", t3d.dem);
+    if (t3d.dem !== T3D_DEFAULT.dem) p.set("terrain", t3d.dem);
     if (t3d.exag !== 1) p.set("exaggeration", t3d.exag);
     if (obj3dWanted.size) p.set("objects3d", [...obj3dWanted].join(","));
   }
@@ -7728,6 +7829,7 @@ function readUrl() {
     if (q.get("terrain") in DEMS) t3d.dem = q.get("terrain");
     if (ex >= 0.5 && ex <= 3) t3d.exag = ex;
     (q.get("objects3d") || "").split(",").forEach(k => { if (k in OBJ3D) obj3dWanted.add(k); });
+    if (BASE_3D.has(q.get("basemap"))) base3dWas = q.get("basemap");      // set with 3D below
     setTerrain3D(true, { pitch: isFinite(pt) ? clamp(pt, 0, 75) : 60, bearing: isFinite(br) ? br : 0 });
   }
   return { hasView, hasDate: DATE_RE.test(ft), compareMode: cm !== "off" && compare.length >= 2 };
