@@ -1394,7 +1394,8 @@ let rasterSeq = 0;
 maplibregl.addProtocol("swisseo", async (params, ctrl) => {
   const m = /^swisseo:\/\/(\w+)\/(\d+)\/(\d+)\/(\d+)/.exec(params.url), lyr = m && RASTERS.get(m[1]);
   if (!lyr) return { data: null };
-  const z = +m[2], x = +m[3], y = +m[4], span = TILE * RES0 / 2 ** z, N = lyr.size || TILE;
+  const z = +m[2], x = +m[3], y = +m[4], span = TILE * RES0 / 2 ** z;
+  const N = typeof lyr.size === "function" ? lyr.size(z) : lyr.size || TILE;
   const bbox = [ORIGIN[0] + x * span, ORIGIN[1] - (y + 1) * span, ORIGIN[0] + (x + 1) * span, ORIGIN[1] - y * span];
   const none = async () => ({ data: lyr.empty ? await createImageBitmap(lyr.empty(N)) : null });   // nothing to draw
   if (lyr.bounds && !boxesMeet(bbox, lyr.bounds)) return none();
@@ -1609,7 +1610,7 @@ const ATTR_DSM = '&copy; <a href="https://www.swisstopo.admin.ch/en/height-model
 /* swissALTI3D, swisstopo's terrain model of Switzerland and Liechtenstein at 0.5 m (the default in 3D): one COG per km²
    and release in the STAC collection ch.swisstopo.swissalti3d, LV95 with LN02 heights (as swissALTIRegio), each as
    0.5 m and 2 m asset; the 0.5 m COGs have overviews at 1, 2 and 4 m. The terrain tiles of the map reach zoom 13
-   (0.625 m per pixel): from zoom 10 (5 m per pixel) on, a tile is read from the 0.5 m assets (the 2 m asset where a km²
+   (0.5 m per pixel): from zoom 10 (4 m per pixel) on, a tile is read from the 0.5 m assets (the 2 m asset where a km²
    has no 0.5 m one) of the latest release of every km² it touches, at the overview that fits; up to zoom 9 (10 m per
    pixel and coarser) and beyond Switzerland or in gaps from swissALTIRegio. The items are looked up in the STAC API
    once per block of 4 × 4 km; at most ALTI3D_OPEN COGs are kept open (their header and cached blocks). */
@@ -1679,8 +1680,11 @@ async function drawAlti3d(bbox, N, signal) {
   return terrarium(out, N);
 }
 const DEMS = {
+  /* From zoom 10 on, the terrain tiles have 320 px: 4, 2, 1 and 0.5 m per pixel, the pixels of swissALTI3D's levels
+     (256 px would give 5, 2.5, 1.25 and 0.625 m: reading the nearest pixel then doubles every fourth row and column, and
+     the sun shading shows the steps as ripples). Up to zoom 9, 256 px: 20 and 10 m, on swissALTIRegio's 10 m grid. */
   alti3d: { name: "swissALTI3D: terrain (0.5 m; beyond Switzerland swissALTIRegio)", attribution: ATTR_ALTI3D + ", " + ATTR_ALTI,
-            maxzoom: 13, draw: drawAlti3d },
+            maxzoom: 13, size: z => z >= 10 ? 320 : 256, draw: drawAlti3d },
   alti: { name: "swissALTIRegio: terrain (10 m)", attribution: ATTR_ALTI,
           draw: async (bbox, N, signal) => terrarium(await readGrid(ALTI, bbox, N, N, signal, 0), N) },
   dsm:  { name: "swissSURFACE3D 10 m: surface with buildings and trees", attribution: ATTR_DSM,
@@ -1755,7 +1759,7 @@ function addDem(kind) {
   // an empty terrain tile would read as -32768 m, so tiles without data are flat at 0 m
   const def = DEMS[kind] || DEMS[T3D_DEFAULT.dem], id = "dem_" + kind;
   if (!RASTERS.has(id)) {
-    RASTERS.set(id, { id, size: 256, bounds: ALTI_BOX, pending: 0, v: 0, dem: true, empty: N => terrarium(null, N), draw: def.draw });
+    RASTERS.set(id, { id, size: def.size || 256, bounds: ALTI_BOX, pending: 0, v: 0, dem: true, empty: N => terrarium(null, N), draw: def.draw });
     map.addSource(id, { type: "raster-dem", tiles: ["swisseo://" + id + "/{z}/{x}/{y}"], tileSize: 256, encoding: "terrarium",
                         maxzoom: def.maxzoom || 8, attribution: def.attribution });
   }
@@ -1986,7 +1990,7 @@ class TileSet3D {
         n.used = frame;
         if (n.ext) { this.traverse(n.ext, v, frame); return; }
         if (n.obj) { n.obj.visible = true; v.draw.push(n); }
-      } else if (n.state === 0) this.queue.set(n, dist);
+      } else if (n.state === 0 || (n.state === 3 && n.tries < 4 && Date.now() > n.retryAt)) this.queue.set(n, dist);
     }
     if (n.ge * v.sseK / dist > this.def.sse) n.children.forEach(c => this.traverse(c, v, frame));
   }
@@ -2001,27 +2005,32 @@ class TileSet3D {
   async request(n) {
     n.state = 1; this.active++;
     try {
-      const r = await fetch(n.uri);
+      const r = await fetch(n.uri, { signal: AbortSignal.timeout(30000) });     // a stalled request frees its slot
       if (!r.ok) throw new Error(r.status + " " + n.uri);
       if (/\.json(\?|$)/.test(n.uri)) n.ext = nodeFrom((await r.json()).root, n.uri);
       else {
         n.obj = await parseTile3D(await r.arrayBuffer(), n.uri);
+        freeArrays(n.obj);
         n.obj.visible = false;
         this.group.add(n.obj);
         this.loaded.add(n);
         n.id = ++obj3dSeq;                                   // for the key of the shadow map
+        n.used = obj3dLayer ? obj3dLayer.frame : 0;          // new: not the first to be evicted
       }
       n.state = 2;
       if (this.dead && n.obj) { disposeObj(n.obj); n.obj = null; }
     } catch (e) {
       console.warn(this.key, e);
-      n.state = 3;                                         // not asked again
+      n.state = 3;                                         // asked again after 5, 10 and 20 s, then given up
+      n.tries = (n.tries || 0) + 1;
+      n.retryAt = Date.now() + 5000 * 2 ** (n.tries - 1);
     }
     this.active--;
     this.evict();
     map.triggerRepaint();
   }
-  /* beyond the cache size, the tiles not drawn for the longest time are dropped */
+  /* Beyond the cache size, the tiles not drawn for the longest time are dropped; those drawn in the last frame and
+     those just loaded (marked with that frame) stay, so the cache grows when one view needs more tiles. */
   evict() {
     if (this.loaded.size <= this.def.cache) return;
     const old = [...this.loaded].sort((a, b) => a.used - b.used).slice(0, this.loaded.size - this.def.cache);
@@ -2043,6 +2052,16 @@ function disposeObj(o) {
   });
 }
 
+/* Once on the GPU, the vertex and index arrays are released in JavaScript (the bounding spheres are computed before):
+   this halves the memory the page needs for the 3D objects. */
+function freeArrays(o) {
+  const free = function () { this.array = null; };
+  o.traverse(m => {
+    if (!m.isMesh || !m.geometry) return;
+    Object.values(m.geometry.attributes).forEach(a => a.onUpload(free));
+    if (m.geometry.index) m.geometry.index.onUpload(free);
+  });
+}
 /* Tile content: b3dm, i3dm and cmpt (3D Tiles 1.0). The result is an object whose matrix maps it into the world square
    relative to the map centre (set every frame from o.userData.frame). */
 const td = new TextDecoder();

@@ -186,7 +186,9 @@ The swissEO Browser therefore always uses the physical reflectance.
   Liechtenstein, by default. Its STAC collection `ch.swisstopo.swissalti3d` has one COG per km² and release (0.5 m and
   2 m assets; the 0.5 m COGs have overviews at 1, 2 and 4 m). The page looks up the items once per block of 4 × 4 km,
   takes the latest release of each km² and its 0.5 m asset (the 2 m one where a km² has none) and reads every terrain
-  tile from the km² it touches at the overview that fits; the terrain tiles reach zoom 13 (0.625 m per pixel). Up to
+  tile from the km² it touches at the overview that fits; the terrain tiles reach zoom 13 (0.5 m per pixel). From zoom
+  10 on they have 320 px, so their pixels are those of swissALTI3D's levels (4, 2, 1, 0.5 m); with 256 px (5, 2.5,
+  1.25, 0.625 m) the nearest pixel doubled every fourth row and column, which the sun shading showed as ripples. Up to
   10 m per pixel, beyond Switzerland and in gaps the heights come from **swissALTIRegio**
   ([metadata](https://www.geocat.ch/datahub/dataset/f7f058e9-288b-4c55-8f4e-6360880dbb59)), swisstopo's 10 m terrain
   model (one COG). Both are turned into terrain tiles of the map grid in the browser. In a close 3D view of Bern the
@@ -223,7 +225,9 @@ The swissEO Browser therefore always uses the physical reflectance.
     3D view. They are 3D Tiles 1.0 in ECEF (buildings: Draco-compressed b3dm; trees: instances of three tree models,
     i3dm in composite tiles) with Swiss heights in the place of ellipsoidal heights, so they stand on swissALTIRegio
     without a geoid model. The page traverses the tilesets itself (bounding regions, screen-space error, a request
-    queue of 8 and a cache of 800 tiles per tileset) and draws them with three.js in a custom MapLibre layer; every tile
+    queue of 8 and a cache of 800 tiles per tileset; the tiles not drawn for the longest time are dropped, never those
+    just loaded or drawn in the last frame; a failed request is repeated after 5, 10 and 20 s, a request times out after
+    30 s; the vertex arrays are released once they are on the GPU) and draws them with three.js in a custom MapLibre layer; every tile
     gets its own affine ECEF → LV95 mapping at its centre (proj4, as everywhere on the page), positions are relative to
     an anchor near the map centre so float32 stays precise, and three.js works in a right-handed north-up frame (the
     MapLibre world square has y to the south). three.js is loaded only when a toggle is switched on.
